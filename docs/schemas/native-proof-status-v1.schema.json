@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://palllm.dev/schemas/native-proof-status-v1.schema.json",
+  "title": "PalLLM Native Proof Status",
+  "description": "Machine-readable JSON emitted by scripts/pal-proof.ps1 -Json. It summarizes live or durable Palworld native-delivery proof lanes without starting the active proof watcher. Source of truth: scripts/pal-proof.ps1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "Schema",
+    "GeneratedAtUtc",
+    "RepoRoot",
+    "RuntimeRoot",
+    "BaseUrl",
+    "Overall",
+    "OverallReason",
+    "DiagnosisCode",
+    "DiagnosisSummary",
+    "DiagnosisAction",
+    "DiagnosisCommand",
+    "NextAction",
+    "ProofSource",
+    "BridgeProofStatus",
+    "Summary",
+    "LiveDeliveryProven",
+    "NativeHudBindReady",
+    "RecommendedHudTarget",
+    "VisibleDeliveryConfirmed",
+    "ActionFeedbackObserved",
+    "CurrentBlockers",
+    "ReadyEvidence",
+    "Artifacts",
+    "Lanes"
+  ],
+  "properties": {
+    "Schema": {
+      "type": "string",
+      "const": "https://palllm.dev/schemas/native-proof-status-v1.schema.json"
+    },
+    "GeneratedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "RepoRoot": {
+      "type": "string"
+    },
+    "RuntimeRoot": {
+      "type": "string"
+    },
+    "BaseUrl": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Overall": {
+      "type": "string",
+      "enum": [
+        "PROVEN",
+        "BLOCKED",
+        "STALE PROOF",
+        "NEEDS LIVE SESSION",
+        "SIDECAR OFFLINE",
+        "BRIDGE PROOF UNAVAILABLE"
+      ]
+    },
+    "OverallReason": {
+      "type": "string"
+    },
+    "DiagnosisCode": {
+      "type": "string"
+    },
+    "DiagnosisSummary": {
+      "type": "string"
+    },
+    "DiagnosisAction": {
+      "type": "string"
+    },
+    "DiagnosisCommand": {
+      "type": "string"
+    },
+    "NextAction": {
+      "type": "string"
+    },
+    "ProofSource": {
+      "type": "string",
+      "enum": [
+        "none",
+        "live-bridge-proof",
+        "latest-native-proof-artifact",
+        "latest-proof-bundle"
+      ]
+    },
+    "BridgeProofStatus": {
+      "type": "string"
+    },
+    "Summary": {
+      "type": "string"
+    },
+    "EvidenceFreshnessStatus": {
+      "type": "string",
+      "enum": ["live", "fresh", "stale", "unknown"]
+    },
+    "EvidenceCapturedAtUtc": {
+      "$ref": "#/$defs/NullableString"
+    },
+    "EvidenceFreshUntilUtc": {
+      "$ref": "#/$defs/NullableString"
+    },
+    "EvidenceFreshnessWindowHours": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "LiveDeliveryProven": {
+      "type": "boolean"
+    },
+    "NativeHudBindReady": {
+      "type": "boolean"
+    },
+    "RecommendedHudTarget": {
+      "type": "string"
+    },
+    "VisibleDeliveryConfirmed": {
+      "type": "boolean"
+    },
+    "ActionFeedbackObserved": {
+      "type": "boolean"
+    },
+    "CurrentBlockers": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "ReadyEvidence": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "Artifacts": {
+      "$ref": "#/$defs/Artifacts"
+    },
+    "Lanes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/Lane" }
+    }
+  },
+  "$defs": {
+    "NullableString": {
+      "type": ["string", "null"]
+    },
+    "Artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "LatestNativeProof",
+        "LatestNativeProofExists",
+        "LatestNativeProofHistory",
+        "LatestProofBundle",
+        "LatestProofBundleExists"
+      ],
+      "properties": {
+        "LatestNativeProof": {
+          "type": "string"
+        },
+        "LatestNativeProofExists": {
+          "type": "boolean"
+        },
+        "LatestNativeProofHistory": {
+          "$ref": "#/$defs/NullableString"
+        },
+        "LatestProofBundle": {
+          "type": "string"
+        },
+        "LatestProofBundleExists": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Lane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Name", "Required", "Status", "Summary"],
+      "properties": {
+        "Name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "Required": {
+          "type": "boolean"
+        },
+        "Status": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "WARN"]
+        },
+        "Summary": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

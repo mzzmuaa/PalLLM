@@ -1,0 +1,265 @@
+{
+  "$schema": "./docs/schemas/agents.schema.json",
+  "$comment": "Machine-readable agent capability manifest for PalLLM. Companion to AGENTS.md (the human-readable briefing). Designed to be loaded by an AI coding agent (or any caller) at session start so the agent knows in one structured payload what this repo is, what entry points exist, what the hard rules are, and how to verify a change. Drift-gated: scripts/run_full_audit.ps1 verifies that every path mentioned here actually exists and that the counts match the live code. Schema validation: this file conforms to docs/schemas/agents.schema.json (JSON Schema 2020-12).",
+
+  "schemaVersion": 1,
+  "lastAudited": "2026-05-23",
+
+  "project": {
+    "name": "PalLLM",
+    "kind": "local-first LLM companion runtime",
+    "license": "MIT",
+    "scope": "Palworld + UE4SS native bridge; portable adapter surface usable from any game / app",
+    "runtime": {
+      "framework": "net10.0",
+      "host": "ASP.NET Core minimal APIs",
+      "lua": "5.4 via UE4SS",
+      "mcpProtocolVersion": "2025-06-18",
+      "openApiVersion": "3.1"
+    },
+    "rootEntryPoints": [
+      { "kind": "agent-briefing", "path": "AGENTS.md", "audience": "any coding agent" },
+      { "kind": "agent-briefing", "path": "CLAUDE.md", "audience": "Claude Code specifically" },
+      { "kind": "human-briefing", "path": "README.md", "audience": "human reader / pitch" },
+      { "kind": "agent-handoff", "path": "docs/HANDOFF.md", "audience": "incoming coding agent picking up an interrupted session" },
+      { "kind": "doc-map", "path": "docs/INDEX.md", "audience": "humans + agents looking for any doc" },
+      { "kind": "verb-runner", "path": "pal.ps1", "audience": "shell-driven workflows; the canonical command surface" },
+      { "kind": "verb-manifest", "path": "pal.json", "audience": "agents that want a machine-readable verb table without parsing PowerShell" }
+    ]
+  },
+
+  "rollingState": {
+    "$comment": "Cross-checked against PROJECT_NUMBERS.json + the live code by drift gates. Bump in lockstep with any code change.",
+    "tests": 1309,
+    "driftGates": "16/16",
+    "buildWarnings": 0,
+    "apiRoutes": 57,
+    "operationalRoutes": 6,
+    "mcpProtocolRoutes": 1,
+    "mcpTools": 38,
+    "mcpResources": 6,
+    "mcpResourceTemplates": 1,
+    "mcpPrompts": 4,
+    "fallbackStrategies": 19,
+    "featureCatalog": 122,
+    "featureReady": 119,
+    "featureScaffolded": 2,
+    "featureDeferred": 1,
+    "adrsAccepted": 6,
+    "docsCount": 69,
+    "honestRoadmap": "76.2%",
+    "linksToSourceOfTruth": "docs/PROJECT_NUMBERS.json"
+  },
+
+  "capabilities": {
+    "$comment": "Each entry is a capability an agent can exercise in this repo. Cross-referenced from docs/HARVEST.md.",
+
+    "verbRunner": {
+      "summary": "Single-command access to every common operation via pal.ps1. The discovery surface for agents and humans alike.",
+      "manifest": "pal.json",
+      "doc": "docs/CHEAT_SHEET.md",
+      "shellEntry": "pwsh ./pal.ps1 <verb>",
+      "discoverVerbs": "pwsh ./pal.ps1 list"
+    },
+
+    "httpSurface": {
+      "summary": "57 /api/* routes + 6 operational routes + 1 /mcp route. Self-documenting via /openapi/v1.json and the in-tree snapshot.",
+      "openApiSnapshot": "docs/openapi/palllm-sidecar-v1.json",
+      "doc": "docs/API.md",
+      "machineReadablePosture": "/api/release/readiness",
+      "machineReadableProof": "/api/bridge/proof",
+      "machineReadablePerf": "/api/inference/performance",
+      "machineReadablePrivacy": "/api/privacy/posture",
+      "machineReadableHardware": "/api/hardware",
+      "registrations": "src/PalLLM.Sidecar/Program.cs (api.Map* call site)"
+    },
+
+    "mcpSurface": {
+      "summary": "MCP-over-HTTP server exposing 38 tools, 6 resources + 1 templated resource, 4 prompts.",
+      "doc": "docs/MCP_QUICKSTART.md",
+      "exampleConfigs": "docs/examples/",
+      "wireWithOneCommand": "pwsh ./pal.ps1 mcp connect <client>",
+      "registrations": "src/PalLLM.Sidecar/Program.cs (api.MapMcp + ToolRegistration entries)"
+    },
+
+    "deterministicFallback": {
+      "summary": "19 hand-authored strategies that always return a coherent reply. Fires when inference is disabled / down / rate-limited.",
+      "doc": "docs/PROMPT_CARDS.md",
+      "researchBacking": "docs/FALLBACK_AI_RESEARCH.md",
+      "demoTour": "pwsh ./pal.ps1 demo",
+      "implementation": "src/PalLLM.Domain/Runtime/FallbackBehaviorEngine.cs"
+    },
+
+    "personalityPacks": {
+      "summary": "Loadable persona overlays. Schema-checked, content-hash-verified.",
+      "schema": "docs/schemas/personality-pack.schema.json",
+      "samples": [
+        "samples/packs/companion-warrior",
+        "samples/packs/companion-scholar",
+        "samples/packs/companion-healer",
+        "samples/packs/companion-trickster"
+      ],
+      "doc": "docs/PACK_SAMPLES.md",
+      "deepDive": "docs/PACK_AUTHORING.md",
+      "implementation": "src/PalLLM.Domain/Packs/PersonalityPack.cs",
+      "computeHash": "pwsh ./scripts/compute-pack-hash.ps1 <pack-root> -Update"
+    },
+
+    "inferenceWiring": {
+      "summary": "One-command path from clean clone to a working LLM endpoint. Nine connectors as of Pass 357; bundled llama.cpp is the default for reference-rig hardware; cloud API is the shipping escape path for below-reference rigs.",
+      "cloudApi": "pwsh ./pal.ps1 connect cloud -Provider openai -Model gpt-4o-mini -ApiKey $env:OPENAI_API_KEY -WriteConfig",
+      "llamaCppRaw": "pwsh ./pal.ps1 connect llamacpp -ModelPath <model.gguf>",
+      "lmStudioDesktop": "pwsh ./pal.ps1 connect lmstudio -Model <loaded-id>",
+      "vllmBlackwell": "pwsh ./pal.ps1 connect vllm",
+      "vllmOmniMultimodal": "pwsh ./pal.ps1 connect omni",
+      "transformersServe": "pwsh ./pal.ps1 connect transformers",
+      "tensorrtNvidia": "pwsh ./pal.ps1 connect tensorrt",
+      "openvinoIntel": "pwsh ./pal.ps1 connect openvino -TargetDevice GPU",
+      "foundryWindows": "pwsh ./pal.ps1 connect foundry -FoundryEndpoint <url>",
+      "modelEndpointProbe": "pwsh ./pal.ps1 models probe -Json",
+      "blackwellRecipes": "docs/BLACKWELL_RECIPES.md",
+      "quantizationPrimer": "docs/QUANTIZATION.md",
+      "multimodalRecipes": "docs/MULTIMODAL_RECIPES.md",
+      "aotReadiness": "pwsh ./pal.ps1 aot-readiness"
+    },
+
+    "diagnostics": {
+      "summary": "Sidecar health, smoke loop, delivery replay, support bundle - all behind verbs.",
+      "oneShotProbe": "pwsh ./pal.ps1 hello",
+      "fullSweep": "pwsh ./pal.ps1 doctor",
+      "cleanup": "pwsh ./pal.ps1 cleanup",
+      "supportBundle": "pwsh ./pal.ps1 support",
+      "runbook": "docs/RUNBOOK.md"
+    },
+
+    "harvesting": {
+      "summary": "Lift any single capability into another project without taking the rest of the repo.",
+      "doc": "docs/HARVEST.md",
+      "advisorCatalog": "docs/ADVISORS.md",
+      "extensionPoints": "docs/EXTENSION_POINTS.md",
+      "patterns": "docs/CONVENTIONS.md"
+    }
+  },
+
+  "validationGates": {
+    "$comment": "All 16 must pass for a change to ship. Same set as scripts/run_full_audit.ps1.",
+    "buildAndTest": [
+      { "id": "Build_Release",     "what": "dotnet build PalLLM.sln --configuration Release",                  "fixHint": "Inspect the build output; this codebase ships at 0 warnings, every warning is a regression." },
+      { "id": "Tests",             "what": "dotnet test PalLLM.sln (1309 expected)",                            "fixHint": "Failing tests describe the broken invariant; the test name is the contract." }
+    ],
+    "drift": [
+      { "id": "Drift_Mojibake",                  "what": "No mojibake byte sequences in source or docs." },
+      { "id": "Drift_Api_route_count",           "what": "README + ROADMAP + ARCHITECTURE + API + CODE_MAP + HANDOFF agree with Program.cs api.Map* count." },
+      { "id": "Drift_Api_reference_surface",     "what": "API.md cross-references match code (operational + protocol routes counted separately)." },
+      { "id": "Drift_OpenApi_snapshot",          "what": "Live build's OpenAPI matches the committed snapshot at docs/openapi/palllm-sidecar-v1.json." },
+      { "id": "Drift_Feature_catalog_count",     "what": "Feature catalog count matches across docs and PalLlmFeatureCatalog.cs." },
+      { "id": "Drift_Feature_status_split",      "what": "Ready / scaffolded / deferred split matches across docs." },
+      { "id": "Drift_Fallback_strategy_count",   "what": "Fallback strategy count in ROADMAP matches Try_* methods in FallbackBehaviorEngine.cs." },
+      { "id": "Drift_Test_count_docs",           "what": "Test count in docs matches code." },
+      { "id": "Drift_Public_copy",               "what": "Release-facing copy is neutral; no third-party brand names in INDEX.md / README.md / RELEASE.md." },
+      { "id": "Drift_Path_references",           "what": "Every repo-local path mentioned in docs / scripts / source actually exists on disk." },
+      { "id": "Drift_Agents_manifest",           "what": "agents.json conforms to docs/schemas/agents.schema.json (required keys, types, shapes)." },
+      { "id": "Drift_Doc_freshness",             "what": "Every audited doc has a Last audited stamp <= 45 days old." },
+      { "id": "Drift_Hot_file_line_count",       "what": "Hot-file line counts in prose mirrors (CLAUDE.md, CHEAT_SHEET.md, copilot-instructions.md, ANTI_PATTERNS.md, HARVEST.md) stay within 5% of the actual wc -l value." },
+      { "id": "Drift_Dangling_markdown_links",   "what": "Every markdown link target resolves." }
+    ],
+    "fullAuditCommand": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_full_audit.ps1 -SkipCoverage -SkipSbom -SkipPackaging"
+  },
+
+  "hardRules": [
+    "Deterministic fallback always answers. POST /api/chat MUST never return a 500 because inference is off.",
+    "Default install is fully local. Zero outbound network unless the operator explicitly configures live inference / vision / TTS / OTLP / update-check endpoints.",
+    "Every drift gate stays green on every change.",
+    "Feature catalog entries are an explicit contract. Remove only with status:deprecated + CHANGELOG note.",
+    "API errors use ProblemDetails. No stack traces, no exception type names in /api/* response bodies.",
+    "Packaged EXE boot path is sacred. If you touch static asset handling, test against sidecar/publish/PalLLM.Sidecar.exe, not just dotnet run.",
+    "Docs and code travel together. If you change a number in the code, bump it in PROJECT_NUMBERS.json AND the docs that pin it AND the drift gate that verifies it - in the same commit."
+  ],
+
+  "antiPatterns": {
+    "summary": "Things that look like good ideas but have already been considered and rejected here.",
+    "doc": "docs/ANTI_PATTERNS.md"
+  },
+
+  "agentHelpers": {
+    "$comment": "Verbs designed specifically for agent use - every one of these returns structured (machine-readable) output.",
+    "context": {
+      "verb": "pwsh ./pal.ps1 context",
+      "what": "Single-shot JSON snapshot: counts + ADR titles + schema paths + freshness. Agent context warmup."
+    },
+    "explain": {
+      "verb": "pwsh ./pal.ps1 explain <path>",
+      "what": "Structured explanation of any file: kind, public surface, dependents, dependencies, related docs, related tests."
+    },
+    "where": {
+      "verb": "pwsh ./pal.ps1 where <natural-language>",
+      "what": "Natural-language query -> ranked file paths. 'where do MCP tools live?' or 'where is the chat hot path?'"
+    },
+    "scaffold": {
+      "verb": "pwsh ./pal.ps1 scaffold <kind> <Name>",
+      "what": "Generate placeholder files for a new advisor / builder / validator / feeder / fallback / mcp-tool following the canonical patterns."
+    }
+  },
+
+  "harvestableUnits": {
+    "$comment": "Independently liftable capabilities. Each one is documented + tested + has a clear public surface.",
+    "patterns": [
+      { "name": "Advisor pattern",          "doc": "docs/ADVISORS.md",      "convention": "docs/CONVENTIONS.md#advisor" },
+      { "name": "Builder pattern",          "doc": "docs/ADVISORS.md",      "convention": "docs/CONVENTIONS.md#builder" },
+      { "name": "Validator pattern",        "doc": "docs/ADVISORS.md",      "convention": "docs/CONVENTIONS.md#validator" },
+      { "name": "Feeder pattern",           "doc": "docs/ADVISORS.md",      "convention": "docs/CONVENTIONS.md#feeder" },
+      { "name": "Drift gate authoring",     "doc": "docs/CONVENTIONS.md",   "convention": "scripts/run_full_audit.ps1" }
+    ],
+    "subsystems": [
+      { "name": "Deterministic fallback director", "doc": "docs/FALLBACK_AI_RESEARCH.md", "files": ["src/PalLLM.Domain/Runtime/FallbackBehaviorEngine.cs"] },
+      { "name": "Personality pack format",         "doc": "docs/PACK_AUTHORING.md",       "files": ["src/PalLLM.Domain/Packs/PersonalityPack.cs", "docs/schemas/personality-pack.schema.json"] },
+      { "name": "Bridge proof packet",             "doc": "docs/API.md",                  "files": ["src/PalLLM.Sidecar/BridgeProofBuilder.cs"] },
+      { "name": "Promotion ledger",                "doc": "docs/STATE_MACHINES.md",       "files": ["src/PalLLM.Domain/Runtime/PromotionLedger.cs"] },
+      { "name": "TTL-cached posture surfaces",     "doc": "docs/adr/0005-ttl-cache-for-posture-surfaces.md", "files": ["src/PalLLM.Domain/Runtime/TtlCache.cs"] },
+      { "name": "Privacy posture API",             "doc": "docs/PRIVACY.md",              "files": ["src/PalLLM.Sidecar/Program.cs (privacy/posture endpoint)"] }
+    ]
+  },
+
+  "readingOrders": {
+    "agent": [
+      "AGENTS.md",
+      "agents.json",
+      "docs/HANDOFF.md",
+      "docs/CODE_MAP.md",
+      "docs/CONVENTIONS.md",
+      "docs/ANTI_PATTERNS.md"
+    ],
+    "harvester": [
+      "docs/HARVEST.md",
+      "docs/CODE_MAP.md",
+      "docs/ADVISORS.md",
+      "docs/adr/",
+      "docs/ARCHITECTURE.md"
+    ],
+    "operator": [
+      "docs/OPERATIONS.md",
+      "docs/API.md",
+      "docs/RUNBOOK.md",
+      "docs/PRIVACY.md"
+    ],
+    "newcomer": [
+      "docs/EASY_MODE.md",
+      "docs/QUICKSTART.md",
+      "docs/PROMPT_CARDS.md",
+      "docs/PITCH.md"
+    ]
+  },
+
+  "honestVerdict": {
+    "$comment": "From docs/READINESS.md - 23 user-facing aspects scored candidly. Aggregate is computed, not aspirational.",
+    "aggregateScore": "~8.0 / 10",
+    "topGap": {
+      "aspect": "In-game native HUD / audio / actions",
+      "score": "5/10",
+      "reason": "Phase 4 of docs/ROADMAP.md - requires live Palworld + UE4SS session; cannot be moved by a coding agent alone.",
+      "tracked": "docs/IMPLEMENTATION_QUEUE.md (queues 3-5)"
+    },
+    "pathTo10": "docs/READINESS.md",
+    "perAudience": "docs/READINESS.md#per-audience-readiness"
+  }
+}

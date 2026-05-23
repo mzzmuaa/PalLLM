@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- The domain assembly is PalLLM's portable, harvestable hot path.
+         Keeping IsAotCompatible enabled turns on trim/single-file/AOT
+         analyzers continuously without changing the sidecar's proven
+         packaged-EXE publish mode. -->
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <!-- Self-contained: PalLLM.Domain owns its portable adapter surface
+       under `Portable/PortableAdapterContracts.cs` — no external project
+       reference. This makes the published binary redistributable without
+       a sibling repo and keeps the release ZIP self-sufficient. -->
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PalLLM.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,136 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "PalLLM": {
+    "RuntimeFolderName": "PalLLM",
+    "Bridge": {
+      "Enabled": true,
+      "PollIntervalMs": 1000,
+      "MaxEventsPerPoll": 32,
+      "MaxInboxEventBytes": 65536,
+      "ArchiveProcessedEvents": true,
+      "OutboxEnabled": true,
+      "OutboxMaxFiles": 100,
+      "OutboxMaxAgeHours": 24,
+      "ArchiveMaxFiles": 500,
+      "ArchiveMaxAgeHours": 72,
+      "FailedMaxFiles": 200,
+      "FailedMaxAgeHours": 168
+    },
+    "Inference": {
+      "Enabled": false,
+      "BaseUrl": "http://127.0.0.1:11434/v1/",
+      "Model": "qwen3.6:35b-a3b",
+      "Temperature": 0.7,
+      "TopP": 0.8,
+      "PresencePenalty": 1.5,
+      "TokenBudgetField": "max_tokens",
+      "EnableThinking": false,
+      "TimeoutSeconds": 60,
+      "MaxResponseBytes": 65536,
+      "ModelCatalogMaxResponseBytes": 262144,
+      "CircuitBreakerFailureThreshold": 5,
+      "CircuitBreakerCooldownSeconds": 30,
+      "ResidencyProvider": "Auto",
+      "ResidencyTtlSeconds": 1800,
+      "TierProbeIntervalSeconds": 30,
+      "ModelTiers": [
+        {
+          "Id": "small",
+          "Model": "gemma3:4b",
+          "Priority": 1,
+          "Description": "Fast-start tier. ~3 GB download, loads in seconds, usable while larger tiers are still being pulled."
+        },
+        {
+          "Id": "large",
+          "Model": "hf.co/unsloth/Qwen3.6-35B-A3B-Instruct-UD-Q4_K_XL-GGUF",
+          "Priority": 10,
+          "Description": "Quality tier. Unsloth dynamic 4-bit quant of the 35B Qwen MoE. Sidecar graduates to this automatically once Ollama finishes pulling/loading it."
+        }
+      ]
+    },
+    "Fallback": {
+      "Enabled": true,
+      "UseWhenInferenceDisabled": true,
+      "UseWhenInferenceFails": true,
+      "EnablePolicyBypass": true,
+      "PreferForReactiveBarks": true,
+      "PreferForRoutineTacticalTasks": true,
+      "PreferForRecoveryAndCampTasks": true,
+      "RecentMemoryWindow": 12,
+      "EnableReflection": false,
+      "PreferTaskFocus": false,
+      "MaxCharacterRequestsPerMinute": 0
+    },
+    "Tts": {
+      "Enabled": false,
+      "BaseUrl": "http://127.0.0.1:5002/synthesize",
+      "DefaultVoice": "en_US-amy-medium",
+      "TimeoutSeconds": 30,
+      "MaxCharacters": 1200,
+      "MaxResponseBytes": 16777216,
+      "MaxStoredFiles": 128,
+      "MaxStoredAgeHours": 24
+    },
+    "Vision": {
+      "Enabled": false,
+      "BaseUrl": "http://127.0.0.1:11434/v1/",
+      "Model": "gemma4:e2b",
+      "Temperature": 0.2,
+      "DefaultMaxTokens": 180,
+      "TimeoutSeconds": 30,
+      "MaxResponseBytes": 65536,
+      "MaxImageBytes": 6291456,
+      "UseForChatAugmentation": true,
+      "EnableScreenshotWatcher": false,
+      "ScreenshotPollIntervalMs": 15000,
+      "MaxScreenshotsPerPoll": 2,
+      "PendingScreenshotMaxFiles": 32,
+      "PendingScreenshotMaxAgeHours": 1
+    },
+    "Session": {
+      "Enabled": true,
+      "MaxPersistedBytes": 8388608,
+      "EnableAutosave": true,
+      "AutosaveIntervalSeconds": 60
+    },
+    "Automation": {
+      "Enabled": false,
+      "AllowedActions": [],
+      "EmitToOutbox": true
+    },
+    "Auth": {
+      "ApiKey": null,
+      "ProtectMetrics": false,
+      "ProtectHealth": false,
+      "McpAllowedOrigins": []
+    },
+    "Http": {
+      "OpenApiCacheMinutes": 10,
+      "FeatureCatalogCacheMinutes": 60,
+      "SelfDescriptionCacheSeconds": 15,
+      "UpstreamSnapshotCacheSeconds": 5,
+      "LocalArtifactMaxBytes": 65536,
+      "ChatConcurrentRequests": 2,
+      "ChatQueueLimit": 4,
+      "VisionConcurrentRequests": 1,
+      "VisionQueueLimit": 2,
+      "TtsConcurrentRequests": 2,
+      "TtsQueueLimit": 4
+    },
+    "McpClient": {
+      "DiscoveryIntervalSeconds": 300,
+      "DiscoveryTimeoutSeconds": 10,
+      "MaxToolsPerServer": 128,
+      "MaxResourcesPerServer": 128,
+      "MaxPromptsPerServer": 64,
+      "MaxMetadataEntryLength": 256,
+      "UpstreamServers": []
+    }
+  },
+  "AllowedHosts": "*"
+}

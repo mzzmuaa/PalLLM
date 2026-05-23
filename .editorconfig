@@ -1,0 +1,135 @@
+# EditorConfig for PalLLM — https://editorconfig.org
+#
+# Sets cross-IDE baselines so VS, VS Code, Rider, vim, emacs, and anything
+# else that honours editorconfig agrees on whitespace and encoding without
+# per-developer preference fighting. Severities for .NET style and quality
+# rules are kept at `suggestion` so they surface as IDE hints but do not
+# break the build — strictness can be turned up per rule later without
+# breaking existing tests.
+
+root = true
+
+# -----------------------------------------------------------------------
+# Global defaults
+# -----------------------------------------------------------------------
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = off
+
+# -----------------------------------------------------------------------
+# Structured data files — keep 2-space indent to match common conventions
+# -----------------------------------------------------------------------
+[*.{json,yml,yaml}]
+indent_size = 2
+
+[*.md]
+# Trailing whitespace in markdown is occasionally a line-break. Don't
+# trim it automatically; an editor that silently strips "foo  \n" breaks
+# the intended rendering.
+trim_trailing_whitespace = false
+indent_size = 2
+
+# -----------------------------------------------------------------------
+# Windows-only files should stay CRLF so cmd.exe / PowerShell read them
+# correctly when a Windows user extracts a release zip.
+# -----------------------------------------------------------------------
+[*.{bat,cmd,ps1,psm1,psd1}]
+end_of_line = crlf
+
+# -----------------------------------------------------------------------
+# C# code style — baseline matching the existing codebase
+# -----------------------------------------------------------------------
+[*.cs]
+indent_size = 4
+
+# Organize usings
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# `this.` qualifiers — off, matching current style
+dotnet_style_qualification_for_field    = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method   = false:suggestion
+dotnet_style_qualification_for_event    = false:suggestion
+
+# Use language keywords over BCL types (`int` over `Int32`)
+dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
+dotnet_style_predefined_type_for_member_access             = true:suggestion
+
+# Modifier order — public first, then access / storage / other
+csharp_preferred_modifier_order = public,private,protected,internal,static,readonly,abstract,sealed,async,override,virtual,new,extern,unsafe,volatile:suggestion
+
+# Prefer readonly fields
+dotnet_style_readonly_field = true:suggestion
+
+# Expression-level preferences
+dotnet_style_object_initializer        = true:suggestion
+dotnet_style_collection_initializer    = true:suggestion
+dotnet_style_explicit_tuple_names      = true:suggestion
+dotnet_style_prefer_inferred_tuple_names               = true:suggestion
+dotnet_style_prefer_inferred_anonymous_type_member_names = true:suggestion
+dotnet_style_prefer_auto_properties                    = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:silent
+dotnet_style_prefer_conditional_expression_over_return     = true:silent
+
+# Null-checking preferences — project uses ?? and is/is not patterns freely
+dotnet_style_coalesce_expression                = true:suggestion
+dotnet_style_null_propagation                   = true:suggestion
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
+
+# `var` preferences — project uses explicit types for readability on non-obvious RHS
+csharp_style_var_for_built_in_types       = false:silent
+csharp_style_var_when_type_is_apparent    = true:suggestion
+csharp_style_var_elsewhere                = false:silent
+
+# Expression-bodied members — project uses them for one-liners
+csharp_style_expression_bodied_methods     = when_on_single_line:suggestion
+csharp_style_expression_bodied_constructors = when_on_single_line:suggestion
+csharp_style_expression_bodied_operators   = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties  = when_on_single_line:suggestion
+csharp_style_expression_bodied_indexers    = when_on_single_line:suggestion
+csharp_style_expression_bodied_accessors   = when_on_single_line:suggestion
+csharp_style_expression_bodied_lambdas     = when_on_single_line:suggestion
+csharp_style_expression_bodied_local_functions = when_on_single_line:silent
+
+# Pattern matching
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_prefer_switch_expression                  = true:suggestion
+csharp_style_prefer_pattern_matching                   = true:suggestion
+csharp_style_prefer_not_pattern                        = true:suggestion
+
+# Usings — file-scoped namespaces (project convention)
+csharp_style_namespace_declarations = file_scoped:suggestion
+
+# Braces — always, matching project style
+csharp_prefer_braces = true:suggestion
+
+# Formatting
+csharp_new_line_before_open_brace            = all
+csharp_new_line_before_else                  = true
+csharp_new_line_before_catch                 = true
+csharp_new_line_before_finally               = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types     = true
+csharp_new_line_between_query_expression_clauses      = true
+
+csharp_indent_case_contents    = true
+csharp_indent_switch_labels    = true
+csharp_indent_labels           = flush_left
+
+csharp_space_after_cast                           = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_call_parameter_list_parentheses        = false
+
+# -----------------------------------------------------------------------
+# Project files — consistent with dotnet conventions
+# -----------------------------------------------------------------------
+[*.{csproj,props,targets,sln}]
+indent_size = 2

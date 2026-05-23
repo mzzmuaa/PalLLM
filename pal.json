@@ -1,0 +1,130 @@
+{
+  "$schema": "./docs/schemas/pal-verbs.schema.json",
+  "$comment": "Machine-readable verb manifest - mirrors what 'pwsh ./pal.ps1 list' prints, but as JSON so any agent can discover the verb table without parsing PowerShell. Source of truth: pal.ps1's Run-List function. Drift-gated indirectly by scripts/run_full_audit.ps1 path-reference checks.",
+
+  "schemaVersion": 1,
+  "lastAudited": "2026-05-23",
+
+  "runner": {
+    "shell": "pwsh ./pal.ps1 <verb> [args]",
+    "windows": "pal <verb> [args]    (via pal.bat shim)",
+    "alias": "make <verb>            (via Makefile, where defined)"
+  },
+
+  "groups": [
+    {
+      "title": "Set up",
+      "tagline": "Get from a fresh clone or release zip to a working PalLLM.",
+      "verbs": [
+        { "verb": "next", "summary": "context-aware single-action advisor", "script": "scripts/pal-next.ps1" },
+        { "verb": "complete", "summary": "queue-by-queue completion dashboard (full Q1-Q6 arc + autonomous baseline)", "script": "scripts/pal-complete.ps1" },
+        { "verb": "welcome", "summary": "first-run guided 60-second tour for new installs", "script": "scripts/pal-welcome.ps1" },
+        { "verb": "onboard", "summary": "first-time setup -- SDK check + build + test + audit + dashboard", "script": "scripts/onboard.ps1" },
+        { "verb": "play", "summary": "one-click: install mod + boot sidecar + open dashboard + launch game", "script": "scripts/play-palllm.ps1" },
+        { "verb": "uninstall", "summary": "cleanly remove the mod (preserves chat history; -Full to wipe everything)", "script": "scripts/uninstall-mod.ps1" }
+      ]
+    },
+    {
+      "title": "Develop",
+      "tagline": "Day-to-day code + test + audit loop.",
+      "verbs": [
+        { "verb": "build", "summary": "dotnet build (Release)", "command": "dotnet build PalLLM.sln --configuration Release --nologo" },
+        { "verb": "test", "summary": "dotnet test (Release, quiet) -- expects 1309 / 1309", "command": "dotnet test PalLLM.sln --configuration Release --nologo --verbosity quiet" },
+        { "verb": "audit", "summary": "full drift audit -- build + tests + 16 gates", "script": "scripts/run_full_audit.ps1" },
+        { "verb": "fast-audit", "summary": "drift gates only -- skip coverage / SBOM / packaging / tests", "script": "scripts/run_full_audit.ps1" },
+        { "verb": "cleanup", "summary": "preview/remove generated audit coverage and build outputs (-Apply to delete)", "script": "scripts/pal-cleanup.ps1" },
+        { "verb": "scaffold", "summary": "scaffold placeholders for a new advisor / builder / validator / feeder / fallback / mcp-tool", "script": "scripts/scaffold.ps1" },
+        { "verb": "run", "summary": "dotnet run the sidecar in the foreground", "command": "dotnet run --configuration Release --project src/PalLLM.Sidecar/PalLLM.Sidecar.csproj" }
+      ]
+    },
+    {
+      "title": "Operate",
+      "tagline": "Health checks, recovery, live diagnostics, and companion texture.",
+      "verbs": [
+        { "verb": "hello", "summary": "one-shot probe: send 'hi' to a running sidecar and print the reply" },
+        { "verb": "demo", "summary": "30-second self-running tour across six fallback families", "script": "scripts/demo-pal.ps1" },
+        { "verb": "campfire", "summary": "offline-capable companion REPL with ritual slash commands", "script": "scripts/pal-campfire.ps1" },
+        { "verb": "fortune", "summary": "in-character daily fortune, date-seeded for the day", "script": "scripts/pal-fortune.ps1" },
+        { "verb": "whisper", "summary": "one quiet ambient companion line", "script": "scripts/pal-whisper.ps1" },
+        { "verb": "quest", "summary": "small self-contained challenge suggestion", "script": "scripts/pal-quest.ps1" },
+        { "verb": "tale", "summary": "short in-character campfire story", "script": "scripts/pal-tale.ps1" },
+        { "verb": "patrol-report", "summary": "companion report from the night watch", "script": "scripts/pal-patrol-report.ps1" },
+        { "verb": "pack", "summary": "manage personality packs (list / copy / new)", "scripts": ["scripts/pal-pack-list.ps1", "scripts/pal-pack-copy.ps1", "scripts/scaffold-pack.ps1"] },
+        { "verb": "doctor", "summary": "environment + smoke + delivery-replay diagnostics", "script": "scripts/doctor.ps1" },
+        { "verb": "smoke", "summary": "sidecar smoke test against a running sidecar", "script": "scripts/run-sidecar-smoke.ps1" },
+        { "verb": "replay", "summary": "replay a captured delivery envelope through the live bridge loop", "script": "scripts/run-delivery-replay.ps1" },
+        { "verb": "native-proof", "summary": "live-Palworld watcher; polls /api/bridge/proof until delivery_proven and persists a durable artifact", "script": "scripts/run-native-proof.ps1" },
+        { "verb": "hud-bind", "summary": "apply the ranked HUD bind recommendation into config/native-hud.lua", "script": "scripts/apply-hud-bind-recommendation.ps1" },
+        { "verb": "proof-bundle", "summary": "package bridge proof + smoke + native-proof + HUD config into one validation bundle", "script": "scripts/export-release-proof-bundle.ps1" },
+        { "verb": "recover", "summary": "archive runtime root + start clean", "script": "scripts/recover-palllm.ps1" },
+        { "verb": "status", "summary": "one-line current-state check" },
+        { "verb": "models", "summary": "recommended model + quantization, serving policy, and live model-endpoint probe", "scripts": ["scripts/pal-model-serving.ps1", "scripts/pal-model-probe.ps1"] },
+        { "verb": "config", "summary": "open/show/wizard appsettings.json", "scripts": ["scripts/pal-config-show.ps1", "scripts/pal-config-wizard.ps1"] },
+        { "verb": "benchmark", "summary": "measure real chat-turn latency vs HOT_PATH.md budgets; `pal benchmark cold-start` (Pass 360) times clone→first-chat path", "scripts": ["scripts/pal-benchmark.ps1", "scripts/pal-benchmark-coldstart.ps1"] },
+        { "verb": "mcp", "summary": "wire PalLLM into an MCP client", "script": "scripts/connect-mcp-client.ps1" },
+        { "verb": "install-llama-cpp", "summary": "download + verify the bundled llama-server release and extract to runtime-root/Bundled/llama.cpp/ (the 'bundled and default' engine)", "script": "scripts/install-llama-cpp.ps1" },
+        { "verb": "connect", "summary": "wire PalLLM's inference path to a local engine OR a cloud API (Pass 357: `pal connect cloud` is the shipping escape path for below-reference-rig hardware)", "scripts": ["scripts/connect-cloud.ps1", "scripts/connect-llamacpp.ps1", "scripts/connect-lmstudio.ps1", "scripts/connect-vllm.ps1", "scripts/connect-vllm-omni.ps1", "scripts/connect-transformers.ps1", "scripts/connect-tensorrt.ps1", "scripts/connect-openvino.ps1", "scripts/connect-foundry.ps1"] },
+        { "verb": "support", "summary": "export an anonymized support bundle", "script": "scripts/export-support-bundle.ps1" },
+        { "verb": "health", "summary": "write one Markdown + JSON health snapshot from local evidence", "script": "scripts/pal-health.ps1" },
+        { "verb": "proof", "summary": "summarize native proof state and the next action", "script": "scripts/pal-proof.ps1" },
+        { "verb": "logs", "summary": "recent activity: launch evidence + native artifacts + latest audit", "script": "scripts/pal-logs.ps1" },
+        { "verb": "preflight", "summary": "single-command readiness checklist", "script": "scripts/pal-preflight.ps1" },
+        { "verb": "check-updates", "summary": "check GitHub Releases for a newer PalLLM version (opt-in network call)", "script": "scripts/check-updates.ps1" },
+        { "verb": "news", "summary": "print the most recent CHANGELOG entry offline", "script": "scripts/pal-news.ps1" }
+      ]
+    },
+    {
+      "title": "Publish",
+      "tagline": "Release packaging + supply-chain checks.",
+      "verbs": [
+        { "verb": "package", "summary": "build the release zip under release/", "script": "scripts/package-release.ps1" },
+        { "verb": "verify", "summary": "verify a packaged release zip / dir: required files, hashes, publish flags, publication-surface hygiene", "script": "scripts/verify-release-package.ps1" },
+        { "verb": "publish-audit", "summary": "local publication preflight: copy, paths, workflow pins, notice coverage", "script": "scripts/publish-audit.ps1" },
+        { "verb": "aot-readiness", "summary": "local AOT/trim readiness scan, with optional native publish probe", "script": "scripts/aot-readiness.ps1" },
+        { "verb": "openapi", "summary": "regenerate or verify the OpenAPI snapshot", "script": "scripts/export-openapi.ps1" },
+        { "verb": "workflow-pins", "summary": "verify GitHub Actions use full-SHA action pins", "script": "scripts/audit-workflow-action-pins.ps1" }
+      ]
+    },
+    {
+      "title": "Inspect",
+      "tagline": "Programmatic readouts of the project state. Designed for agent use.",
+      "verbs": [
+        { "verb": "context", "summary": "JSON snapshot for AI agent consumption", "script": "scripts/agent-context.ps1" },
+        { "verb": "harvest", "summary": "list/show harvestable units", "script": "scripts/pal-harvest.ps1" },
+        { "verb": "explain", "summary": "structured explanation of a file or directory", "script": "scripts/pal-explain.ps1" },
+        { "verb": "where", "summary": "natural-language query -> ranked file paths", "script": "scripts/pal-where.ps1" },
+        { "verb": "readiness", "summary": "candid scorecard matching docs/READINESS.md" },
+        { "verb": "list", "summary": "human-readable verb table" },
+        { "verb": "help", "summary": "help text plus the verb table" }
+      ]
+    }
+  ],
+
+  "examples": {
+    "$comment": "High-leverage combinations an agent should know about. Order matters: each line is a self-contained one-liner.",
+    "lines": [
+      { "command": "pwsh ./pal.ps1 onboard", "what": "First-time contributor flow: SDK + build + test + audit + dashboard." },
+      { "command": "pwsh ./pal.ps1 fast-audit", "what": "Quick drift check; no rebuild and no tests." },
+      { "command": "pwsh ./pal.ps1 cleanup", "what": "Preview local generated clutter; add -Apply to delete." },
+      { "command": "pwsh ./pal.ps1 audit", "what": "Full validation: build + tests + every drift gate." },
+      { "command": "pwsh ./pal.ps1 publish-audit", "what": "Focused local publication preflight before tagging." },
+      { "command": "pwsh ./pal.ps1 aot-readiness", "what": "Static AOT/trim readiness scan before native publish experiments." },
+      { "command": "pwsh ./pal.ps1 proof", "what": "Read-only native proof status and the exact next command." },
+      { "command": "pwsh ./pal.ps1 demo", "what": "30-second self-running tour across six fallback families." },
+      { "command": "pwsh ./pal.ps1 connect ollama", "what": "Wire the local OpenAI-compatible engine in one command." },
+      { "command": "pwsh ./pal.ps1 connect llamacpp -ModelPath <model.gguf>", "what": "Print or wire a raw llama.cpp llama-server GGUF lane." },
+      { "command": "pwsh ./pal.ps1 connect lmstudio -Model <loaded-id>", "what": "Print or wire a local LM Studio lane." },
+      { "command": "pwsh ./pal.ps1 connect vllm", "what": "Pick and print the right Blackwell vLLM recipe." },
+      { "command": "pwsh ./pal.ps1 connect transformers -Revision <sha>", "what": "Print or wire a pinned transformers serve lane." },
+      { "command": "pwsh ./pal.ps1 connect tensorrt -ToolCallParser qwen3", "what": "Print or wire a TensorRT-LLM lane." },
+      { "command": "pwsh ./pal.ps1 connect openvino -TargetDevice GPU", "what": "Print or wire an OpenVINO Model Server /v3 lane." },
+      { "command": "pwsh ./pal.ps1 connect foundry -FoundryEndpoint <url>", "what": "Print or wire a Microsoft Foundry Local lane." },
+      { "command": "pwsh ./pal.ps1 models serving", "what": "Print the live per-lane model-server checklist." },
+      { "command": "pwsh ./pal.ps1 models probe", "what": "Write a no-prompt /v1/models + /metrics evidence artifact." },
+      { "command": "pwsh ./pal.ps1 mcp connect vscode", "what": "Wire the workspace MCP config." },
+      { "command": "pwsh ./pal.ps1 readiness", "what": "Honest scorecard. No inflation, no hand-waving." },
+      { "command": "pwsh ./pal.ps1 explain src/PalLLM.Sidecar/Program.cs", "what": "Structured explanation of any file: kind, surface, deps, docs, tests." },
+      { "command": "pwsh ./pal.ps1 where chat hot path", "what": "Natural-language query -> ranked file paths." }
+    ]
+  }
+}

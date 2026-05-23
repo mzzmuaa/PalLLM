@@ -1,0 +1,43 @@
+# Cursor rules for PalLLM
+
+PalLLM uses the universal `AGENTS.md` convention as the source
+of truth for AI / coding-agent guidance. This file points at it
+so Cursor's per-repo rules pick up the same briefing every other
+agent sees.
+
+**Read AGENTS.md first.** Everything below is a TL;DR.
+
+## Project facts (verify via `pal.ps1`)
+
+- .NET 10 LTS, ASP.NET Core minimal APIs, NUnit 3.x, Lua 5.1
+- 1309 tests, 16 / 16 drift gates, 0 build warnings
+- 57 `/api/*` routes, 38 MCP tools, 19 deterministic fallback
+  strategies, 122 feature-catalog entries, 6 ADRs
+
+## Run loop
+
+```powershell
+pwsh ./pal.ps1 build      # quick build check
+pwsh ./pal.ps1 test       # 1309 / 1309 expected
+pwsh ./pal.ps1 audit      # 16 drift gates -- fail = stop
+```
+
+## What to NOT change without an ADR
+
+- The portable adapter seam in
+  `src/PalLLM.Domain/Portable/PortableAdapterContracts.cs`
+  (ADR 0002).
+- The deterministic-first reply contract - every chat must
+  return a working reply even with inference off (ADR 0001).
+- The bridge protocol - sidecar never reaches into Palworld
+  (ADR 0003).
+- Default-off opt-in posture - never flip a network-emitting
+  feature to default-on (ADR 0006).
+
+## When in doubt
+
+- `docs/ANTI_PATTERNS.md` - what's been considered and rejected
+- `docs/COOKBOOK.md` - recipes for adding endpoints / advisors
+  / fallbacks / MCP tools / config flags
+- `docs/EXTENSION_POINTS.md` - "where does the change go?" map
+- `docs/CHEAT_SHEET.md` - one-page summary of everything

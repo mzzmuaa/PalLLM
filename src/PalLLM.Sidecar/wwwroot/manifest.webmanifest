@@ -1,0 +1,41 @@
+{
+  "$comment": "PalLLM Web App Manifest. Lets a user install the welcome page as a PWA on Chrome / Edge / Opera / Samsung Internet (localhost is treated as a secure context, so no HTTPS required). Loaded from /manifest.webmanifest by welcome.html. The sidecar serves it as a static file via the default ASP.NET Core static-files middleware — no Program.cs changes needed.",
+  "name": "PalLLM Companion",
+  "short_name": "PalLLM",
+  "description": "Your local-first AI companion. Talks back without sending anything off your device by default.",
+  "start_url": "/welcome.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f5f7f5",
+  "theme_color": "#2e7e4d",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": [
+    "productivity",
+    "utilities",
+    "personalization"
+  ],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Talk to your companion",
+      "short_name": "Talk",
+      "description": "Open the welcome page and start chatting.",
+      "url": "/welcome.html"
+    },
+    {
+      "name": "Open dashboard",
+      "short_name": "Dashboard",
+      "description": "Open the full Field Console dashboard.",
+      "url": "/"
+    }
+  ]
+}

@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7f5" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0d1412" media="(prefers-color-scheme: dark)">
+    <meta name="description" content="Local-first oversight for the PalLLM companion runtime - runtime health, world state, bridge activity, inference lanes, companion tone, and feature readiness at a glance.">
+    <title>PalLLM Field Console</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/app.js"></script>
+</head>
+<body>
+    <a class="skip-link" href="#main">Skip to Main Content</a>
+
+    <header class="topbar">
+        <div class="topbar-main">
+            <div class="brand-block">
+                <p class="eyebrow">Local Companion Runtime</p>
+                <h1 class="app-title"><span translate="no">PalLLM</span> Field Console</h1>
+                <p class="app-copy">
+                    Local, low-latency oversight for runtime health, world state, companion tone,
+                    and bridge delivery.
+                </p>
+            </div>
+
+            <div class="action-cluster">
+                <button id="refresh-button" class="action-button" type="button">
+                    Refresh Now
+                </button>
+
+                <label class="toggle" for="auto-refresh">
+                    <input id="auto-refresh" name="auto-refresh" type="checkbox">
+                    <span>Auto Refresh</span>
+                </label>
+
+                <a class="action-link" href="/api/health">Open Health JSON</a>
+                <a class="action-link" href="/metrics">Open Metrics</a>
+            </div>
+        </div>
+
+        <div class="status-strip">
+            <div class="status-block">
+                <p class="status-label">Live Status</p>
+                <p id="status-banner" class="status-banner" role="status" aria-live="polite" aria-atomic="true">Loading&hellip;</p>
+                <p id="last-refresh" class="status-meta">Waiting for first refresh&hellip;</p>
+            </div>
+
+            <div id="signal-ribbon" class="signal-ribbon">
+                <span class="tone-chip skeleton-chip" aria-hidden="true"></span>
+                <span class="tone-chip skeleton-chip" aria-hidden="true"></span>
+                <span class="tone-chip skeleton-chip" aria-hidden="true"></span>
+                <span class="tone-chip skeleton-chip" aria-hidden="true"></span>
+                <span class="tone-chip skeleton-chip" aria-hidden="true"></span>
+                <span class="tone-chip skeleton-chip" aria-hidden="true"></span>
+            </div>
+
+            <!--
+              Compact self-healing watchdog chip. Proves the background
+              janitor is alive and surfaces its latest pass so operators can
+              see "watchdog ticked 42s ago, archived 0 envelopes" without
+              leaving the dashboard. Populated from GET /api/self-healing/status.
+            -->
+            <p id="self-healing-chip"
+               class="self-healing-chip"
+               data-state="loading"
+               title="Background self-healing watchdog status.">
+                Watchdog&hellip;
+            </p>
+
+            <!--
+              Suggestions badge. Hidden when the runtime is healthy. When
+              suggestions are firing, surfaces a colour-coded count chip in
+              the topbar so an operator scrolled deep on any panel still
+              sees critical state at a glance. Clicking jumps to the
+              full Suggestions surface lower on the page.
+            -->
+            <a id="suggestions-badge"
+               class="suggestions-badge is-empty"
+               href="#suggestions"
+               data-severity="info"
+               title="Live runtime suggestions. Click to jump to the full list.">
+                <span id="suggestions-badge-icon" aria-hidden="true">&middot;</span>
+                <span id="suggestions-badge-text">0 signals</span>
+            </a>
+        </div>
+
+        <nav class="section-nav" aria-label="Section Navigation">
+            <a href="#quickstart">Quickstart</a>
+            <a href="#suggestions">Signals</a>
+            <a href="#why">Why</a>
+            <a href="#mesh">Mesh</a>
+            <a href="#promotion">Promotion</a>
+            <a href="#chat">Chat</a>
+            <a href="#runtime">Runtime</a>
+            <a href="#world">World</a>
+            <a href="#delivery">Activity</a>
+            <a href="#relationships">Relationships</a>
+            <a href="#features">Features</a>
+        </nav>
+    </header>
+
+    <noscript>
+        <p class="noscript-note">
+            JavaScript is required for live telemetry in the <span translate="no">PalLLM</span> Field Console.
+            You can still inspect raw endpoints such as <a href="/api/health">Health JSON</a> and <a href="/metrics">Metrics</a>.
+        </p>
+    </noscript>
+
+    <main id="main" class="workspace" tabindex="-1">
+        <!--
+          Quickstart panel. Populated from GET /api/quickstart on load.
+          Surfaces the same state-aware next-step guidance that AI / MCP
+          callers receive, so a new human operator sees exactly what the
+          sidecar recommends next without reading any docs. Collapses to a
+          dense "ready" banner once no critical / recommended steps remain.
+        -->
+        <section id="quickstart" class="surface quickstart-surface" data-state="loading" aria-labelledby="quickstart-title">
+            <div class="surface-header">
+                <div>
+                    <p class="surface-kicker">Next Step</p>
+                    <h2 id="quickstart-title" class="surface-title">Quickstart</h2>
+                </div>
+                <p class="surface-copy" id="quickstart-headline">
+                    Reading the sidecar&rsquo;s live state&hellip;
+                </p>
+            </div>
+            <ol id="quickstart-steps" class="quickstart-steps" aria-live="polite"></ol>
+            <p class="quickstart-footnote">
+                This panel mirrors <a href="/api/quickstart">GET /api/quickstart</a>.
+                It refreshes whenever you hit <strong>Refresh Now</strong>.
+            </p>
+        </section>
+
+        <!--
+          Live runtime suggestions panel. Fed from /api/health.suggestions[]
+          (the surface added in Pass 132). Each entry carries a stable Code
+          (e.g. 'no-packs-loaded', 'inference-circuit-open', 'bridge-idle'),
+          a plain-English Message, and an optional copy-paste Command.
+          Hidden when the runtime is healthy (empty array). Complements the
+          Quickstart panel above: Quickstart is first-run "how to get
+          started" guidance; this panel is the live "something just changed"
+          signal an operator gets while running.
+        -->
+        <section id="suggestions" class="surface suggestions-surface is-empty" data-state="loading" aria-labelledby="suggestions-title">
+            <div class="surface-header">
+                <div>
+                    <p class="surface-kicker">Live Signals</p>
+                    <h2 id="suggestions-title" class="surface-title">Runtime Suggestions</h2>
+                </div>
+                <p class="surface-copy" id="suggestions-headline">
+                    Reading live signals from <code>/api/health</code>&hellip;
+                </p>
+            </div>
+            <ul id="suggestions-list" class="suggestions-list" aria-live="polite"></ul>
+            <p class="suggestions-footnote">
+                Each card mirrors one entry from <a href="/api/health">GET /api/health</a> &rarr; <code>Suggestions[]</code>,
+                also reachable from <code>pal next</code>, <code>pal doctor</code>, and the
+                <code>pal_health_suggestions</code> MCP tool.
+            </p>
+        </section>
+
+        <!--
+          Why panel — local causal explanations. Send a natural-language
+          question to POST /api/why and render the structured causal chain
+          + evidence references returned by WhyEngine. Deterministic-first:
+          no live inference required, so the answer always lands even
+          when every external dependency is down.
+        -->
+        <section id="why" class="surface why-surface" aria-labelledby="why-title">
+            <div class="surface-header">
+                <div>
+                    <p class="surface-kicker">Local Why Engine</p>
+                    <h2 id="why-title" class="surface-title">Ask "why?"</h2>
+                </div>
+                <p class="surface-copy">
+                    Natural-language causal questions about what the runtime just did.
+                    Always answers — no live inference required.
+                </p>
+            </div>
+            <form id="why-form" class="why-form" aria-labelledby="why-title">
+                <label for="why-input" class="why-label">Question</label>
+                <input
+                    id="why-input"
+                    name="question"
+                    type="text"
+                    class="why-input"
+                    placeholder="e.g. Why did my reply come from the fallback?"
+                    maxlength="400"
+                    autocomplete="off">
+                <button type="submit" class="action-button why-submit">Explain</button>
+            </form>
+            <div id="why-suggestions" class="why-suggestions" aria-label="Suggested questions">
+                <button type="button" class="why-chip" data-why-preset="why did my reply come from the fallback?">Fallback?</button>
+                <button type="button" class="why-chip" data-why-preset="why is the bridge not ready?">Bridge?</button>
+                <button type="button" class="why-chip" data-why-preset="why is my health score low?">Health?</button>
+                <button type="button" class="why-chip" data-why-preset="why was inference bypassed?">Bypass?</button>
+                <button type="button" class="why-chip" data-why-preset="why is the circuit breaker open?">Circuit?</button>
+            </div>
+            <article id="why-answer" class="why-answer" data-state="empty">
+                <p class="why-placeholder">Ask a question to see a grounded causal answer.</p>
+            </article>
+        </section>
+
+        <!--
+          Local-first AI mesh role coverage. Mirrors GET /api/roles.
+          Five slots (Edge / Worker / Judge / Media / Validator) with
+          active / configured / missing state + a pairing-pattern
+          headline so operators + AI see which brain is doing what.
+        -->
+        <section id="mesh" class="surface mesh-surface" data-state="loading" aria-labelledby="mesh-title">
+            <div class="surface-header">
+                <div>
+                    <p class="surface-kicker">Local-first AI Mesh</p>
+                    <h2 id="mesh-title" class="surface-title">Model Roles</h2>
+                </div>
+                <p class="surface-copy" id="mesh-pairing">
+                    Reading role bindings&hellip;
+                </p>
+            </div>
+            <ul id="mesh-slots" class="mesh-slots" aria-live="polite"></ul>
+            <p class="mesh-footnote">
+                Mirrors <a href="/api/roles">GET /api/roles</a>. Bind endpoints under
+                <code>PalLLM:ModelRoles[]</code> in <code>appsettings.json</code>.
+            </p>
+        </section>
+
+        <!--
+          Hard-code promotion ledger. Mirrors GET /api/promotion/summary.
+          Per-task cards show candidate / collecting / blocked state so
+          operators see which AI-assisted patterns are stable enough to
+          promote into deterministic product logic without running a
+          single HTTP call.
+        -->
+        <section id="promotion" class="surface promotion-surface" data-state="loading" aria-labelledby="promotion-title">
+            <div class="surface-header">
+                <div>
+                    <p class="surface-kicker">Hard-code Promotion</p>
+                    <h2 id="promotion-title" class="surface-title">Stable Patterns</h2>
+                </div>
+                <p class="surface-copy" id="promotion-headline">
+                    Reading the ledger&hellip;
+                </p>
+            </div>
+            <ul id="promotion-tasks" class="promotion-tasks" aria-live="polite"></ul>
+            <p class="promotion-footnote">
+                Mirrors <a href="/api/promotion/summary">GET /api/promotion/summary</a>.
+                The background feeder records one observation per fallback-strategy fire; promote
+                a pattern into a deterministic rule once it passes the stability gate.
+            </p>
+        </section>
+
+        <!--
+          Interactive chat panel. Lets operators actually TRY the
+          companion from the dashboard without leaving the browser —
+          the Field Console was read-only until now. Posts to
+          /api/chat by default; the streaming toggle switches to
+          /api/chat/stream so operators can watch phase events land.
+          Shows the inferred Duo task-kind next to each reply (via
+          a lightweight /api/chat/plan call) so the mesh routing is
+          visible per turn.
+        -->
+        <section id="chat" class="surface chat-surface" aria-labelledby="chat-title">
+            <div class="surface-header">
+                <div>
+                    <p class="surface-kicker">Interactive</p>
+                    <h2 id="chat-title" class="surface-title">Try the Companion</h2>
+                </div>
+                <p class="surface-copy">
+                    Send a chat turn directly from the dashboard. Deterministic fallback
+                    always replies; live inference answers when enabled.
+                </p>
+            </div>
+            <form id="chat-form" class="chat-form" aria-labelledby="chat-title">
+                <label for="chat-input" class="chat-label">Message</label>
+                <textarea
+                    id="chat-input"
+                    name="userMessage"
+                    class="chat-input"
+                    rows="3"
+                    maxlength="4000"
+                    placeholder="Ask the companion anything&hellip;"
+                    autocomplete="off"></textarea>
+                <div class="chat-controls">
+                    <label class="chat-toggle">
+                        <input type="checkbox" id="chat-stream-toggle">
+                        <span>Stream (SSE)</span>
+                    </label>
+                    <label class="chat-character">
+                        <span>Character</span>
+                        <input type="text" id="chat-character" placeholder="(optional id)" maxlength="64">
+                    </label>
+                    <button type="submit" class="action-button chat-submit">Send</button>
+                </div>
+            </form>
+            <ol id="chat-history" class="chat-history" aria-live="polite" aria-label="Chat history"></ol>
+            <p class="chat-footnote">
+                Uses <a href="/api/chat">POST /api/chat</a> /
+                <a href="/api/chat/stream">POST /api/chat/stream</a>. Each turn's
+                inferred Duo task kind is shown as a small chip; expected to match
+                <a href="/api/chat/plan">/api/chat/plan</a>.
+            </p>
+        </section>
+
+        <section id="runtime" class="surface" aria-labelledby="runtime-title">
+            <div class="surface-header">
+                <div>
+                    <p class="surface-kicker">Operational Surface</p>
+                    <h2 id="runtime-title" class="surface-title">Current Session</h2>
+                </div>
+                <p class="surface-copy">
+                    High-signal runtime telemetry first, with model posture, queue pressure,
+                    and session freshness kept readable at a glance.
+                </p>
+            </div>
+
+            <div class="overview-layout">
+                <div>
+                    <div id="metric-grid" class="metric-grid" aria-busy="true">
+                        <article class="metric skeleton-card" aria-hidden="true">
+                            <span class="skeleton-line width-45"></span>
+                            <span class="skeleton-line skeleton-value width-65"></span>
+                            <span class="skeleton-line width-80"></span>
+                        </article>
+                        <article class="metric skeleton-card" aria-hidden="true">
+                            <span class="skeleton-line width-40"></span>
+                            <span class="skeleton-line skeleton-value width-48"></span>
+                            <span class="skeleton-line width-72"></span>
+                        </article>
+                        <article class="metric skeleton-card" aria-hidden="true">
+                            <span class="skeleton-line width-42"></span>
+                            <span class="skeleton-line skeleton-value width-52"></span>
+                            <span class="skeleton-line width-74"></span>
+                        </article>
+                        <article class="metric skeleton-card" aria-hidden="true">
+                            <span class="skeleton-line width-36"></span>
+                            <span class="skeleton-line skeleton-value width-44"></span>
+                            <span class="skeleton-line width-68"></span>
+                        </article>
+                        <article class="metric skeleton-card" aria-hidden="true">
+                            <span class="skeleton-line width-38"></span>
+                            <span class="skeleton-line skeleton-value width-50"></span>
+                            <span class="skeleton-line width-76"></span>
+                        </article>
+                        <article class="metric skeleton-card" aria-hidden="true">
+                            <span class="skeleton-line width-34"></span>
+                            <span class="skeleton-line skeleton-value width-46"></span>
+                            <span class="skeleton-line width-70"></span>
+                        </article>
+                    </div>
+                </div>
+
+                <aside class="summary-rail" aria-labelledby="summary-title">
+                    <h3 id="summary-title">Operational Readout</h3>
+                    <div id="overview-summary" class="summary-grid">
+                        <article class="summary-item" aria-hidden="true">
+                            <span class="skeleton-line width-28"></span>
+                            <span class="skeleton-line width-78"></span>
+                        </article>
+                        <article class="summary-item" aria-hidden="true">
+                            <span class="skeleton-line width-24"></span>
+                            <span class="skeleton-line width-66"></span>
+                        </article>
+                        <article class="summary-item" aria-hidden="true">
+                            <span class="skeleton-line width-30"></span>
+                            <span class="skeleton-line width-72"></span>
+                        </article>
+                        <article class="summary-item" aria-hidden="true">
+                            <span class="skeleton-line width-34"></span>
+                            <span class="skeleton-line width-64"></span>
+                        </article>
+                        <article class="summary-item" aria-hidden="true">
+                            <span class="skeleton-line width-26"></span>
+                            <span class="skeleton-line width-70"></span>
+                        </article>
+                        <article class="summary-item" aria-hidden="true">
+                            <span class="skeleton-line width-32"></span>
+                            <span class="skeleton-line width-60"></span>
+                        </article>
+                        <article class="summary-item" aria-hidden="true">
+                            <span class="skeleton-line width-29"></span>
+                            <span class="skeleton-line width-74"></span>
+                        </article>
+                    </div>
+                </aside>
+            </div>
+
+            <section class="section-block runtime-subsection" aria-labelledby="inference-performance-title">
+                <div class="surface-header subsection-header">
+                    <div>
+                        <p class="surface-kicker">Recent Lane Readiness</p>
+                        <h3 id="inference-performance-title" class="surface-title">Inference Lanes</h3>
+                    </div>
+                    <p class="surface-copy">
+                        Recent chat and vision calls grouped by active model lane, with latency-budget status, success posture, and token pressure kept visible.
+                    </p>
+                </div>
+
+                <ul id="inference-performance" class="stack-list">
+                    <li class="stack-item skeleton-card" aria-hidden="true"></li>
+                    <li class="stack-item skeleton-card" aria-hidden="true"></li>
+                    <li class="stack-item skeleton-card" aria-hidden="true"></li>
+                </ul>
+            </section>
+        </section>
+
+        <div class="workspace-main">
+            <section id="world" class="surface" aria-labelledby="world-title">
+                <div class="surface-header">
+                    <div>
+                        <p class="surface-kicker">Scene Context</p>
+                        <h2 id="world-title" class="surface-title">World State</h2>
+                    </div>
+                    <p class="surface-copy">
+                        What the runtime believes about the active world, nearby pressure,
+                        and the bridge events shaping fallback behavior.
+                    </p>
+                </div>
+
+                <div class="section-grid">
+                    <section class="section-block" aria-labelledby="world-summary-title">
+                        <h3 id="world-summary-title">Snapshot</h3>
+                        <div id="world-summary">
+                            <div class="info-grid skeleton-grid" aria-hidden="true">
+                                <article class="info-item skeleton-card"></article>
+                                <article class="info-item skeleton-card"></article>
+                                <article class="info-item skeleton-card"></article>
+                                <article class="info-item skeleton-card"></article>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section-block" aria-labelledby="bridge-summary-title">
+                        <h3 id="bridge-summary-title">Bridge Activity</h3>
+                        <div id="bridge-summary">
+                            <div class="info-grid skeleton-grid" aria-hidden="true">
+                                <article class="info-item skeleton-card"></article>
+                                <article class="info-item skeleton-card"></article>
+                                <article class="info-item skeleton-card"></article>
+                                <article class="info-item skeleton-card"></article>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
+            <section id="delivery" class="surface" aria-labelledby="delivery-title">
+                <div class="surface-header">
+                    <div>
+                        <p class="surface-kicker">Activity Rail</p>
+                        <h2 id="delivery-title" class="surface-title">Delivery &amp; Logs</h2>
+                    </div>
+                    <p class="surface-copy">
+                        Pending replies and the most recent adapter events, ordered for the
+                        next thing an operator would want to inspect.
+                    </p>
+                </div>
+
+                <div class="rail-layout">
+                    <section class="section-block" aria-labelledby="outbox-title">
+                        <h3 id="outbox-title">Outbox</h3>
+                        <ul id="outbox-list" class="stack-list">
+                            <li class="stack-item skeleton-card" aria-hidden="true"></li>
+                            <li class="stack-item skeleton-card" aria-hidden="true"></li>
+                            <li class="stack-item skeleton-card" aria-hidden="true"></li>
+                        </ul>
+                    </section>
+
+                    <section class="section-block" aria-labelledby="logs-title">
+                        <h3 id="logs-title">Latest Log Entries</h3>
+                        <ul id="logs-list" class="log-list">
+                            <li class="log-item skeleton-card" aria-hidden="true"></li>
+                            <li class="log-item skeleton-card" aria-hidden="true"></li>
+                            <li class="log-item skeleton-card" aria-hidden="true"></li>
+                        </ul>
+                    </section>
+                </div>
+            </section>
+        </div>
+
+        <section id="relationships" class="surface" aria-labelledby="relationships-title">
+            <div class="surface-header">
+                <div>
+                    <p class="surface-kicker">Social State</p>
+                    <h2 id="relationships-title" class="surface-title">Relationships</h2>
+                </div>
+                <p class="surface-copy">
+                    Recent companion rapport, mood, and tone so personality drift and player
+                    treatment stay visible instead of disappearing into prompts.
+                </p>
+            </div>
+
+            <div class="table-shell">
+                <table class="data-table">
+                    <caption class="sr-only">Tracked character relationships, affinity, mood, tone, and last interaction time.</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Character</th>
+                            <th scope="col">Affinity</th>
+                            <th scope="col">Mood</th>
+                            <th scope="col">Tone</th>
+                            <th scope="col">Last Seen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="relationships-body">
+                        <tr aria-hidden="true">
+                            <td data-label="Character"><span class="skeleton-line width-75"></span></td>
+                            <td data-label="Affinity"><span class="skeleton-line width-45"></span></td>
+                            <td data-label="Mood"><span class="skeleton-line width-55"></span></td>
+                            <td data-label="Tone"><span class="skeleton-line width-50"></span></td>
+                            <td data-label="Last Seen"><span class="skeleton-line width-62"></span></td>
+                        </tr>
+                        <tr aria-hidden="true">
+                            <td data-label="Character"><span class="skeleton-line width-70"></span></td>
+                            <td data-label="Affinity"><span class="skeleton-line width-42"></span></td>
+                            <td data-label="Mood"><span class="skeleton-line width-48"></span></td>
+                            <td data-label="Tone"><span class="skeleton-line width-44"></span></td>
+                            <td data-label="Last Seen"><span class="skeleton-line width-58"></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="features" class="surface" data-deferred="true" aria-labelledby="features-title">
+            <div class="surface-header">
+                <div>
+                    <p class="surface-kicker">Capability Map</p>
+                    <h2 id="features-title" class="surface-title">Feature Readiness</h2>
+                </div>
+                <p class="surface-copy">
+                    Capability inventory loads on demand so the first paint stays focused on
+                    the live session instead of static catalog data.
+                </p>
+            </div>
+
+            <div id="features-list" class="feature-list" aria-busy="false">
+                <p class="empty-state">Capability inventory loads when this section comes into view.</p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

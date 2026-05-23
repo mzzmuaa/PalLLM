@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://palllm.dev/schemas/install-manifest-v1.schema.json",
+  "title": "PalLLM Install Manifest",
+  "description": "Single file written to runtime-root/install-manifest.json by scripts/install-mod.ps1. Records every filesystem touchpoint a PalLLM install creates so scripts/uninstall-mod.ps1 can undo it precisely without guessing. Pattern follows 2026 transactional-install best practice (Helm-style atomic install with rollback). Source of truth: scripts/PalLLM.InstallManifest.ps1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "SchemaVersion",
+    "InstallId",
+    "InstalledAt",
+    "Producer",
+    "PalworldRoot",
+    "ModRoot",
+    "InstalledModPath",
+    "SourcePath",
+    "InstallMode",
+    "Artifacts"
+  ],
+  "properties": {
+    "SchemaVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "Manifest schema version. Always 1 for now. The reader rejects manifests with a different version so a v2 manifest can never be silently mis-uninstalled by an older script."
+    },
+    "InstallId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique installation identifier. Useful for correlating manifests with audit logs."
+    },
+    "InstalledAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp when this install completed."
+    },
+    "Producer": {
+      "type": "string",
+      "description": "Script that wrote this manifest. Always 'install-mod.ps1' today."
+    },
+    "ProducerVersion": {
+      "type": "string",
+      "description": "Version stamp of the producer (sidecar exe FileVersion when packaged, 'dev' otherwise)."
+    },
+    "PalworldRoot": {
+      "type": "string",
+      "description": "Resolved Palworld install root (e.g. 'D:\\\\SteamLibrary\\\\steamapps\\\\common\\\\Palworld')."
+    },
+    "ModRoot": {
+      "type": "string",
+      "description": "Mod root the PalLLM mod was installed under (Palworld's UE4SS Mods directory). Never deleted on uninstall - it belongs to Palworld / UE4SS."
+    },
+    "InstalledModPath": {
+      "type": "string",
+      "description": "Absolute path of the installed PalLLM mod directory (or junction)."
+    },
+    "SourcePath": {
+      "type": "string",
+      "description": "Absolute path of the source the mod was copied from (the repo's mod directory or the release zip's mod payload)."
+    },
+    "InstallMode": {
+      "type": "string",
+      "enum": ["Copy", "Junction"],
+      "description": "How the mod was installed. 'Junction' keeps the mod live-editable from the repo source; 'Copy' is the default for end users."
+    },
+    "Artifacts": {
+      "type": "array",
+      "description": "Every filesystem touchpoint the install created, in the order it created them. Uninstall walks this in reverse to undo precisely.",
+      "items": {
+        "$ref": "#/$defs/Artifact"
+      }
+    }
+  },
+  "$defs": {
+    "Artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Kind", "Path", "AddedAt"],
+      "properties": {
+        "Kind": {
+          "type": "string",
+          "enum": ["directory", "file", "junction", "enabled-file", "sample-pack"],
+          "description": "What kind of filesystem object this entry tracks. Uninstall picks the right removal verb per kind (Remove-Item -Recurse for 'directory', plain Remove-Item for 'junction' so it doesn't recurse into the source)."
+        },
+        "Path": {
+          "type": "string",
+          "description": "Absolute path of the artifact."
+        },
+        "Source": {
+          "type": ["string", "null"],
+          "description": "Where the artifact was copied from (for traceability). Null for synthesized files like enabled.txt."
+        },
+        "AddedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO-8601 UTC timestamp when this artifact was created. Used by rollback to walk artifacts in reverse-creation order."
+        },
+        "Metadata": {
+          "type": ["object", "null"],
+          "additionalProperties": true,
+          "description": "Optional free-form metadata (e.g. file size, sha256, source-version)."
+        }
+      }
+    }
+  }
+}

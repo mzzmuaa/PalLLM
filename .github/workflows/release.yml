@@ -1,0 +1,128 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. v0.3.1)"
+        required: true
+        default: "v0.0.0-manual"
+
+permissions:
+  contents: write
+  # Required for GitHub artifact attestations (SLSA provenance via OIDC).
+  # These are scoped to this workflow; the OIDC token cannot be reused
+  # outside the workflow run that minted it.
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+jobs:
+  package:
+    name: Build + package release zip
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Test (gate release on green)
+        run: dotnet test PalLLM.sln --configuration Release --nologo --verbosity minimal
+
+      - name: Generate CycloneDX SBOMs
+        # CycloneDX is the OWASP-backed BOM format required by many
+        # enterprise vendors for supply-chain transparency. One SBOM per
+        # shipping project; both land in artifacts/sbom/ which
+        # package-release.ps1 then picks up via its docs/examples/
+        # style pattern. https://github.com/CycloneDX/cyclonedx-dotnet
+        shell: pwsh
+        run: |
+          dotnet tool install --global CycloneDX --version 5.0.0 2>$null
+          $sbomDir = "artifacts/sbom"
+          New-Item -ItemType Directory -Force -Path $sbomDir | Out-Null
+          dotnet CycloneDX src/PalLLM.Sidecar/PalLLM.Sidecar.csproj --output $sbomDir --filename PalLLM.Sidecar.cdx.json --json
+          dotnet CycloneDX src/PalLLM.Domain/PalLLM.Domain.csproj  --output $sbomDir --filename PalLLM.Domain.cdx.json  --json
+          Get-ChildItem -Path $sbomDir | ForEach-Object { Write-Host "SBOM: $($_.FullName) ($($_.Length) bytes)" }
+
+      - name: Build release zip
+        shell: pwsh
+        run: |
+          $tag = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}" } else { "${{ inputs.version }}" }
+          Write-Host "Packaging release for $tag"
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-release.ps1 -Version $tag
+          Get-ChildItem -Path . -Filter "PalLLM-*.zip" -Recurse | ForEach-Object { Write-Host "Built: $($_.FullName)" }
+
+      - name: Compute release digests
+        shell: pwsh
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/compute-release-checksums.ps1
+          Get-ChildItem -Path artifacts/packaging -File | ForEach-Object { Write-Host "Packaging artifact: $($_.FullName)" }
+
+      - name: Attest release artifact digests (SLSA v1)
+        # SHA256SUMS supplies the attestation subjects: each release artifact
+        # listed there receives SLSA provenance from this GitHub workflow.
+        # New implementations use actions/attest rather than the legacy
+        # attest-build-provenance wrapper.
+        #   gh attestation verify PalLLM-<tag>.zip --owner <owner>
+        # https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations
+        if: github.ref_type == 'tag'
+        uses: actions/attest@281a49d4cbb0a72c9575a50d18f6deb515a11deb # v4
+        with:
+          subject-checksums: artifacts/packaging/SHA256SUMS
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: PalLLM-release
+          path: |
+            **/PalLLM-*.zip
+            artifacts/packaging/SHA256SUMS
+            artifacts/packaging/SHA512SUMS
+            artifacts/packaging/checksums.json
+            artifacts/sbom/*.cdx.json
+
+      - name: Create GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          files: |
+            **/PalLLM-*.zip
+            artifacts/packaging/SHA256SUMS
+            artifacts/packaging/SHA512SUMS
+            artifacts/packaging/checksums.json
+            artifacts/sbom/*.cdx.json
+          generate_release_notes: true
+          body: |
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
+            for the full change list for this release.
+
+            **Quick install:**
+            1. Download the zip below.
+            2. Extract.
+            3. Double-click `play.bat`.
+
+            Prerequisites: the game and a UE4SS v3.x or newer install. The
+            release zip bundles a self-contained sidecar by default, so no
+            separate .NET runtime install is required for the normal player
+            path.
+
+            **Supply-chain verification:**
+            Each release carries `SHA256SUMS`, `SHA512SUMS`, `checksums.json`,
+            and SLSA v1 provenance attestations for the release artifacts
+            listed in the checksum manifest. First compare the zip against
+            `SHA256SUMS`, then verify that the artifact was produced by this
+            workflow:
+            ```
+            gh attestation verify PalLLM-${{ github.ref_name }}.zip --owner ${{ github.repository_owner }}
+            ```
+            The CycloneDX SBOMs (`*.cdx.json`) enumerate every NuGet
+            package and version pulled into the sidecar image, suitable
+            for ingestion by Dependency-Track, OWASP Grype, or any
+            other SBOM-aware security scanner.

@@ -1,0 +1,60 @@
+name: CodeQL
+
+# Schedule-plus-push code scanning for C#. Runs:
+#   - on every push to the default branch (surface regressions fast),
+#   - on every pull request (block known-vulnerable patterns before merge),
+#   - weekly on Monday at 06:00 UTC (catch newly-published CodeQL rules
+#     against already-merged code even when no commits land that week).
+#
+# CodeQL is GitHub's first-party SAST engine. For C# it builds the project,
+# extracts a semantic database, and runs a curated query suite covering
+# the OWASP Top 10 categories, CWE hits, and .NET-specific hazards.
+#
+# Findings land in the repo's Security tab → Code scanning alerts.
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  analyze:
+    name: CodeQL analyse (C#)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@865f5f5c36632f18690a3d569fa0a764f2da0c3e # v3
+        with:
+          languages: csharp
+          # Default + security-extended query packs — covers OWASP categories
+          # plus extra paranoid rules that catch more edge cases.
+          queries: security-extended
+
+      - name: Build with CodeQL autobuild
+        uses: github/codeql-action/autobuild@865f5f5c36632f18690a3d569fa0a764f2da0c3e # v3
+
+      - name: Perform analysis
+        uses: github/codeql-action/analyze@865f5f5c36632f18690a3d569fa0a764f2da0c3e # v3
+        with:
+          category: "/language:csharp"

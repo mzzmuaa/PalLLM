@@ -1,0 +1,40 @@
+{
+  "$comment": "Hand-curated daily-fortune catalog for `pal fortune`. Lighthearted, never predictive. One-line strings under 120 characters, written in the companion's deterministic-fallback voice. Pack authors are welcome to ship their own catalogs.",
+  "schemaVersion": 1,
+  "lastAudited": "2026-05-04",
+
+  "fortunes": [
+    { "category": "morning",    "text": "Easy start beats clever start. Eat something, then leave camp." },
+    { "category": "morning",    "text": "Pals are watching the perimeter. Yours is just to wake up the rest of the way." },
+    { "category": "morning",    "text": "Whatever you put off yesterday is the same size today." },
+    { "category": "morning",    "text": "Cold morning. Cold mornings reward people who move first." },
+    { "category": "morning",    "text": "Drink something hot. The plan can wait two minutes." },
+    { "category": "morning",    "text": "If you forget your sphere belt one more time, I'm packing it for you." },
+    { "category": "morning",    "text": "First step is the only one you don't already have a plan for. Take it." },
+
+    { "category": "field",      "text": "Today's weather rewards the patient. Today's weather always does." },
+    { "category": "field",      "text": "Don't push north today. The map'll still be north tomorrow." },
+    { "category": "field",      "text": "Save one revive. You'll know which fight needed it after." },
+    { "category": "field",      "text": "If something looks worth investigating, mark it before you commit. Past-you forgets things." },
+    { "category": "field",      "text": "An alpha at half health is more dangerous than at full. Slow your throws." },
+    { "category": "field",      "text": "When the tree line goes quiet, that's when you check your pals' positions, not the menu." },
+    { "category": "field",      "text": "There's a good ridge somewhere within ten minutes. Go find it before deciding the day's mood." },
+    { "category": "field",      "text": "If you need to retreat, retreat clean. Half-retreats are how parties wipe." },
+
+    { "category": "base",       "text": "Charcoal first, ingots second, decoration whenever. The order matters more than the speed." },
+    { "category": "base",       "text": "If a pal's been working alone for twenty minutes, swap them out. They notice." },
+    { "category": "base",       "text": "Storage chest sorted today is storage chest still sorted next month." },
+    { "category": "base",       "text": "Your forge runs cleaner when nobody's standing over it. Walk away for a turn." },
+    { "category": "base",       "text": "One repair pass beats three patch passes. Spend the materials." },
+    { "category": "base",       "text": "Empty out the spoiled food. The pals notice that too." },
+
+    { "category": "reflection", "text": "Yesterday's hard fight is today's stories. The pal that almost died is the one with a name now." },
+    { "category": "reflection", "text": "You don't have to be productive every session. Sitting at the fire counts." },
+    { "category": "reflection", "text": "Whatever you didn't do yesterday is small. Whatever you did is small. Both still moved you forward." },
+    { "category": "reflection", "text": "The companion who never speaks isn't the one you keep. Same applies to friends." },
+    { "category": "reflection", "text": "Quiet days are not wasted days. They're how the loud days don't break you." },
+    { "category": "reflection", "text": "A run that ends with everyone back at base is a complete run. Mileage isn't the metric." },
+    { "category": "reflection", "text": "Pals you trained well outlast pals you caught lucky. Both still count." },
+    { "category": "reflection", "text": "Tonight's plan can be 'tonight, I rest.' That's a real plan." }
+  ]
+}

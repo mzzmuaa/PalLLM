@@ -1,0 +1,65 @@
+# PalLLM .gitattributes — line endings and merge behavior.
+#
+# Goal: every text file in the repo uses LF in the index, and platform-native
+# in the working tree on Windows. PowerShell + Lua + C# + Markdown all
+# tolerate this; the few files that MUST be CRLF (`.bat`, `.cmd`) or LF
+# (`.sh`) are pinned explicitly below.
+
+# Default: auto-detect text, normalize to LF in the index.
+* text=auto eol=lf
+
+# Code
+*.cs       text eol=lf diff=csharp
+*.csproj   text eol=lf
+*.props    text eol=lf
+*.targets  text eol=lf
+*.sln      text eol=crlf
+*.lua      text eol=lf
+*.ps1      text eol=lf
+*.psm1     text eol=lf
+*.psd1     text eol=lf
+*.py       text eol=lf
+*.sh       text eol=lf
+
+# Windows shell wrappers — Windows expects CRLF.
+*.bat      text eol=crlf
+*.cmd      text eol=crlf
+
+# Config
+*.json     text eol=lf
+*.yaml     text eol=lf
+*.yml      text eol=lf
+*.toml     text eol=lf
+*.xml      text eol=lf
+
+# Docs
+*.md       text eol=lf
+*.txt      text eol=lf
+LICENSE    text eol=lf
+NOTICE.md  text eol=lf
+
+# Binaries — never normalize, never diff as text.
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ico      binary
+*.pdf      binary
+*.zip      binary
+*.tar.gz   binary
+*.dll      binary
+*.exe      binary
+*.gguf     binary
+*.bin      binary
+*.pak      binary
+*.uasset   binary
+*.umap     binary
+
+# Linguist hints — keep the language stats accurate on GitHub.
+docs/openapi/*.json linguist-generated=true
+docs/schemas/*.json linguist-documentation=true
+artifacts/*         linguist-generated=true
+mod/ue4ss/Mods/PalLLM/Bridge/* linguist-generated=true
+
+# GitHub diff hints — collapse generated noise in PRs.
+docs/openapi/*.json -diff

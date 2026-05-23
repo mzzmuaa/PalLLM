@@ -1,0 +1,43 @@
+{
+  "// Comment": "VS Code workspace settings for PalLLM. Repo-wide editorconfig is in .editorconfig at the root; this file is for VS Code-specific knobs that don't fit the cross-IDE editorconfig schema.",
+
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+
+  "// editorconfig still wins": "Markdown intentionally keeps trailing whitespace (line-break sentinel). The repo .editorconfig overrides files.trimTrailingWhitespace for *.md.",
+  "[markdown]": {
+    "files.trimTrailingWhitespace": false
+  },
+  "[bat]": { "files.eol": "\r\n" },
+  "[powershell]": { "files.eol": "\r\n" },
+
+  "// .NET 10 SDK": "MSBuild expects this version. The release ZIP and CI both run on this SDK; bumping it requires a docs sweep.",
+  "omnisharp.enableImportCompletion": true,
+  "omnisharp.organizeImportsOnFormat": true,
+
+  "// XML doc generation": "Both csproj files have GenerateDocumentationFile=true. The repo-root Directory.Build.props suppresses CS1591 noise.",
+
+  "// Test runner": "We use NUnit 3.x. The 'test' VS Code task delegates to pal.ps1.",
+
+  "// Files to hide from the explorer (always-generated)": "",
+  "files.exclude": {
+    "**/.vs": true,
+    "**/bin": true,
+    "**/obj": true,
+    "**/TestResults": true,
+    "**/CoverageReport": true,
+    "**/artifacts/full-audit": true
+  },
+
+  "// Files to exclude from search (lots of generated noise)": "",
+  "search.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/TestResults": true,
+    "**/CoverageReport": true,
+    "**/artifacts": true,
+    "**/release": true,
+    "**/docs/openapi/palllm-sidecar-v1.json": true
+  }
+}

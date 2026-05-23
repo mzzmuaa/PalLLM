@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to PalLLM</title>
+    <meta name="theme-color" content="#f5f7f5" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f1410" media="(prefers-color-scheme: dark)">
+    <meta name="description" content="Your local-first AI companion. Talks back without sending anything off your device by default.">
+    <meta name="application-name" content="PalLLM Companion">
+    <meta name="apple-mobile-web-app-title" content="PalLLM">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/favicon.svg">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <style>
+        :root {
+            --bg: #f5f7f5;
+            --fg: #161a16;
+            --muted: #545a54;
+            --accent: #2e7e4d;
+            --accent-soft: #d8ecdf;
+            --card: #ffffff;
+            --line: #e3e6e3;
+            --shadow: 0 8px 28px rgba(15, 30, 18, 0.06);
+            --base-font-size: 16px;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f1410;
+                --fg: #e8eee8;
+                --muted: #98a098;
+                --accent: #5fbd83;
+                --accent-soft: #1a2c20;
+                --card: #161c17;
+                --line: #2a302a;
+                --shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+            }
+        }
+        /* Accessibility: high-contrast mode (operator-toggleable). */
+        :root.contrast {
+            --bg: #ffffff;
+            --fg: #000000;
+            --muted: #2a2a2a;
+            --accent: #006400;
+            --accent-soft: #c8e6c9;
+            --card: #ffffff;
+            --line: #000000;
+            --shadow: 0 0 0 2px rgba(0, 0, 0, 0.6);
+        }
+        @media (prefers-color-scheme: dark) {
+            :root.contrast {
+                --bg: #000000;
+                --fg: #ffffff;
+                --muted: #d0d0d0;
+                --accent: #6fff8e;
+                --accent-soft: #003314;
+                --card: #000000;
+                --line: #ffffff;
+            }
+        }
+        /* Accessibility: bigger text mode (operator-toggleable). */
+        :root.big-text { --base-font-size: 20px; }
+        :root.big-text h1 { font-size: clamp(34px, 6vw, 48px); }
+        :root.big-text .lede { font-size: clamp(18px, 2.4vw, 22px); }
+        :root.big-text .chat-input input,
+        :root.big-text .chat-input button { font-size: 18px; padding-top: 14px; padding-bottom: 14px; }
+        :root.big-text .reply { font-size: 18px; }
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--fg);
+            font: var(--base-font-size)/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+        }
+        .wrap {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 48px 24px 64px;
+        }
+        .pal-avatar {
+            width: 92px;
+            height: 92px;
+            margin: 0 auto 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .pal-avatar svg {
+            width: 64px;
+            height: 64px;
+            color: var(--card);
+            animation: gentleBob 4s ease-in-out infinite;
+        }
+        @keyframes gentleBob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+        .pal-avatar::after {
+            content: "";
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #4caf50;
+            border: 2px solid var(--card);
+            animation: pulseLive 2.4s ease-in-out infinite;
+        }
+        @keyframes pulseLive {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.55; }
+        }
+        /* Pass 184 idle-state animations.
+           Eyes (#pal-eye-left, #pal-eye-right) and mouth (#pal-mouth)
+           are individually targetable so JS can trigger blink + smile
+           independently of the avatar bob. */
+        @keyframes palBlink {
+            0%, 92%, 100% { transform: scaleY(1); }
+            95%, 99% { transform: scaleY(0.1); }
+        }
+        .pal-avatar svg .pal-eye {
+            transform-origin: center;
+            transform-box: fill-box;
+            animation: palBlink 6.2s ease-in-out infinite;
+        }
+        .pal-avatar svg .pal-eye.right { animation-delay: 0.1s; }
+        @keyframes palSmile {
+            0%   { d: path("M22 40 Q32 48 42 40"); }
+            40%  { d: path("M20 38 Q32 54 44 38"); }
+            100% { d: path("M22 40 Q32 48 42 40"); }
+        }
+        .pal-avatar svg .pal-mouth.smiling {
+            animation: palSmile 1.6s ease-in-out;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .pal-avatar svg,
+            .pal-avatar::after,
+            .pal-avatar svg .pal-eye,
+            .pal-avatar svg .pal-mouth { animation: none; }
+        }
+        .header-row {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        h1 {
+            margin: 0 0 8px;
+            font-size: clamp(28px, 5vw, 40px);
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        .lede {
+            margin: 0;
+            color: var(--muted);
+            font-size: clamp(16px, 2vw, 19px);
+        }
+        .chat {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 28px;
+        }
+        .chat-prompt {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+        .a11y-bar {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            display: flex;
+            gap: 8px;
+            font-size: 12px;
+        }
+        .a11y-toggle {
+            padding: 6px 10px;
+            font: inherit;
+            font-size: 12px;
+            background: transparent;
+            color: var(--muted);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+        }
+        .a11y-toggle:hover {
+            background: var(--card);
+            color: var(--fg);
+            border-color: var(--accent);
+        }
+        .a11y-toggle[aria-pressed="true"] {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .chat-input {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .mic-btn {
+            flex-shrink: 0;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            font-size: 18px;
+            background: var(--card);
+            color: var(--accent);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+        }
+        .mic-btn.available { display: inline-flex; }
+        .mic-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+        .mic-btn[aria-pressed="true"] {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+            animation: micPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes micPulse {
+            0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft); }
+            50% { box-shadow: 0 0 0 6px transparent; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .mic-btn[aria-pressed="true"] { animation: none; }
+        }
+        .chat-input input {
+            flex: 1;
+            min-width: 0;
+            padding: 12px 14px;
+            font: inherit;
+            background: var(--bg);
+            color: var(--fg);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            outline: none;
+            transition: border-color 120ms ease;
+        }
+        .chat-input input:focus { border-color: var(--accent); }
+        .chat-input button {
+            padding: 12px 20px;
+            font: inherit;
+            font-weight: 500;
+            background: var(--accent);
+            color: white;
+            border: 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: filter 120ms ease, transform 80ms ease;
+        }
+        .chat-input button:hover { filter: brightness(1.06); }
+        .chat-input button:active { transform: translateY(1px); }
+        .chat-input button:disabled {
+            opacity: 0.5;
+            cursor: progress;
+        }
+        .reply {
+            margin-top: 18px;
+            padding: 16px 18px;
+            background: var(--accent-soft);
+            border-radius: 12px;
+            font-size: 16px;
+            line-height: 1.55;
+            min-height: 1.55em;
+            white-space: pre-wrap;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: opacity 220ms ease, max-height 220ms ease, padding 220ms ease;
+        }
+        .reply.shown {
+            opacity: 1;
+            max-height: 60vh;
+            padding: 16px 18px;
+            overflow-y: auto;
+        }
+        .reply-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .reply-meta {
+            font-size: 13px;
+            color: var(--muted);
+            flex: 1;
+            min-width: 0;
+        }
+        .speak-btn {
+            padding: 6px 12px;
+            font: inherit;
+            font-size: 13px;
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            cursor: pointer;
+            display: none;
+            transition: background 120ms ease, border-color 120ms ease;
+        }
+        .speak-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+        }
+        .speak-btn[aria-pressed="true"] {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .speak-btn.available { display: inline-flex; align-items: center; gap: 4px; }
+        .history {
+            margin-top: 28px;
+            padding: 0;
+            list-style: none;
+            border-top: 1px solid var(--line);
+            padding-top: 18px;
+        }
+        .history:empty { display: none; }
+        .history-title {
+            font-size: 13px;
+            color: var(--muted);
+            margin: 0 0 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .history-title.empty { display: none; }
+        .history-item {
+            margin: 0 0 12px;
+            padding: 10px 14px;
+            background: transparent;
+            border-left: 3px solid var(--accent-soft);
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+            color: var(--muted);
+        }
+        .history-item-you {
+            font-weight: 500;
+            color: var(--fg);
+            margin-bottom: 4px;
+        }
+        .clear-history {
+            font-size: 12px;
+            color: var(--muted);
+            background: transparent;
+            border: 0;
+            cursor: pointer;
+            padding: 4px 8px;
+            text-decoration: underline;
+        }
+        .clear-history:hover { color: var(--accent); }
+        .cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 36px;
+        }
+        @media (min-width: 600px) {
+            .cards { grid-template-columns: 1fr 1fr 1fr; }
+        }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 20px;
+            text-decoration: none;
+            color: var(--fg);
+            transition: transform 120ms ease, border-color 120ms ease;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent);
+        }
+        .card-icon {
+            font-size: 24px;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        .card-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .card-desc {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+        .footer {
+            margin-top: 48px;
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+        }
+        .footer a { color: var(--accent); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+        .privacy {
+            margin-top: 18px;
+            padding: 12px 14px;
+            font-size: 13px;
+            color: var(--muted);
+            background: transparent;
+            border: 1px dashed var(--line);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <main class="wrap" style="position: relative;">
+        <div class="a11y-bar" role="toolbar" aria-label="Accessibility options">
+            <button class="a11y-toggle" type="button"
+                    id="big-text-toggle"
+                    aria-pressed="false"
+                    aria-label="Toggle bigger text">
+                Big text
+            </button>
+            <button class="a11y-toggle" type="button"
+                    id="contrast-toggle"
+                    aria-pressed="false"
+                    aria-label="Toggle high-contrast mode">
+                High contrast
+            </button>
+        </div>
+        <div class="header-row">
+            <div class="pal-avatar" aria-hidden="true">
+                <!-- Friendly companion icon. Pure SVG, no external assets.
+                     Eyes + mouth are individually addressable so Pass-184
+                     idle animations (blink, smile-on-reply) can target
+                     them. -->
+                <svg id="pal-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="32" cy="32" r="28" fill="currentColor" opacity="0.15"/>
+                    <circle id="pal-eye-left"  class="pal-eye left"  cx="22" cy="28" r="3.5" fill="currentColor"/>
+                    <circle id="pal-eye-right" class="pal-eye right" cx="42" cy="28" r="3.5" fill="currentColor"/>
+                    <path id="pal-mouth" class="pal-mouth" d="M22 40 Q32 48 42 40" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none"/>
+                    <path d="M14 22 Q18 14 24 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                    <path d="M50 22 Q46 14 40 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                </svg>
+            </div>
+            <h1>Hi! I'm your companion.</h1>
+            <p class="lede">
+                Say something below and I'll reply. I run entirely on this
+                computer — nothing leaves your machine unless you choose to
+                connect a smarter assistant.
+            </p>
+        </div>
+
+        <section class="chat" aria-label="Talk to your companion">
+            <label for="msg" class="chat-prompt">What would you like to say?</label>
+            <form class="chat-input" id="chat-form" autocomplete="off">
+                <button class="mic-btn" id="mic-btn" type="button"
+                        aria-pressed="false"
+                        aria-label="Speak instead of typing"
+                        title="Speak instead of typing">
+                    <span aria-hidden="true">🎤</span>
+                </button>
+                <input id="msg" name="msg" type="text"
+                       placeholder="hi there"
+                       aria-label="Message to your companion"
+                       maxlength="500" required>
+                <button type="submit" id="send-btn">Send</button>
+            </form>
+            <div class="reply" id="reply" role="status" aria-live="polite"></div>
+            <div class="reply-row">
+                <div class="reply-meta" id="reply-meta" aria-hidden="true"></div>
+                <button class="speak-btn" id="speak-btn" type="button"
+                        aria-label="Read this reply aloud"
+                        aria-pressed="false">
+                    <span aria-hidden="true">🔊</span> Read aloud
+                </button>
+            </div>
+            <ul class="history" id="history" aria-label="Recent conversation"></ul>
+        </section>
+
+        <section class="cards" aria-label="What can I do next?">
+            <a class="card" href="/" data-action="open-dashboard">
+                <span class="card-icon" aria-hidden="true">📊</span>
+                <span class="card-title">See the full dashboard</span>
+                <span class="card-desc">Memory, packs, health, and every other surface — for power users.</span>
+            </a>
+            <a class="card" href="https://github.com/your-repo/PalLLM/blob/main/docs/QUICKSTART.md" target="_blank" rel="noopener">
+                <span class="card-icon" aria-hidden="true">🎒</span>
+                <span class="card-title">Make me smarter</span>
+                <span class="card-desc">Connect a local AI engine for richer replies. Still 100% on this computer.</span>
+            </a>
+            <a class="card" href="https://github.com/your-repo/PalLLM/blob/main/docs/PACK_AUTHORING.md" target="_blank" rel="noopener">
+                <span class="card-icon" aria-hidden="true">🎨</span>
+                <span class="card-title">Give me a personality</span>
+                <span class="card-desc">Pick a pack — Warrior, Scholar, Healer, Trickster — or write your own.</span>
+            </a>
+        </section>
+
+        <p class="privacy">
+            <strong>Your privacy is the default.</strong>
+            By default, no message you send to your companion ever leaves
+            this computer. The companion you're talking to right now is a
+            small deterministic program running on your hardware.
+        </p>
+
+        <footer class="footer">
+            <a href="/">dashboard</a>
+            &middot;
+            <a href="/openapi/v1.json">api</a>
+            &middot;
+            <a href="/api/airgap/verify">privacy proof</a>
+        </footer>
+    </main>
+
+    <script>
+        // Plain ES2017 — no framework, no build step, no analytics, no
+        // network call beyond the same-origin /api/chat endpoint. The
+        // browser SpeechSynthesis API and localStorage are used purely
+        // client-side; nothing about voice playback or chat history
+        // ever leaves this computer.
+        (function () {
+            const form = document.getElementById('chat-form');
+            const input = document.getElementById('msg');
+            const button = document.getElementById('send-btn');
+            const reply = document.getElementById('reply');
+            const replyMeta = document.getElementById('reply-meta');
+            const speakBtn = document.getElementById('speak-btn');
+            const historyEl = document.getElementById('history');
+
+            const HISTORY_KEY = 'palllm.welcome.history.v1';
+            const PREFS_KEY = 'palllm.welcome.prefs.v1';
+            const HISTORY_MAX = 5;
+            const speechAvailable = 'speechSynthesis' in window
+                && typeof SpeechSynthesisUtterance === 'function';
+
+            // Voice input: webkitSpeechRecognition is widely supported on
+            // Chrome / Edge / Opera / Samsung Internet. Firefox + Safari
+            // gracefully degrade — the mic button never renders for them.
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const sttAvailable = typeof SR === 'function';
+
+            const micBtn = document.getElementById('mic-btn');
+            const bigTextBtn = document.getElementById('big-text-toggle');
+            const contrastBtn = document.getElementById('contrast-toggle');
+            const palSvg = document.getElementById('pal-svg');
+            const palMouth = document.getElementById('pal-mouth');
+            const palEyeLeft = document.getElementById('pal-eye-left');
+            const palEyeRight = document.getElementById('pal-eye-right');
+
+            // Pass 184 — Pal idle behaviour: smile on reply + gentle eye
+            // tracking. Honors prefers-reduced-motion by short-circuiting
+            // both before any DOM mutation happens.
+            const reduceMotion = window.matchMedia
+                && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            function palSmile () {
+                if (reduceMotion || !palMouth) return;
+                palMouth.classList.remove('smiling');
+                // Force reflow so the same animation can re-trigger
+                // immediately when two replies land in quick succession.
+                void palMouth.getBoundingClientRect().width;
+                palMouth.classList.add('smiling');
+                setTimeout(() => palMouth.classList.remove('smiling'), 1700);
+            }
+
+            // Eye tracking — eyes drift toward the cursor by ±1.5px.
+            // Throttled to ~30fps via requestAnimationFrame to keep
+            // older laptops cool.
+            if (!reduceMotion && palSvg && palEyeLeft && palEyeRight) {
+                let pendingMove = false;
+                let lastClientX = 0, lastClientY = 0;
+                const baseLeft = { cx: 22, cy: 28 };
+                const baseRight = { cx: 42, cy: 28 };
+
+                function applyEyeOffset () {
+                    pendingMove = false;
+                    const rect = palSvg.getBoundingClientRect();
+                    const dx = lastClientX - (rect.left + rect.width / 2);
+                    const dy = lastClientY - (rect.top + rect.height / 2);
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    // Cap drift at 1.5px in SVG units. Larger cursor
+                    // distances normalise to the same edge of the iris.
+                    const max = 1.5;
+                    const reach = Math.min(dist, max * 100) / 100;
+                    const ndx = dist > 0 ? (dx / dist) * reach : 0;
+                    const ndy = dist > 0 ? (dy / dist) * reach : 0;
+                    palEyeLeft.setAttribute('cx', String(baseLeft.cx + ndx));
+                    palEyeLeft.setAttribute('cy', String(baseLeft.cy + ndy));
+                    palEyeRight.setAttribute('cx', String(baseRight.cx + ndx));
+                    palEyeRight.setAttribute('cy', String(baseRight.cy + ndy));
+                }
+
+                window.addEventListener('mousemove', (event) => {
+                    lastClientX = event.clientX;
+                    lastClientY = event.clientY;
+                    if (!pendingMove) {
+                        pendingMove = true;
+                        window.requestAnimationFrame(applyEyeOffset);
+                    }
+                }, { passive: true });
+            }
+
+            // Accessibility preferences (persisted in localStorage).
+            function loadPrefs () {
+                try {
+                    const raw = localStorage.getItem(PREFS_KEY);
+                    return raw ? JSON.parse(raw) : {};
+                } catch { return {}; }
+            }
+            function savePrefs (prefs) {
+                try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); }
+                catch { /* private mode / quota — no-op */ }
+            }
+            function applyPrefs () {
+                const prefs = loadPrefs();
+                document.documentElement.classList.toggle('big-text', !!prefs.bigText);
+                document.documentElement.classList.toggle('contrast', !!prefs.contrast);
+                if (bigTextBtn) bigTextBtn.setAttribute('aria-pressed', String(!!prefs.bigText));
+                if (contrastBtn) contrastBtn.setAttribute('aria-pressed', String(!!prefs.contrast));
+            }
+            applyPrefs();
+
+            if (bigTextBtn) {
+                bigTextBtn.addEventListener('click', () => {
+                    const prefs = loadPrefs();
+                    prefs.bigText = !prefs.bigText;
+                    savePrefs(prefs);
+                    applyPrefs();
+                });
+            }
+            if (contrastBtn) {
+                contrastBtn.addEventListener('click', () => {
+                    const prefs = loadPrefs();
+                    prefs.contrast = !prefs.contrast;
+                    savePrefs(prefs);
+                    applyPrefs();
+                });
+            }
+
+            // Voice input wiring (browser-native, no network call —
+            // recognition runs against the OS / browser's installed
+            // speech model, which is local on most platforms).
+            let recognition = null;
+            if (sttAvailable && micBtn) {
+                micBtn.classList.add('available');
+                recognition = new SR();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = (navigator.language || 'en-US');
+
+                recognition.addEventListener('result', (event) => {
+                    const transcript = event.results[0]?.[0]?.transcript || '';
+                    if (transcript) {
+                        // Append rather than replace so a partial typed
+                        // message + spoken addendum compose naturally.
+                        const existing = input.value.trim();
+                        input.value = existing
+                            ? existing + ' ' + transcript
+                            : transcript;
+                    }
+                });
+                recognition.addEventListener('end', () => {
+                    micBtn.setAttribute('aria-pressed', 'false');
+                });
+                recognition.addEventListener('error', () => {
+                    micBtn.setAttribute('aria-pressed', 'false');
+                });
+
+                micBtn.addEventListener('click', () => {
+                    if (micBtn.getAttribute('aria-pressed') === 'true') {
+                        try { recognition.stop(); } catch { /* not running */ }
+                        micBtn.setAttribute('aria-pressed', 'false');
+                    } else {
+                        try {
+                            recognition.start();
+                            micBtn.setAttribute('aria-pressed', 'true');
+                            input.focus();
+                        } catch { /* already running or perm denied */ }
+                    }
+                });
+            }
+
+            // Voice playback (browser-native, no network call).
+            let currentUtterance = null;
+            function stopSpeaking () {
+                if (speechAvailable && window.speechSynthesis.speaking) {
+                    window.speechSynthesis.cancel();
+                }
+                if (speakBtn) speakBtn.setAttribute('aria-pressed', 'false');
+                currentUtterance = null;
+            }
+            function speak (text) {
+                if (!speechAvailable || !text) return;
+                stopSpeaking();
+                currentUtterance = new SpeechSynthesisUtterance(text);
+                currentUtterance.rate = 1.0;
+                currentUtterance.pitch = 1.0;
+                currentUtterance.onend = () => {
+                    if (speakBtn) speakBtn.setAttribute('aria-pressed', 'false');
+                    currentUtterance = null;
+                };
+                if (speakBtn) speakBtn.setAttribute('aria-pressed', 'true');
+                window.speechSynthesis.speak(currentUtterance);
+            }
+
+            if (speakBtn && speechAvailable) {
+                speakBtn.classList.add('available');
+                speakBtn.addEventListener('click', () => {
+                    if (currentUtterance) {
+                        stopSpeaking();
+                    } else {
+                        speak(reply.textContent);
+                    }
+                });
+            }
+
+            // History (localStorage; never sent over the wire).
+            function loadHistory () {
+                try {
+                    const raw = localStorage.getItem(HISTORY_KEY);
+                    if (!raw) return [];
+                    const parsed = JSON.parse(raw);
+                    return Array.isArray(parsed) ? parsed.slice(-HISTORY_MAX) : [];
+                } catch { return []; }
+            }
+            function saveHistory (entries) {
+                try {
+                    localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(-HISTORY_MAX)));
+                } catch { /* private mode / quota — no-op */ }
+            }
+            function renderHistory () {
+                const entries = loadHistory();
+                historyEl.innerHTML = '';
+                if (entries.length === 0) return;
+
+                const title = document.createElement('p');
+                title.className = 'history-title';
+                title.textContent = 'Recent conversation';
+                historyEl.appendChild(title);
+
+                entries.slice().reverse().forEach((entry) => {
+                    const li = document.createElement('li');
+                    li.className = 'history-item';
+                    const you = document.createElement('div');
+                    you.className = 'history-item-you';
+                    you.textContent = 'You: ' + entry.user;
+                    const pal = document.createElement('div');
+                    pal.textContent = 'Pal: ' + entry.assistant;
+                    li.appendChild(you);
+                    li.appendChild(pal);
+                    historyEl.appendChild(li);
+                });
+
+                const clear = document.createElement('button');
+                clear.type = 'button';
+                clear.className = 'clear-history';
+                clear.textContent = 'Clear conversation history';
+                clear.addEventListener('click', () => {
+                    saveHistory([]);
+                    renderHistory();
+                });
+                historyEl.appendChild(clear);
+            }
+
+            async function send (event) {
+                event.preventDefault();
+                const text = input.value.trim();
+                if (text.length === 0) return;
+
+                stopSpeaking();
+                button.disabled = true;
+                button.textContent = 'Thinking…';
+                reply.classList.remove('shown');
+                reply.textContent = '';
+                replyMeta.textContent = '';
+
+                try {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 30000);
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            userMessage: text,
+                            characterId: 1
+                        }),
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeout);
+
+                    if (!response.ok) {
+                        throw new Error('Companion is busy (' + response.status + ')');
+                    }
+
+                    const data = await response.json();
+                    const message = data.AssistantMessage || '(no reply)';
+                    const used = data.UsedFallback === true || data.usedFallback === true;
+                    const strategy = data.FallbackStrategy || data.fallbackStrategy || '';
+
+                    reply.textContent = message;
+                    reply.classList.add('shown');
+                    replyMeta.textContent = used
+                        ? `Reply via local deterministic mode (${strategy}). No data left this computer.`
+                        : `Reply via your configured local AI. No data left this computer.`;
+
+                    // Pal smiles when the reply arrives — purely cosmetic,
+                    // CSS-driven, honors prefers-reduced-motion.
+                    palSmile();
+
+                    // Append to history; keep last 5.
+                    const entries = loadHistory();
+                    entries.push({ user: text, assistant: message });
+                    saveHistory(entries);
+                    renderHistory();
+
+                    input.value = '';
+                } catch (err) {
+                    reply.textContent = 'I had trouble replying right now. Try again, or open the dashboard for diagnostics.';
+                    reply.classList.add('shown');
+                    replyMeta.textContent = err && err.name === 'AbortError'
+                        ? 'Reply took too long; the dashboard can show why.'
+                        : 'Click "See the full dashboard" below for details.';
+                } finally {
+                    button.disabled = false;
+                    button.textContent = 'Send';
+                    input.focus();
+                }
+            }
+
+            form.addEventListener('submit', send);
+
+            // Auto-focus the input so the experience starts at "say
+            // something". Skip on touch devices to avoid surprise keyboards.
+            if (!('ontouchstart' in window)) {
+                input.focus();
+            }
+
+            // Render any prior conversation on first paint.
+            renderHistory();
+        })();
+    </script>
+</body>
+</html>

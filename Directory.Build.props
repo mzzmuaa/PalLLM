@@ -1,0 +1,30 @@
+<!--
+  Root-level MSBuild props inherited by every project in the solution.
+  See https://learn.microsoft.com/dotnet/msbuild/customize-your-build —
+  centralizing cross-project properties here keeps PalLLM.Domain.csproj
+  and PalLLM.Sidecar.csproj in sync without copy-pasting.
+
+  Keep this file small. Project-specific tuning belongs in the
+  per-project .csproj; only settings that should apply to EVERY project
+  go here.
+-->
+<Project>
+
+  <PropertyGroup>
+    <!--
+      Warnings we deliberately suppress repo-wide, with rationale:
+
+      CS1591 — "Missing XML comment for publicly visible type or member."
+        We still want XML docs to be GENERATED (see GenerateDocumentationFile
+        in each .csproj) because IntelliSense / harvesters rely on them,
+        but we do NOT want 3_000+ missing-doc warnings for wire-contract
+        records whose positional parameters are self-documenting. Types
+        that are user-facing config surfaces (PalLlmOptions, its sub-option
+        classes) carry hand-written <summary> tags; positional-parameter
+        records in Integration/ rely on their <record summary> and
+        contextual naming.
+    -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+</Project>

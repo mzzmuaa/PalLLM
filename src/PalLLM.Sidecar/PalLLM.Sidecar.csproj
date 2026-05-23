@@ -1,0 +1,75 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- PalLlmOptions is a large startup-bound tree. Source-generated
+         binding removes reflection from that path and keeps the sidecar
+         friendlier to trimming/AOT experiments without changing runtime
+         configuration semantics. -->
+    <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+    <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
+    <OpenApiGenerateDocumentsOptions>--document-name v1 --file-name palllm-sidecar-v1</OpenApiGenerateDocumentsOptions>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PalLLM.Domain\PalLLM.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Pass 217: expose internals to the test project so security-critical
+         helpers (e.g. ReleaseBundleArchiveInspector.IsSafeArchiveEntryName)
+         can be unit-tested directly instead of only via slow integration
+         fixtures. Mirrors the Domain project's existing InternalsVisibleTo. -->
+    <InternalsVisibleTo Include="PalLLM.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- .NET 10 first-party OpenAPI 3.1 document generation for Minimal
+         APIs. Generates a JSON Schema 2020-12-compliant spec from the
+         route registrations in Program.cs. See docs/API.md. -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+
+    <!-- Build-time OpenAPI document generation. Microsoft documents this as
+         the path for checked-in specs and spec-based integration tests.
+         Keep it private to this project: consumers only need the emitted
+         JSON snapshot, not the MSBuild task package. -->
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.7">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <!-- Opt-in OpenTelemetry distributed tracing. The runtime only
+         activates when OTEL_EXPORTER_OTLP_ENDPOINT is set in the
+         environment; otherwise no listeners are registered and these
+         packages contribute zero per-request overhead. See
+         docs/OPERATIONS.md § "Enabling distributed tracing". -->
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+
+    <!-- Model Context Protocol (MCP) server over Streamable HTTP. Exposes
+         PalLLM's world snapshot, memory, chat, and feature catalog to any
+         MCP-aware agent (Claude Desktop, VS Code, Cursor, ChatGPT). The
+         server rides alongside the existing REST surface — no-op for REST
+         clients, fully usable for MCP clients. See
+         docs/OPERATIONS.md § "Exposing PalLLM via MCP". -->
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.2.0" />
+  </ItemGroup>
+
+  <!-- Feed XML docs from the domain assembly into the .NET 10 OpenAPI
+       generator so the committed spec can carry summaries for DTOs that
+       live outside the sidecar project. -->
+  <Target Name="AddOpenApiReferencedXmlComments" AfterTargets="ResolveReferences">
+    <ItemGroup>
+      <AdditionalFiles
+        Include="@(ReferencePath->'%(RootDir)%(Directory)%(Filename).xml')"
+        Condition="'%(ReferencePath.Filename)' == 'PalLLM.Domain' and Exists('%(RootDir)%(Directory)%(Filename).xml')"
+        KeepMetadata="Identity;HintPath" />
+    </ItemGroup>
+  </Target>
+
+</Project>

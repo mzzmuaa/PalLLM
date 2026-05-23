@@ -1,0 +1,149 @@
+# PalLLM Prometheus alert rules (Pass 358).
+#
+# Drops into a Prometheus rules directory and applies to PalLLM
+# instances that expose /metrics. Threshold rationale lives in
+# docs/OBSERVABILITY_SLO.md. Adjust thresholds in your own fork
+# if your hardware tier differs from PalLLM's reference rig
+# (RTX 3090 / 32 GB DDR4 / 5800X3D) -- the "Standard" budget
+# below matches that rig per docs/HOT_PATH.md § "Per-tier
+# latency budgets".
+#
+# All alerts route through the `severity` label so a standard
+# Alertmanager routing tree (severity=critical -> page,
+# severity=warning -> ticket) picks them up without per-alert
+# routing rules.
+
+groups:
+- name: palllm_availability
+  rules:
+  - alert: PalLLMServiceDown
+    expr: up{job=~".*palllm.*"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      slo: availability
+    annotations:
+      summary: "PalLLM sidecar is unreachable for 1m"
+      description: |
+        Prometheus has been unable to scrape the PalLLM sidecar at
+        {{ $labels.instance }} for the last minute. Check
+        `/health/live` directly, then `/health/ready`. Likely causes:
+        process crashed, port not listening, network ACL changed.
+      runbook_url: "https://github.com/<owner>/PalLLM/blob/main/docs/OBSERVABILITY_SLO.md#palllmservicedown"
+
+- name: palllm_latency
+  rules:
+  - alert: PalLLMChatLatencyHigh_Warning
+    # 1-hour p95 over the chat-duration histogram. Standard-tier
+    # budget per docs/HOT_PATH.md is 2500 ms.
+    expr: |
+      histogram_quantile(
+        0.95,
+        sum by (le) (
+          rate(palllm_chat_duration_seconds_bucket[5m])
+        )
+      ) > 2.5
+    for: 10m
+    labels:
+      severity: warning
+      slo: latency
+    annotations:
+      summary: "PalLLM chat p95 latency above Standard-tier budget (2.5s) for 10m"
+      description: |
+        p95 chat turn duration is exceeding the Standard hardware
+        tier's 2500 ms budget. Check inference lane status via
+        `/api/inference/lane-status`. Common causes: model warmup,
+        GPU thermal throttling, KV-cache fragmentation, or a remote
+        cloud provider degrading.
+      runbook_url: "https://github.com/<owner>/PalLLM/blob/main/docs/OBSERVABILITY_SLO.md#palllmchatlatencyhigh"
+
+  - alert: PalLLMChatLatencyHigh_Critical
+    # 4000 ms = Constrained-tier budget. Even the slowest tier
+    # should not exceed this; sustained excess is a real incident.
+    expr: |
+      histogram_quantile(
+        0.95,
+        sum by (le) (
+          rate(palllm_chat_duration_seconds_bucket[5m])
+        )
+      ) > 4.0
+    for: 5m
+    labels:
+      severity: critical
+      slo: latency
+    annotations:
+      summary: "PalLLM chat p95 latency above Constrained-tier budget (4s) for 5m"
+      description: |
+        p95 chat turn duration is exceeding even the Constrained
+        hardware tier's 4000 ms budget. This is severely degraded
+        UX. Likely causes: inference endpoint unreachable, GPU OOM
+        retry storm, or scrape lag distorting the histogram. Page.
+      runbook_url: "https://github.com/<owner>/PalLLM/blob/main/docs/OBSERVABILITY_SLO.md#palllmchatlatencyhigh"
+
+- name: palllm_quality
+  rules:
+  - alert: PalLLMFallbackRateHigh
+    # Fallback rate > 30% over a 15-min window indicates the LLM
+    # is degraded or unreachable. PalLLM's deterministic-fallback
+    # director kept the companion responsive, but the operator
+    # should know inference isn't carrying.
+    expr: |
+      (
+        rate(palllm_fallback_reply_total[15m])
+          /
+        rate(palllm_chat_duration_seconds_count[15m])
+      ) > 0.30
+    for: 15m
+    labels:
+      severity: warning
+      slo: quality
+    annotations:
+      summary: "PalLLM fallback-reply rate above 30% for 15m"
+      description: |
+        The deterministic fallback director is handling more than 30%
+        of chat turns. Inference is degraded or unreachable. Check
+        the inference endpoint (`/v1/models` reachable? auth key
+        valid? cloud quota exhausted?). Companion is still responsive
+        but quality is below expectations.
+      runbook_url: "https://github.com/<owner>/PalLLM/blob/main/docs/OBSERVABILITY_SLO.md#palllmfallbackratehigh"
+
+- name: palllm_bridge
+  rules:
+  - alert: PalLLMInboxBacklogGrowing
+    # Healthy steady-state is < 5 pending files; backlog > 50
+    # means the drain worker is falling behind production rate.
+    expr: palllm_inbox_pending_files > 50
+    for: 10m
+    labels:
+      severity: warning
+      slo: bridge
+    annotations:
+      summary: "PalLLM bridge inbox backlog exceeded 50 files for 10m"
+      description: |
+        The bridge drain worker is falling behind the Lua mod's event
+        production rate. Consider raising `PalLLM:Bridge:MaxEventsPerPoll`
+        or shortening `PollIntervalMs`. Alternative: the drain worker
+        is wedged on a corrupt event (Pass 355 adversarial tests
+        guard against this but new corruption shapes are always
+        possible).
+      runbook_url: "https://github.com/<owner>/PalLLM/blob/main/docs/OBSERVABILITY_SLO.md#palllminboxbacklog"
+
+- name: palllm_inference
+  rules:
+  - alert: PalLLMInferenceLaneRed
+    # palllm_inference_lane_status is a gauge with exactly one
+    # series per lane = 1. The "red" state means the recent-window
+    # check flipped the lane to deterministic-fallback-only.
+    expr: palllm_inference_lane_status{state="red"} == 1
+    for: 5m
+    labels:
+      severity: warning
+      slo: quality
+    annotations:
+      summary: "PalLLM inference lane {{ $labels.operation }} in RED state for 5m"
+      description: |
+        The recent-window readiness check flipped inference lane
+        `{{ $labels.operation }}` to RED. PalLLM is serving this
+        lane via deterministic fallback. Check the underlying
+        engine (llama-server / cloud API / remote PC) for errors.
+      runbook_url: "https://github.com/<owner>/PalLLM/blob/main/docs/OBSERVABILITY_SLO.md#palllminferencelane"

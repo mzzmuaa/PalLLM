@@ -1,0 +1,108 @@
+{
+  "$comment": "Hand-curated 'tales' catalog for `pal tale` - short campfire yarns, 3-4 lines each, atmospheric. The kind of thing you call up at the end of a long session for a moment of texture. In-character with the companion's voice: direct, no theatrics, never preachy. Unattributed, vague enough to belong to anyone's playthrough. Random selection.",
+
+  "schemaVersion": 1,
+  "lastAudited": "2026-05-04",
+
+  "tales": [
+    {
+      "title": "the trader's sandals",
+      "lines": [
+        "There was a trader who only ever wore one sandal.",
+        "Asked her once. She said the other was traded for the route memory.",
+        "Said the route was worth two sandals. Walked off in the snow."
+      ]
+    },
+    {
+      "title": "the pal who watched",
+      "lines": [
+        "Heard about a pal that wouldn't sleep until the player did.",
+        "Followed them for hours, eyes open, no whining, no fuss.",
+        "When the player finally lay down, the pal lay across their feet.",
+        "Lived eleven years that way. Never failed once."
+      ]
+    },
+    {
+      "title": "the broken sphere",
+      "lines": [
+        "An old hunter kept a cracked sphere on a string around his neck.",
+        "Said he tried to capture his own reflection with it years ago.",
+        "Said it didn't work. Said he kept the crack so he wouldn't try again."
+      ]
+    },
+    {
+      "title": "thirty winters",
+      "lines": [
+        "Met someone once who'd been on the islands thirty winters.",
+        "Asked what changed. They said the islands didn't.",
+        "Asked what they meant. They said: that's the secret."
+      ]
+    },
+    {
+      "title": "the quiet base",
+      "lines": [
+        "Came across an abandoned base in the south once.",
+        "Fire still warm. Chests sorted. Fence intact. Nobody home.",
+        "Left it alone. Some bases are still working - just not for us."
+      ]
+    },
+    {
+      "title": "the fast pal",
+      "lines": [
+        "Story goes there was a pal so fast it could outrun the weather.",
+        "Player loved the legend; trained their pal to run that fast.",
+        "First storm, the pal stayed by their side. Didn't want to go anywhere."
+      ]
+    },
+    {
+      "title": "small good day",
+      "lines": [
+        "An old letter washed up on the east beach a while back.",
+        "Single sentence: 'Today the bread didn't burn and the rain came when I was inside.'",
+        "Whoever wrote it knew exactly what a good day was."
+      ]
+    },
+    {
+      "title": "the ridge song",
+      "lines": [
+        "They say if you stand on the north ridge before dawn,",
+        "the wind makes a sound like a song you've heard somewhere.",
+        "Story goes nobody can ever hum the song after they leave the ridge.",
+        "Either the wind takes it back, or the wind never gave it."
+      ]
+    },
+    {
+      "title": "the scholar's notebook",
+      "lines": [
+        "A scholar once filled a notebook with what every pal seemed to be thinking.",
+        "Last page said: turns out they were thinking the same thing as me.",
+        "Then a doodle of a campfire. Then nothing else."
+      ]
+    },
+    {
+      "title": "the patient hunter",
+      "lines": [
+        "A hunter sat at the same lake for three days waiting for a single alpha.",
+        "Never came. The hunter went home, made stew, slept early.",
+        "The alpha showed up at the lake the next morning. Found nobody. Left.",
+        "Some hunts work like that. Some don't."
+      ]
+    },
+    {
+      "title": "the visitor",
+      "lines": [
+        "Old base log mentions a visitor who came at night, never spoke,",
+        "ate one bowl of stew at the fire, left a small green stone, walked off.",
+        "Nobody remembers what the stone meant. Everybody who finds it keeps it."
+      ]
+    },
+    {
+      "title": "what the fire taught",
+      "lines": [
+        "The fire teaches one thing, more than once.",
+        "Stay close enough to feel it. Far enough not to burn.",
+        "Most days, that's the whole job."
+      ]
+    }
+  ]
+}

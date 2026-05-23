@@ -1,0 +1,11 @@
+{
+  "_comment": "Ready-to-paste Claude Desktop MCP server entry for PalLLM. Merge the 'mcpServers' block into your existing claude_desktop_config.json. Path on Windows: %APPDATA%/Claude/claude_desktop_config.json -- on macOS: ~/Library/Application Support/Claude/claude_desktop_config.json -- on Linux: ~/.config/Claude/claude_desktop_config.json. Restart Claude Desktop after saving.",
+  "_comment_auth": "If PalLLM is running with PalLLM:Auth:ApiKey set, add an 'Authorization' entry under 'headers': { \"Authorization\": \"Bearer YOUR-KEY-HERE\" }. Otherwise omit the headers block.",
+  "_comment_remote": "For a PalLLM running on another machine, replace localhost with the host's IP or hostname. Always pair remote deployments with PalLLM:Auth:ApiKey + TLS via a reverse proxy.",
+  "mcpServers": {
+    "palllm": {
+      "url": "http://localhost:5088/mcp",
+      "transport": "streamable-http"
+    }
+  }
+}

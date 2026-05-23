@@ -1,0 +1,48 @@
+# PalLLM
+
+> Local-first LLM companion runtime for Palworld. A .NET 10 ASP.NET Core
+> sidecar + UE4SS Lua bridge + Model Context Protocol server. Gives
+> in-game companions a local AI voice with no cloud account and no data
+> leaving the machine by default. Zero-inference fallback keeps the
+> companion responsive even without an AI model configured.
+
+The project is MIT-licensed and explicitly designed so individual
+capabilities (Duo cooperation-pattern planner, proof-packet provenance
+format, promotion ledger, privacy posture inventory, disagreement
+detector, hardware profiler, and ~20 more) can be lifted into other
+.NET projects — see `docs/HARVEST.md` for recipes.
+
+## For humans
+
+- [PITCH.md](docs/PITCH.md): plain-English tour of what PalLLM does and why it's interesting
+- [FAQ.md](docs/FAQ.md): answers to the most common first-time questions (cost, GPU, privacy, uninstall)
+- [GLOSSARY.md](docs/GLOSSARY.md): every PalLLM-specific term defined in plain English
+- [README.md](README.md): runtime posture, surface inventory, install path
+- [CONTRIBUTING.md](CONTRIBUTING.md): how to contribute
+- [docs/QUICKSTART.md](docs/QUICKSTART.md): first chat reply in 5 minutes
+- [docs/MCP_QUICKSTART.md](docs/MCP_QUICKSTART.md): connect PalLLM to a desktop AI client
+- [docs/PRIVACY.md](docs/PRIVACY.md): what data does and doesn't leave the machine
+
+## For coding agents
+
+- [AGENTS.md](AGENTS.md): root-level agent briefing (read this first)
+- [CLAUDE.md](CLAUDE.md): Claude-Code-specific shortcut
+- [docs/HANDOFF.md](docs/HANDOFF.md): 30-second briefing on what just landed + what's next
+- [docs/CODE_MAP.md](docs/CODE_MAP.md): where every symbol lives
+- [docs/ADVISORS.md](docs/ADVISORS.md): one-page catalog of every advisor / builder / validator / feeder
+- [docs/CONVENTIONS.md](docs/CONVENTIONS.md): the 4 patterns + 3 hard rules
+- [docs/HARVEST.md](docs/HARVEST.md): how to extract individual capabilities
+- [docs/DESIGN_PRINCIPLES.md](docs/DESIGN_PRINCIPLES.md): why the codebase is shaped this way
+
+## Reference
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): solution layout, HTTP surface, background workers
+- [docs/API.md](docs/API.md): full HTTP API reference (55 /api routes + MCP protocol route)
+- [docs/ROADMAP.md](docs/ROADMAP.md): honest shipping position (76.2% player-experience-weighted)
+- [docs/INDEX.md](docs/INDEX.md): full Diátaxis-organised doc map
+
+## Machine-readable contracts
+
+- [docs/openapi/palllm-sidecar-v1.json](docs/openapi/palllm-sidecar-v1.json): committed OpenAPI 3.1 snapshot
+- [src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs](src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs): 120 feature descriptors, also available at `GET /api/features`
+- [src/PalLLM.Domain/Portable/PortableAdapterContracts.cs](src/PalLLM.Domain/Portable/PortableAdapterContracts.cs): redistributable adapter seam (IGameAdapter, ICharacter, etc.)

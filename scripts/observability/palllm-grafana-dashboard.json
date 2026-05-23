@@ -1,0 +1,149 @@
+{
+  "_comment": "PalLLM reference Grafana dashboard (Pass 358). Import via Grafana UI: + > Import > Upload JSON. Adjust the datasource UID via the dropdown after import. The 4 panels mirror the 4 SLO categories declared in docs/OBSERVABILITY_SLO.md.",
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "Chat turn latency (p50 / p95 / p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(palllm_chat_duration_seconds_bucket[5m])))",
+          "legendFormat": "p50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(palllm_chat_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(palllm_chat_duration_seconds_bucket[5m])))",
+          "legendFormat": "p99",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 2.5 },
+              { "color": "red", "value": 4.0 }
+            ]
+          }
+        }
+      },
+      "description": "Latency budgets per docs/HOT_PATH.md: Standard tier 2.5s p95 (orange threshold), Constrained tier 4.0s p95 (red threshold)."
+    },
+    {
+      "title": "Fallback-reply rate (proportion of chats served deterministically)",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "expr": "rate(palllm_fallback_reply_total[15m]) / rate(palllm_chat_duration_seconds_count[15m])",
+          "legendFormat": "fallback share",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "max": 1.0,
+          "min": 0.0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.30 }
+            ]
+          }
+        }
+      },
+      "description": "When this exceeds 30%, inference is degraded — PalLLM's deterministic-fallback director is handling most turns. Check the upstream LLM endpoint."
+    },
+    {
+      "title": "Bridge inbox backlog (pending files)",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "expr": "palllm_inbox_pending_files",
+          "legendFormat": "{{ instance }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 20 },
+              { "color": "red", "value": 50 }
+            ]
+          }
+        }
+      },
+      "description": "Healthy steady-state is < 5. Growing backlog means the drain worker is falling behind the Lua mod's event-production rate."
+    },
+    {
+      "title": "Inference lane status",
+      "type": "stat",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "expr": "palllm_inference_lane_status",
+          "legendFormat": "{{ operation }} = {{ state }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "options": { "0": { "color": "grey", "text": "off" } }, "type": "value" },
+            { "options": { "1": { "color": "green", "text": "on" } }, "type": "value" }
+          ]
+        }
+      },
+      "description": "Exactly one series per lane (operation, state) should be 1 at any time. green=ready, yellow=degraded, red=fallback-only."
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["palllm", "slo"],
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": { "selected": false, "text": "Prometheus", "value": "Prometheus" }
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "PalLLM SLO overview",
+  "uid": "palllm-slo-overview",
+  "version": 1,
+  "weekStart": ""
+}

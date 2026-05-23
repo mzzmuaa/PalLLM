@@ -1,0 +1,155 @@
+# PalLLM + llama.cpp via Docker Compose
+#
+# Runs both services on a shared Docker network so PalLLM reaches llama-server
+# at http://llamacpp:8080 without any host-network plumbing. The llamacpp
+# models volume can be host-mounted at an operator-curated path (e.g.
+# D:\Models on Windows or /srv/Models on Linux) so the same GGUFs serve
+# multiple PalLLM installs without duplication. See docs/LOCAL_MODELS_INVENTORY.md
+# for the operator-curated layout this compose example assumes.
+#
+# Ollama is intentionally absent — Pass 339 removed it from PalLLM's
+# operator surfaces. Use this compose file as the canonical local stack.
+# For high-config / Blackwell GPUs that want the vLLM throughput path,
+# see docs/BLACKWELL_RECIPES.md (vLLM-on-CUDA recipes).
+#
+# ------------------------------------------------------------------------
+# Prerequisites
+# ------------------------------------------------------------------------
+#
+# 1. A PalLLM sidecar container image. The Dockerfile in this repo builds
+#    from the PalLLM repo alone — no sibling checkout required:
+#       docker build -t palllm:local .
+#    Then change `image: ghcr.io/REPLACE_ME/palllm:latest` below to
+#    `image: palllm:local`.
+# 2. A llama.cpp server image. Upstream publishes
+#    `ghcr.io/ggml-org/llama.cpp:server-cuda` (CUDA),
+#    `ghcr.io/ggml-org/llama.cpp:server` (CPU), and `:server-rocm` (AMD).
+# 3. A curated GGUF library on the host that the compose stack mounts into
+#    the llama-server container. The example below assumes the operator's
+#    library lives at `D:\Models` on Windows or `/srv/Models` on Linux.
+#
+# ------------------------------------------------------------------------
+# Usage
+# ------------------------------------------------------------------------
+#
+#   docker compose -f docs/examples/compose.yaml up -d
+#   curl http://localhost:5088/health/live         # -> "Healthy"
+#   curl http://localhost:5088/api/features        # -> feature catalog
+#
+# Point Claude Desktop / VS Code / Cursor at http://localhost:5088/mcp (see
+# claude-desktop-config.json and vscode-mcp.json in this directory).
+#
+# This stack runs PalLLM without authentication — safe only on trusted LANs.
+# Before exposing the sidecar beyond localhost, set PalLLM__Auth__ApiKey in
+# the environment block below AND put TLS in front via a reverse proxy. See
+# docs/TLS.md for the deployment walk-through and Caddyfile for a ready-to-
+# adapt Caddy config with automatic HTTPS.
+
+services:
+  llamacpp:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    container_name: palllm-llamacpp
+    restart: unless-stopped
+    # GPU access requires the NVIDIA Container Toolkit on the host. Drop
+    # this block entirely if you're running CPU-only with the `:server`
+    # image instead.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ports:
+      # Expose llama-server to the host so you can curl /v1/models / debug
+      # the loaded GGUF directly. Remove this if you only want llama-server
+      # reachable from the palllm service.
+      - "8080:8080"
+    volumes:
+      # Host path to your operator-curated GGUF library. Adjust for your OS:
+      #   Windows: "D:\\Models:/models:ro"
+      #   Linux:   "/srv/Models:/models:ro"
+      # The :ro flag keeps llama-server read-only against the curation so an
+      # accidental container write doesn't corrupt your library.
+      - "D:\\Models:/models:ro"
+    command:
+      # Quality lane: unsloth Qwen 3.6-A3B UD-Q8_K_XL with model-native MTP
+      # speculative decoding (see docs/LOCAL_MODELS_INVENTORY.md for full
+      # path mapping). Adjust the -m argument for whichever model your
+      # curation has set as the canonical chat lane.
+      - "-m"
+      - "/models/Qwen/Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf"
+      - "--mmproj"
+      - "/models/mmproj/mmproj-F16.gguf"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8080"
+      - "-c"
+      - "16384"
+      - "-ngl"
+      - "99"
+      - "--flash-attn"
+      - "on"
+      - "--metrics"
+      - "--no-webui"
+      # Activate the Qwen 3.6 model-native MTP head for speculative
+      # decoding (~30-50% throughput gain). Remove if the GGUF doesn't
+      # ship an MTP head.
+      - "--spec-type"
+      - "ngram-mod"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  palllm:
+    # Replace with your built / pushed PalLLM image. See the prereq block
+    # above for how to build it. This placeholder tag is intentionally
+    # unreachable so `docker compose up` fails fast with a clear error
+    # until the operator picks an image.
+    image: ghcr.io/REPLACE_ME/palllm:latest
+    container_name: palllm-sidecar
+    restart: unless-stopped
+    depends_on:
+      llamacpp:
+        condition: service_healthy
+    ports:
+      - "5088:5088"
+    environment:
+      # Point inference at the llamacpp service on the compose network.
+      PalLLM__Inference__Enabled: "true"
+      PalLLM__Inference__BaseUrl: "http://llamacpp:8080/v1/"
+      PalLLM__Inference__Model: "Qwen3.6-35B-A3B-UD-Q8_K_XL"
+      PalLLM__Vision__Enabled: "true"
+      PalLLM__Vision__BaseUrl: "http://llamacpp:8080/v1/"
+      PalLLM__Vision__Model: "Qwen3.6-35B-A3B-UD-Q8_K_XL"
+
+      # The operator-curated model library lives in the llamacpp container at
+      # /models, mounted read-only from the host. PalLLM doesn't open this
+      # path directly — it's documented here for traceability against
+      # docs/LOCAL_MODELS_INVENTORY.md.
+      PalLLM__ExternalModelsRoot: "/models"
+
+      # Persist runtime state (memory, relationships, outbox) to a named
+      # volume so a container restart doesn't reset companion memory.
+      PalLLM__PalSavedRoot: "/var/palllm"
+
+      # Uncomment + set to enable bearer-token auth on /api/* and /mcp/*:
+      # PalLLM__Auth__ApiKey: "replace-with-a-strong-secret"
+
+      # Uncomment to enable OpenTelemetry export (traces + logs) to a local
+      # OTLP collector on the same compose network:
+      # OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+      # OTEL_SERVICE_NAME: "pal-llm-sidecar"
+    volumes:
+      - palllm-runtime:/var/palllm
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:5088/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  palllm-runtime:

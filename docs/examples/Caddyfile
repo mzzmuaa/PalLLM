@@ -1,0 +1,69 @@
+# Caddy reverse proxy for PalLLM.
+#
+# Caddy handles TLS termination + automatic HTTPS via Let's Encrypt, so the
+# PalLLM sidecar keeps binding to plain HTTP on localhost and never needs
+# its own TLS config. Deploy Caddy on the same host as PalLLM (or any host
+# with network line-of-sight to port 5088).
+#
+# Usage:
+#   1. Replace `palllm.example.com` with your real hostname.
+#   2. Set `PalLLM:Auth:ApiKey` on the sidecar to a strong secret, then
+#      send that same value from clients as `Authorization: Bearer ...`.
+#      Exposing PalLLM publicly WITHOUT the API key is an operator error —
+#      every /api/* and /mcp request would be world-reachable.
+#   3. Start Caddy from the directory holding this file:
+#        caddy run --config Caddyfile
+#   4. Open https://palllm.example.com/health/live -> "Healthy".
+#
+# The `/mcp` endpoint handles MCP clients exactly the same way as a local
+# http://localhost:5088/mcp deployment — point your Claude Desktop /
+# VS Code / Cursor config at https://palllm.example.com/mcp instead.
+#
+# Rate limiting: Caddy has no built-in rate limiter, but the `caddy-ratelimit`
+# third-party module plugs in cleanly. For a simple deployment, the OS-level
+# UFW/iptables connection cap is usually enough; rate limit if you're seeing
+# abuse on public endpoints.
+
+palllm.example.com {
+    # Logs go to stderr by default; switch to a file in production if you
+    # want retention beyond the systemd journal.
+    log {
+        output stderr
+        format console
+    }
+
+    # Forward every path. PalLLM itself partitions /api, /mcp, /health,
+    # /metrics, and /openapi internally — Caddy is pure TLS + proxy.
+    reverse_proxy localhost:5088 {
+        # Preserve the original Host header so PalLLM's tracing surfaces
+        # the real hostname and any future per-host logic sees it.
+        header_up Host {host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+
+        # MCP's Streamable HTTP transport uses Server-Sent Events for
+        # server-to-client messages. Caddy handles SSE natively, but make
+        # sure no intermediate cache strips the `text/event-stream`
+        # content-type.
+        flush_interval -1
+    }
+
+    # Security headers. HSTS tells compliant browsers to refuse plain HTTP
+    # for this host. preload is safe here because everything behind Caddy
+    # is HTTPS-only anyway.
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Remove the server banner so scanners can't cheaply identify us.
+        -Server
+    }
+}
+
+# Optional: force HTTP -> HTTPS. Caddy does this automatically when you
+# provide a valid hostname (via Let's Encrypt), so usually you don't need
+# this block. Included for explicitness if your DNS / ACME flow drifts.
+#
+# http://palllm.example.com {
+#     redir https://palllm.example.com{uri} permanent
+# }

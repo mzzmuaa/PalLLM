@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "lastAudited": "2026-04-25",
+  "palworld": {
+    "supported": ["0.5.x", "0.4.x"],
+    "unsupportedBelow": "0.4.0"
+  },
+  "ue4ss": {
+    "supported": ["3.x"]
+  },
+  "dotnet": {
+    "supported": ["10"],
+    "unsupported": ["9", "8", "7", "6"]
+  },
+  "os": {
+    "sidecar": [
+      { "os": "Windows 10", "min": "22H2", "status": "supported" },
+      { "os": "Windows 11", "min": null, "status": "supported" },
+      { "os": "Windows Server 2022", "min": null, "status": "supported" },
+      { "os": "Linux x86_64", "min": null, "status": "supported" },
+      { "os": "macOS", "min": null, "status": "untested" }
+    ],
+    "mod": [
+      { "os": "Windows 10", "min": "22H2", "status": "supported" },
+      { "os": "Windows 11", "min": null, "status": "supported" }
+    ]
+  },
+  "knownGoodMods": [
+    { "id": "PalKit", "notes": "No overlap in hook surface." },
+    { "id": "PalDex", "notes": "No overlap in hook surface." },
+    { "id": "BetterPalworld", "notes": "Expected to work — verify no double-hook on pal-AI." },
+    { "id": "LiveMap", "notes": "Different hook surface." }
+  ],
+  "knownConflicts": [
+    {
+      "id": "OtherLlmBridge",
+      "kind": "mod",
+      "reason": "Any other mod that injects an LLM bridge competes for the same outbox / HUD hooks.",
+      "mitigation": "Install only one LLM-bridge mod."
+    },
+    {
+      "id": "HudOverlap",
+      "kind": "mod",
+      "reason": "Mods that bind the same HUD widgets PalLLM targets can conflict.",
+      "mitigation": "Set PalLLM:Bridge:NativeHudTargets[] to a non-overlapping target, or uninstall the competitor."
+    },
+    {
+      "id": "AggressiveAv",
+      "kind": "tooling",
+      "reason": "Corporate AV / EDR that flags UE4SS DLL injection blocks the mod.",
+      "mitigation": "Whitelist the PalLLM install directory or talk to IT."
+    },
+    {
+      "id": "DefenderExploitGuard",
+      "kind": "tooling",
+      "reason": "Exploit Guard \"block DLL injection\" rule blocks UE4SS mod loading.",
+      "mitigation": "Exclude the Palworld + PalLLM paths (see docs/SERVER_OPERATOR.md)."
+    },
+    {
+      "id": "AppLockerEnforce",
+      "kind": "tooling",
+      "reason": "AppLocker / WDAC in enforce mode blocks unsigned EXE.",
+      "mitigation": "Wait for a code-signed release, or allowlist the PalLLM publisher."
+    }
+  ],
+  "inferenceEndpoints": [
+    { "id": "llama-cpp-loopback", "url": "http://127.0.0.1:8080/v1/", "status": "reference", "notes": "Pass 337 default; pairs with operator's curated D:\\Models library. See docs/LOCAL_MODELS_INVENTORY.md." },
+    { "id": "llama-cpp",          "url": "http://<host>:8080/v1/",    "status": "supported" },
+    { "id": "vllm",            "url": "http://<host>:8000/v1/",      "status": "supported", "notes": "Required for NVFP4 / FP8 / AWQ-INT4 inference. See docs/QUANTIZATION.md." },
+    { "id": "tensorrt-llm",    "url": "http://<host>:8000/v1/",      "status": "supported", "notes": "Lowest-latency Blackwell path. NVFP4 native. See docs/QUANTIZATION.md." },
+    { "id": "sglang",          "url": "http://<host>:30000/v1/",     "status": "supported", "notes": "Strong agent/tool-use support. NVFP4 + FP8 native on Blackwell/Hopper." },
+    { "id": "tgi",             "url": "http://<host>:3000/v1/",      "status": "supported" },
+    { "id": "openai-direct",   "url": "https://api.openai.com/v1/",  "status": "works-not-recommended", "notes": "Sends chat traffic off-device; /api/airgap/verify will mark public-internet." }
+  ],
+  "quantizationFormats": [
+    {
+      "id": "nvfp4",
+      "displayName": "NVFP4",
+      "bitsPerWeight": 4,
+      "hardwareRequirement": "blackwell",
+      "supportedEngines": ["vllm", "tensorrt-llm", "sglang", "nvidia-nim"],
+      "notes": "NVIDIA proprietary 4-bit FP. Two-level scaling (per-block FP8 micro-scale + per-tensor FP32 macro-scale). Best speed/quality on Blackwell."
+    },
+    {
+      "id": "mxfp4",
+      "displayName": "MXFP4 (OCP standard)",
+      "bitsPerWeight": 4,
+      "hardwareRequirement": "blackwell-or-mi300",
+      "supportedEngines": ["vllm", "tensorrt-llm"],
+      "notes": "OCP Microscaling 4-bit FP. Single-level per-block FP8 scale. Cross-vendor (NVIDIA + AMD)."
+    },
+    {
+      "id": "fp8",
+      "displayName": "FP8 (E4M3)",
+      "bitsPerWeight": 8,
+      "hardwareRequirement": "hopper-or-ada-or-blackwell",
+      "supportedEngines": ["vllm", "tensorrt-llm", "sglang"],
+      "notes": "Native 8-bit FP. Near-FP16 quality at half the memory."
+    },
+    {
+      "id": "q4_k_m",
+      "displayName": "Q4_K_M (GGUF)",
+      "bitsPerWeight": 4.5,
+      "hardwareRequirement": "any",
+      "supportedEngines": ["llama-cpp", "lm-studio"],
+      "notes": "llama.cpp K-quant. Mature calibration; works on every CPU/GPU."
+    },
+    {
+      "id": "q8_0",
+      "displayName": "Q8_0 (GGUF)",
+      "bitsPerWeight": 8,
+      "hardwareRequirement": "any",
+      "supportedEngines": ["llama-cpp", "lm-studio"],
+      "notes": "llama.cpp 8-bit. Within 0.3 points of FP16 on most benchmarks."
+    },
+    {
+      "id": "awq-int4",
+      "displayName": "AWQ-INT4",
+      "bitsPerWeight": 4,
+      "hardwareRequirement": "ampere-or-newer",
+      "supportedEngines": ["vllm", "tgi"],
+      "notes": "Activation-aware integer quantization. Good for pre-Hopper GPUs."
+    }
+  ]
+}

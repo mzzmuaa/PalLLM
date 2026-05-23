@@ -1,0 +1,117 @@
+{
+  "$comment": "Hand-curated 'patrol report' catalog for `pal patrol-report`. Companion narrates the night they spent watching while the player slept. 4-6 lines per report, atmospheric, in-character. Designed for end-of-session moments: you're logging in for the first time today, you want a beat that says 'somebody was looking out for you while you were gone'. Random selection.",
+
+  "schemaVersion": 1,
+  "lastAudited": "2026-05-04",
+
+  "reports": [
+    {
+      "summary": "the quiet night",
+      "lines": [
+        "Quiet night. Wind shifted around three, but the trees handled it.",
+        "Pals rotated patrols clean. Nobody complained, nobody slacked.",
+        "I dozed by the fire until first light. The kettle was warm when I woke.",
+        "Nothing to flag. Welcome back."
+      ]
+    },
+    {
+      "summary": "the small visitor",
+      "lines": [
+        "A small grass-pal wandered through camp around midnight.",
+        "Didn't take anything. Stood at the edge of the firelight for a minute.",
+        "I let it be. It went back the way it came when the moon dropped.",
+        "Mention of it because it felt like the kind of thing you'd want to know."
+      ]
+    },
+    {
+      "summary": "the storm that almost came",
+      "lines": [
+        "Storm built up off the east ridge for an hour - thunder, no rain.",
+        "I had the pals tighten the awnings just in case.",
+        "Storm broke up before it reached us. Not every alarm gets earned.",
+        "Awnings came back down at first light. No damage."
+      ]
+    },
+    {
+      "summary": "the long quiet",
+      "lines": [
+        "You slept hard. I noticed.",
+        "I kept the fire small so the smoke didn't draw anything in.",
+        "Pals were good company. They sleep better when you're nearby.",
+        "Wake up easy. We have time today."
+      ]
+    },
+    {
+      "summary": "the dropped tool",
+      "lines": [
+        "Found one of your repair tools half-buried near the workbench.",
+        "Must've slipped out of the kit yesterday during the run.",
+        "Cleaned it, put it back. It still works.",
+        "Mention it so it doesn't surprise you when the count's off."
+      ]
+    },
+    {
+      "summary": "the patient predator",
+      "lines": [
+        "A predator-pal sat at the tree line for almost two hours.",
+        "Didn't attack. Watched. Counted us, maybe.",
+        "It left around four. The pals didn't react, which means it wasn't a real threat tonight.",
+        "Tomorrow's a different question. Worth noting where it watched from."
+      ]
+    },
+    {
+      "summary": "the small repair",
+      "lines": [
+        "Patched a fence panel that had cracked through after yesterday's haul.",
+        "Used scraps. The fix isn't pretty but it'll hold a week.",
+        "Sleep was uninterrupted otherwise.",
+        "Welcome back. The kettle's still on."
+      ]
+    },
+    {
+      "summary": "the wind that brought news",
+      "lines": [
+        "Wind picked up from the south around two and brought woodsmoke.",
+        "Not ours. Far enough that I don't think it's a threat.",
+        "Could be another camp, could be a wildfire on the horizon - hard to say from here.",
+        "Worth a glance at the south ridge today, if you're up for it."
+      ]
+    },
+    {
+      "summary": "a pal had a dream",
+      "lines": [
+        "One of the pals had a dream around midnight - whined a little, settled.",
+        "Didn't wake the others.",
+        "Animals dream too. We tend to forget that.",
+        "Otherwise: nothing to report."
+      ]
+    },
+    {
+      "summary": "the night that earned its keep",
+      "lines": [
+        "Took the watch the whole night.",
+        "Three small things tried the perimeter. None of them made it through.",
+        "I won't bore you with details - we held.",
+        "If you slept hard, that's because we did the work. Welcome back."
+      ]
+    },
+    {
+      "summary": "the sound of nothing",
+      "lines": [
+        "Quiet enough I noticed myself listening for sounds that weren't there.",
+        "That's a good night, but it makes you alert in a way that's hard to put down.",
+        "Pals didn't catch any of it. So maybe I imagined the listening.",
+        "Carry on. We earned the morning."
+      ]
+    },
+    {
+      "summary": "a small good thing",
+      "lines": [
+        "Berries on the east bush turned red overnight. A week early.",
+        "Something to pick today if the schedule allows.",
+        "Pals are healthy. Camp is warm.",
+        "Small good things stack."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,275 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://palllm.dev/schemas/bridge-event-envelope-v1.schema.json",
+  "title": "PalLLM Bridge Event Envelope",
+  "description": "One file under runtime-root/Bridge/Inbox/ - written by the Lua bridge (or any other producer wanting to talk to PalLLM through the bridge), drained by the sidecar's BridgeInboxWorker through a bounded JSON reader. Source of truth: src/PalLLM.Domain/Integration/Contracts.cs (BridgeEventEnvelope).",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["EventType", "Source", "TimestampUtc", "Payload"],
+  "properties": {
+    "EventType": {
+      "type": "string",
+      "description": "Required discriminator. Known types include 'bridge_boot', 'chat_message', 'snapshot', 'base_discovered', 'combat_start', 'combat_end', 'pal_status', 'production', 'travel', 'weather_change', 'raid', 'ui_probe', 'reply_delivery', and 'speech_playback'. Unknown, malformed, unreadable, or oversized envelopes are quarantined to Bridge/Failed/.",
+      "minLength": 1
+    },
+    "Source": {
+      "type": "string",
+      "description": "Producer identifier. Conventionally 'ue4ss' for the in-game Lua bridge, or any string identifying a custom producer.",
+      "default": "ue4ss",
+      "minLength": 1
+    },
+    "TimestampUtc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp when the event was produced."
+    },
+    "Payload": {
+      "description": "Free-form JSON payload whose schema depends on EventType. The runtime parses it via System.Text.Json.JsonElement and routes per EventType. Common payload shapes are shown below.",
+      "oneOf": [
+        { "$ref": "#/$defs/BridgeBootPayload" },
+        { "$ref": "#/$defs/ChatMessagePayload" },
+        { "$ref": "#/$defs/SnapshotPayload" },
+        { "$ref": "#/$defs/BaseDiscoveredPayload" },
+        { "$ref": "#/$defs/CombatPayload" },
+        { "$ref": "#/$defs/PalStatusPayload" },
+        { "$ref": "#/$defs/ProductionPayload" },
+        { "$ref": "#/$defs/TravelPayload" },
+        { "$ref": "#/$defs/WeatherChangePayload" },
+        { "$ref": "#/$defs/RaidPayload" },
+        { "$ref": "#/$defs/UiProbePayload" },
+        { "$ref": "#/$defs/ReplyDeliveryPayload" },
+        { "$ref": "#/$defs/SpeechPlaybackPayload" },
+        { "type": "object", "description": "Free-form payload for custom event types." }
+      ]
+    }
+  },
+  "$defs": {
+    "BridgeBootPayload": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "Version": { "type": "string" },
+        "Status": { "type": "string" },
+        "Compat": { "type": "string" },
+        "CompatSignals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "Key": { "type": "string" },
+              "Present": { "type": "boolean" }
+            }
+          }
+        },
+        "UiProbeEnabled": { "type": "boolean" },
+        "ActionExecutorEnabled": { "type": "boolean" },
+        "NativeHudRenderEnabled": { "type": "boolean" },
+        "NativeHudWidgetTargetCount": { "type": "integer" },
+        "NativeHudWidgetTargets": { "type": "array", "items": { "type": "string" } },
+        "NativeHudConfigSource": { "type": "string" },
+        "NativeHudConfigPath": { "type": "string" },
+        "ProductionSamplerEnabled": { "type": "boolean" },
+        "WaypointNativeMarkerEnabled": { "type": "boolean" }
+      }
+    },
+    "ChatMessagePayload": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "Sender": { "type": "string", "description": "Speaker name captured by the bridge." },
+        "Message": { "type": "string", "description": "Chat text remembered by the runtime." },
+        "Category": { "type": "string" }
+      }
+    },
+    "SnapshotPayload": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Periodic world-state snapshot from the game.",
+      "properties": {
+        "Source": { "type": "string" },
+        "WorldName": { "type": "string" },
+        "IsWorldLoaded": { "type": ["boolean", "null"] },
+        "Biome": { "type": "string" },
+        "Weather": { "type": "string" },
+        "TimeOfDay": { "type": "string" },
+        "CurrentObjective": { "type": "string" },
+        "KnownBases": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "RecentEvents": { "type": "array", "items": { "type": "string" } },
+        "Characters": { "type": "array", "items": { "type": "object", "additionalProperties": true } }
+      }
+    },
+    "BaseDiscoveredPayload": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "BaseId": { "type": "string" },
+        "AreaRange": { "type": ["number", "null"] }
+      }
+    },
+    "CombatPayload": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "Phase": { "type": "string" },
+        "Opponent": { "type": "string" },
+        "Location": { "type": "string" },
+        "AlliesCount": { "type": ["integer", "null"] },
+        "HostilesCount": { "type": ["integer", "null"] },
+        "ThreatLevel": { "type": ["number", "null"] }
+      }
+    },
+    "PalStatusPayload": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "PalName": { "type": "string" },
+        "Species": { "type": "string" },
+        "Change": { "type": "string" },
+        "HealthFraction": { "type": ["number", "null"] },
+        "StaminaFraction": { "type": ["number", "null"] },
+        "Note": { "type": "string" },
+        "RequestId": { "type": "string" },
+        "SourceStrategy": { "type": "string" }
+      }
+    },
+    "ProductionPayload": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "BaseId": { "type": "string" },
+        "Station": { "type": "string" },
+        "Item": { "type": "string" },
+        "Quantity": { "type": "integer" },
+        "Status": { "type": "string" },
+        "Note": { "type": "string" },
+        "RequestId": { "type": "string" },
+        "SourceStrategy": { "type": "string" }
+      }
+    },
+    "TravelPayload": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "Origin": { "type": "string" },
+        "Destination": { "type": "string" },
+        "Waypoint": { "type": "string" },
+        "Mode": { "type": "string" },
+        "Note": { "type": "string" },
+        "RequestId": { "type": "string" },
+        "SourceStrategy": { "type": "string" }
+      }
+    },
+    "WeatherChangePayload": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "Weather": { "type": "string" },
+        "Biome": { "type": "string" },
+        "Severity": { "type": "string" }
+      }
+    },
+    "RaidPayload": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "BaseId": { "type": "string" },
+        "Faction": { "type": "string" },
+        "AttackerCount": { "type": ["integer", "null"] },
+        "Phase": { "type": "string" },
+        "Note": { "type": "string" }
+      }
+    },
+    "UiProbePayload": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "HUD/widget probe summary. Full dumps live separately under runtime-root/Bridge/Diagnostics/.",
+      "properties": {
+        "Reason": { "type": "string" },
+        "Summary": { "type": "string" },
+        "DumpPath": { "type": "string" },
+        "ObservedWidgetCount": { "type": "integer" },
+        "ActiveWidgetCount": { "type": "integer" },
+        "Widgets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "DisplayName": { "type": "string" },
+              "FullName": { "type": "string" },
+              "ClassName": { "type": "string" },
+              "SeenCount": { "type": "integer" },
+              "IsActive": { "type": "boolean" },
+              "LastLifecycle": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "ReplyDeliveryPayload": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "RequestId": { "type": "string" },
+        "Speaker": { "type": "string" },
+        "ResponsePath": { "type": "string" },
+        "StrategyId": { "type": "string" },
+        "Phase": { "type": "string" },
+        "UsedFallback": { "type": "boolean" },
+        "Rendered": { "type": "boolean" },
+        "Surface": { "type": "string" },
+        "CardLabel": { "type": "string" },
+        "CardIndex": { "type": "integer" },
+        "CardCount": { "type": "integer" },
+        "Note": { "type": "string" }
+      }
+    },
+    "SpeechPlaybackPayload": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Content-free result of a game-side local speech playback attempt or proof-only skip. WAV receipts may include encoding, sample format, byte order, native-mixer conversion hint, low-latency native-mixer queue and buffer-duration estimates, sample rate, channel count, bit depth, duration, byte rate, block alignment, audio-data byte count, sample-frame count, partial-frame remainder, WAVE_FORMAT_EXTENSIBLE valid bits, and channel mask inferred from RIFF metadata. Raw PCM can include parameter-derived sample rate, channel count, bit depth, duration, byte rate, block alignment, audio-data byte count, sample-frame count, partial-frame remainder, encoding, sample-format, byte-order, native-mixer conversion metadata, and native-mixer queue/buffer estimates from MIME values such as audio/L16; rate=24000; channels=1. Receipts can also include playback sequence, superseded request id/count/age, prior buffered duration, estimated remaining buffered duration, and cancellation mode so stale-speech/barge-in proof remains content-free. Raw PCM uses PlaybackMode raw_pcm plus FailureCode raw_pcm_native_mixer_required with zero launch attempts while the default-off native mixer callback is disabled. Enabled callback paths can report native_audio_mixer_unavailable, native_audio_mixer_failed, or native_audio_mixer_rejected, and only a started native_mixer receipt proves engine-side raw PCM playback. Raw PCM uses raw_pcm_block_alignment_invalid when the artifact does not contain complete sample frames. The bridge does not include audio bytes or the local file path.",
+      "properties": {
+        "RequestId": { "type": "string" },
+        "Started": { "type": "boolean" },
+        "ArtifactBytes": { "type": "integer", "minimum": 0 },
+        "AttemptCount": { "type": "integer", "minimum": 0 },
+        "ElapsedMs": { "type": "integer", "minimum": 0 },
+        "PlaybackSequence": { "type": "integer", "minimum": 0 },
+        "SupersededRequestId": { "type": "string" },
+        "SupersededSpeechCount": { "type": "integer", "minimum": 0 },
+        "SupersededSpeechAgeMs": { "type": "integer", "minimum": 0 },
+        "SupersededSpeechBufferedMs": { "type": "integer", "minimum": 0 },
+        "SupersededSpeechRemainingMs": { "type": "integer", "minimum": 0 },
+        "CancellationMode": { "type": "string" },
+        "SampleRateHz": { "type": "integer", "minimum": 0 },
+        "ChannelCount": { "type": "integer", "minimum": 0 },
+        "BitsPerSample": { "type": "integer", "minimum": 0 },
+        "DurationMs": { "type": "integer", "minimum": 0 },
+        "ByteRate": { "type": "integer", "minimum": 0 },
+        "BlockAlignBytes": { "type": "integer", "minimum": 0 },
+        "AudioDataBytes": { "type": "integer", "minimum": 0 },
+        "FrameCount": { "type": "integer", "minimum": 0 },
+        "BlockRemainderBytes": { "type": "integer", "minimum": 0 },
+        "ValidBitsPerSample": { "type": "integer", "minimum": 0 },
+        "ChannelMask": { "type": "integer", "minimum": 0 },
+        "AudioEncoding": { "type": "string" },
+        "SampleFormat": { "type": "string" },
+        "ByteOrder": { "type": "string" },
+        "MixerConversionHint": { "type": "string" },
+        "MixerQuantumMs": { "type": "integer", "minimum": 0 },
+        "MixerQuantumFrames": { "type": "integer", "minimum": 0 },
+        "MixerQueueDepthEstimate": { "type": "integer", "minimum": 0 },
+        "MixerTailFrames": { "type": "integer", "minimum": 0 },
+        "MixerBufferedMs": { "type": "integer", "minimum": 0 },
+        "MixerTailMs": { "type": "integer", "minimum": 0 },
+        "PlaybackMode": { "type": "string" },
+        "PlaybackHint": { "type": "string" },
+        "MimeType": { "type": "string" },
+        "FileExtension": { "type": "string" },
+        "Reason": { "type": "string" },
+        "FailureCode": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "$comment": "Hand-curated low-key 'whispers' catalog for `pal whisper`. Unlike fortunes (which have fanfare), whispers are ambient, quiet, no-questions one-liners. The 'thinking of you' verb. Random selection, not date-seeded - whispers can repeat across days because the point is presence, not novelty. Same authoring rules as fortunes: under 120 characters, in-character, written in the deterministic-fallback voice.",
+
+  "schemaVersion": 1,
+  "lastAudited": "2026-05-04",
+
+  "whispers": [
+    "Wind shifted. Smelled like rain and pine. Thought you'd want to know.",
+    "Quiet out here. Pals are good. You're good. Carry on.",
+    "Saw a bird I haven't seen before. Yellow throat. Fast. Gone now.",
+    "Coals are still warm if you wandered back through.",
+    "Charlie's been chasing his tail for ten minutes. He's having a great time.",
+    "Sky's the color of cold tea. Felt right to mention.",
+    "Two pals are sleeping in the same patch of sun. Don't wake them.",
+    "Whatever that bug was, it stopped buzzing. I'll let you know if it starts again.",
+    "Fire's at the size where it stops being work and starts being decoration.",
+    "The river's higher than it was yesterday. Noted, not concerned.",
+    "Found a small stone shaped like an apple. Put it in the ledge.",
+    "Heard a tree creak. Tree's fine. Just letting you know it talks.",
+    "One of the pals is humming. I think they made it up.",
+    "Salt's running low again. Reminding now so it isn't a problem later.",
+    "Sun's where it ought to be. Day's where it ought to be.",
+    "I am here. That's all this is.",
+    "Mist's rolling off the ridge. Pretty hour to be outside if you've got it.",
+    "Pal patrol rotation finished clean. No incidents.",
+    "Bread didn't burn. Took everything I had. Bread didn't burn.",
+    "Crow's been on the same fencepost for an hour. Either it likes us or it's casing the place.",
+    "Found old tracks near the south slope. Nothing fresh. Just for the map.",
+    "If you were planning to repair anything tonight, the light's still good for it.",
+    "Smelled the air. Storm's not today. Maybe tomorrow.",
+    "Berries on the east bush are ripe again. Five days faster than I thought.",
+    "Pal's having a dream. Twitching. Cute. Won't wake them.",
+    "Thinking about how loud silence is when a fight ends right.",
+    "The tea's hot. The kettle's where you left it.",
+    "Quiet's a feature, not a bug. Reminding you in case the feed says otherwise.",
+    "The companion you trained came back to eat with the others. That's a real win.",
+    "I've been here since you got here. I'll be here when you go. Carry on."
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "$comment": "Hand-curated 'micro-quests' catalog for `pal quest`. Each quest is a small, specific, ~30-minute self-contained challenge the companion suggests when the player asks 'what should I do?'. Not progression-blocking. Not grindy. Specific enough to be fun, open enough to fail gracefully. Lighthearted; the companion is suggesting, not assigning. Random selection.",
+
+  "schemaVersion": 1,
+  "lastAudited": "2026-05-04",
+
+  "quests": [
+    { "tier": "easy",   "summary": "Bring back something orange you've never carried before. Anything counts." },
+    { "tier": "easy",   "summary": "Find the highest point you can stand on without dying. Stay there for a minute. Look around." },
+    { "tier": "easy",   "summary": "Capture one pal you'd normally walk past. Just one. See how it works in your roster." },
+    { "tier": "easy",   "summary": "Walk a perimeter loop around base. Note one thing you've never noticed before." },
+    { "tier": "easy",   "summary": "Cook one new food. If it's bad, that's a story. If it's good, that's a recipe." },
+    { "tier": "easy",   "summary": "Train one pal up a single rank. Just one rank. Then stop." },
+    { "tier": "easy",   "summary": "Build a small marker - a stack of rocks, a torch, anything - somewhere you want to remember." },
+    { "tier": "easy",   "summary": "Sit at the campfire long enough to watch the in-game day flip to night. No phone, no menu." },
+    { "tier": "easy",   "summary": "Find a pal that's been in storage for ages. Take them out. See if they remember the work." },
+    { "tier": "easy",   "summary": "Walk back to the first place you set foot on the map. See what it looks like now." },
+
+    { "tier": "medium", "summary": "Pick a direction you usually don't go. Walk it for ten minutes. Map what you find." },
+    { "tier": "medium", "summary": "Take only one weapon out today. The wrong one. See what survives." },
+    { "tier": "medium", "summary": "Help a pal you've been ignoring. Spend twenty minutes with just them in the field." },
+    { "tier": "medium", "summary": "Do a clean run with no consumables. No revives, no stim packs. Plan the fights." },
+    { "tier": "medium", "summary": "Find an alpha you know about. Don't fight it. Just observe its pattern for a few minutes." },
+    { "tier": "medium", "summary": "Catch one pal of every type you've never caught. Stop when you've got three." },
+    { "tier": "medium", "summary": "Set up a second tiny base far from your main one. Just a fire and a chest. See if you ever come back." },
+    { "tier": "medium", "summary": "Try a fishing or gathering activity at a spot you've never gathered before. New scenery counts as the reward." },
+    { "tier": "medium", "summary": "Do a delivery run between two of your bases - even if you don't need the materials moved." },
+    { "tier": "medium", "summary": "Find one rare resource you don't have yet. Stop for the day once it's in the chest." },
+
+    { "tier": "spicy",  "summary": "Run an entire session without opening the inventory menu. Plan tight. Trust your gear." },
+    { "tier": "spicy",  "summary": "Take only your worst three pals into the field. Make it back without losing one." },
+    { "tier": "spicy",  "summary": "Try to make it from base to a far landmark without crafting or dying. Just the journey." },
+    { "tier": "spicy",  "summary": "Pick a fight you'd usually run from. Lose, if you have to. Note what would've helped." },
+    { "tier": "spicy",  "summary": "Solo a wild encounter that you've always done with two pals. The third option is run, that's fine." },
+    { "tier": "spicy",  "summary": "Visit three biomes you don't normally touch. Take a screenshot in each. That's the proof." },
+    { "tier": "spicy",  "summary": "Set yourself a single rule for the session ('no fast travel', 'no ranged weapons', etc.). Stick to it." },
+
+    { "tier": "quiet",  "summary": "Don't accomplish anything today. Walk somewhere pretty. Sit with the pals. Log out grateful." },
+    { "tier": "quiet",  "summary": "Sort the storage chest. That's the whole quest. It counts." },
+    { "tier": "quiet",  "summary": "Take a known route, but at half speed. Notice what you usually miss." }
+  ]
+}

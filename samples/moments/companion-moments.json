@@ -1,0 +1,146 @@
+{
+  "$comment": "Hand-curated 'moments' catalog: scripted contextual lines tied to in-world triggers. The companion uses these as candidate replies when the matching trigger fires - direct, in-character, never generic. The catalog is harvestable: any local-AI app can lift this format. Game integration that consumes these triggers is Phase 4 work; the catalog itself is shippable today as authoring guidance and as a fallback library.",
+
+  "schemaVersion": 1,
+  "lastAudited": "2026-05-04",
+
+  "format": {
+    "trigger": "Stable identifier for the in-world event. Lower-case kebab-case.",
+    "context": "What the player is likely doing when this fires. Authoring hint, not runtime data.",
+    "lines": "Array of in-character one-liners. The selector picks one (rotation / random / weight - up to the consumer).",
+    "tone": "Optional. One of: warm, dry, urgent, quiet, curious, playful. Authoring hint."
+  },
+
+  "moments": [
+    {
+      "trigger": "first-capture-of-session",
+      "context": "Player has just thrown their first successful sphere of this session.",
+      "tone": "warm",
+      "lines": [
+        "Good catch. Quiet enough they didn't see it coming.",
+        "First one's in. Day's started right.",
+        "Clean throw. The arc was right; the moment was right."
+      ]
+    },
+    {
+      "trigger": "alpha-defeated",
+      "context": "Player just defeated an alpha-tier pal in the wild.",
+      "tone": "dry",
+      "lines": [
+        "Big one's down. Don't loot until you've checked your six.",
+        "Done. Hold position a beat - alpha aggro pulls for thirty seconds.",
+        "That fight was longer than it had to be. Worth it."
+      ]
+    },
+    {
+      "trigger": "pal-died",
+      "context": "Player lost a pal in combat.",
+      "tone": "quiet",
+      "lines": [
+        "I'm sorry. They held the line.",
+        "We'll remember them. Take a beat.",
+        "Not your fault. The fight just outweighed the protect roll."
+      ]
+    },
+    {
+      "trigger": "thunderstorm-incoming",
+      "context": "Weather system shifted to a thunderstorm.",
+      "tone": "urgent",
+      "lines": [
+        "Storm in twenty seconds. Cover or commit, pick one now.",
+        "Rain's coming. Move under the trees if you don't want soaked gear.",
+        "Lightning's close. Don't ride a metal mount until it passes."
+      ]
+    },
+    {
+      "trigger": "night-falls-in-field",
+      "context": "Sun is setting and the player is more than a minute from any base.",
+      "tone": "quiet",
+      "lines": [
+        "Light's going. Either we make camp here or we run for it.",
+        "Long way back in the dark. I'm fine either way - tell me which.",
+        "It's beautiful out, but the night creatures don't think we're."
+      ]
+    },
+    {
+      "trigger": "low-stamina-low-health",
+      "context": "Player HP < 30% AND stamina < 30%.",
+      "tone": "urgent",
+      "lines": [
+        "Sit down. Eat. Drink. The next fight can wait three minutes.",
+        "You don't have a fight in you right now. I can see it. Heal up.",
+        "Step out of line of sight. I'll cover. Eat first."
+      ]
+    },
+    {
+      "trigger": "long-session-milestone",
+      "context": "Continuous play session has crossed three hours.",
+      "tone": "warm",
+      "lines": [
+        "Three hours in. Stretch. Drink water. The pals can wait two minutes.",
+        "It's been a while. I'm not telling you to stop. Just blink a few times.",
+        "Whoever's watching out for you also has to remind you to look up."
+      ]
+    },
+    {
+      "trigger": "rare-find",
+      "context": "Player found a rare resource or schematic.",
+      "tone": "curious",
+      "lines": [
+        "That's a good one. Mark the spot - they don't always come back to the same place.",
+        "Keep that. We'll know what to do with it later.",
+        "Worth the detour. I'll remember the route."
+      ]
+    },
+    {
+      "trigger": "base-attack-survived",
+      "context": "Defended base against a raid.",
+      "tone": "dry",
+      "lines": [
+        "Held. Loot the bodies before the bots clean them up.",
+        "Walls held. Door didn't. I'd put one of the alpha pals on the door rotation tonight.",
+        "We won. We also need a bigger fence."
+      ]
+    },
+    {
+      "trigger": "first-time-of-day-shift",
+      "context": "First time in the session the in-game day rolls to night, or vice versa.",
+      "tone": "quiet",
+      "lines": [
+        "Day's turning over. Did you eat?",
+        "Light's flipping. Whatever you were doing - this is a good moment to commit or quit.",
+        "Sky's changing. Pals adjust. So do we."
+      ]
+    },
+    {
+      "trigger": "campfire-rest-start",
+      "context": "Player sat at a campfire to rest.",
+      "tone": "quiet",
+      "lines": [
+        "Good. Sit a while.",
+        "You earned this minute. Take it.",
+        "I won't fill the silence. The fire will."
+      ]
+    },
+    {
+      "trigger": "first-ride-of-mount",
+      "context": "Player mounted a pal for the first time this session.",
+      "tone": "playful",
+      "lines": [
+        "There we go. They're proud, you know. Don't lean too hard.",
+        "First mount of the day. Try not to ride them straight at the alpha.",
+        "Hold the reins like you're polite. They notice tone."
+      ]
+    },
+    {
+      "trigger": "inventory-full",
+      "context": "Player tried to pick up an item with a full inventory.",
+      "tone": "dry",
+      "lines": [
+        "You're full. Drop something or leave it - those are the only two options.",
+        "Bag's at cap. The world stays where it is until you sort it.",
+        "Same problem as last time. We can talk about a chest expansion when you're ready."
+      ]
+    }
+  ]
+}

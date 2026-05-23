@@ -1,0 +1,55 @@
+{
+  "// Comment": "VS Code launch configurations for PalLLM. Hit F5 with 'Sidecar (Release)' selected to boot the runtime in the debugger. The repo's pal.ps1 task runner covers no-debugger workflows.",
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Sidecar (Release)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Release)",
+      "program": "${workspaceFolder}/src/PalLLM.Sidecar/bin/Release/net10.0/PalLLM.Sidecar.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/PalLLM.Sidecar",
+      "stopAtEntry": false,
+      "console": "internalConsole",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5088"
+      },
+      "// note": "Production builds run with ASPNETCORE_ENVIRONMENT=Production. Development is set here so verbose error pages render in the debugger."
+    },
+    {
+      "name": "Sidecar (Debug)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/PalLLM.Sidecar/bin/Debug/net10.0/PalLLM.Sidecar.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/PalLLM.Sidecar",
+      "stopAtEntry": false,
+      "console": "internalConsole",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5088"
+      }
+    },
+    {
+      "name": "Sidecar with OTLP traces",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Release)",
+      "program": "${workspaceFolder}/src/PalLLM.Sidecar/bin/Release/net10.0/PalLLM.Sidecar.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/PalLLM.Sidecar",
+      "stopAtEntry": false,
+      "console": "internalConsole",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5088",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
+        "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc"
+      },
+      "// note": "Assumes Jaeger or another OTLP collector is running on localhost:4317. See docs/OBSERVABILITY.md for the docker run command."
+    }
+  ]
+}

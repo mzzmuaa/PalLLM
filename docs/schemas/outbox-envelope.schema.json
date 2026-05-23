@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://palllm.dev/schemas/outbox-envelope-v1.schema.json",
+  "title": "PalLLM Outbox Envelope",
+  "description": "One file under runtime-root/Bridge/Outbox/ — written by the sidecar after a successful chat orchestration, picked up by the Lua bridge for in-game rendering. Source of truth: src/PalLLM.Domain/Integration/Contracts.cs (OutboxEnvelope + OutboxChatReply).",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["EventType", "Source", "TimestampUtc", "Payload"],
+  "properties": {
+    "EventType": {
+      "type": "string",
+      "description": "Discriminator. Today always 'chat_reply'; future event types may share the envelope.",
+      "default": "chat_reply"
+    },
+    "Source": {
+      "type": "string",
+      "description": "Producer identifier. Always 'palllm' for sidecar-emitted envelopes.",
+      "default": "palllm"
+    },
+    "TimestampUtc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp when the envelope was written."
+    },
+    "Payload": {
+      "$ref": "#/$defs/OutboxChatReply"
+    }
+  },
+  "$defs": {
+    "OutboxChatReply": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["RequestId", "AssistantMessage", "Presentation"],
+      "properties": {
+        "RequestId": {
+          "type": "string",
+          "description": "Correlation id matching the request that produced this reply."
+        },
+        "CharacterId": {
+          "type": ["integer", "null"],
+          "description": "Character id this reply is for, or null for unaddressed replies."
+        },
+        "CharacterName": {
+          "type": "string",
+          "description": "Display name of the responding character. Empty when not provided by the request."
+        },
+        "TaskTag": {
+          "type": "string",
+          "description": "Short tag describing the task category (e.g. 'tactical', 'social'). Empty if untagged."
+        },
+        "TaskKind": {
+          "type": "string",
+          "description": "Stable kebab-case kind classifier (e.g. 'short-acknowledgement', 'reactive-bark', 'tactical-suggest')."
+        },
+        "AssistantMessage": {
+          "type": "string",
+          "description": "The reply text. Multi-sentence; safe to render verbatim."
+        },
+        "ResponsePath": {
+          "type": "string",
+          "description": "Diagnostic trace of how the reply was produced (e.g. 'fallback-after-breaker-open', 'inference-completed', 'fallback-after-rate-limit')."
+        },
+        "UsedFallback": {
+          "type": "boolean",
+          "description": "True when the deterministic fallback director produced this reply."
+        },
+        "FallbackStrategy": {
+          "type": ["string", "null"],
+          "description": "When UsedFallback is true, names the specific strategy (e.g. 'narrative-recall', 'tactical-suggest')."
+        },
+        "FallbackPhase": {
+          "type": ["string", "null"],
+          "description": "Tier of the fallback path: 'primary' or 'emergency'."
+        },
+        "Action": {
+          "$ref": "#/$defs/ActionIntent"
+        },
+        "Speech": {
+          "$ref": "#/$defs/SpeechArtifact"
+        },
+        "Presentation": {
+          "$ref": "#/$defs/PresentationCuePlan",
+          "description": "Always present. The Lua bridge consumes Presentation.Visual + Presentation.Audio cues to render the reply."
+        }
+      }
+    },
+    "ActionIntent": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "description": "Optional advisory action intent the Lua bridge may execute (subject to its own allowlist). Off by default; only mirrored into Bridge/Outbox when PalLLM:Automation:Enabled is true and PalLLM:Automation:EmitToOutbox remains enabled.",
+      "properties": {
+        "Type": { "type": "string", "description": "Action type id, must match Automation:AllowedActions." },
+        "Args": { "type": "object", "additionalProperties": true },
+        "Priority": { "type": "string" },
+        "Justification": { "type": "string" }
+      }
+    },
+    "SpeechArtifact": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "description": "Optional TTS artifact metadata. Present only when PalLLM:Tts:Enabled is true and the synthesis succeeded.",
+      "properties": {
+        "FilePath": { "type": "string" },
+        "DurationMs": { "type": "integer", "minimum": 0 },
+        "Voice": { "type": "string" }
+      }
+    },
+    "PresentationCuePlan": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Paired visual + audio cues for rendering the reply. See PresentationCuePlanner for the full surface.",
+      "properties": {
+        "Visual": { "type": "object", "additionalProperties": true },
+        "Audio": { "type": "object", "additionalProperties": true },
+        "Family": { "type": "string", "description": "Cue family classifier matching the fallback strategy." }
+      }
+    }
+  }
+}

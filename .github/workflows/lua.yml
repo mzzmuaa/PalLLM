@@ -1,0 +1,48 @@
+name: Lua lint
+
+# Static analysis for the UE4SS Lua bridge. Catches undefined globals,
+# shadowed locals, empty blocks, and mismatched scoping before the mod
+# reaches a player's game install — where a Lua error shows up as a
+# silent "nothing happened" in-game.
+#
+# Config lives in `.luacheckrc` at the repo root; UE4SS-specific globals
+# are whitelisted there. Runs on every push and pull request touching
+# the Lua tree; kept as a dedicated workflow (separate from ci.yml) so
+# the C# and Lua surfaces can fail independently.
+
+on:
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "mod/**"
+      - ".luacheckrc"
+      - ".github/workflows/lua.yml"
+  pull_request:
+    branches: ["main", "master"]
+    paths:
+      - "mod/**"
+      - ".luacheckrc"
+      - ".github/workflows/lua.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  luacheck:
+    name: luacheck (Lua 5.4)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Run luacheck
+        uses: lunarmodules/luacheck@cc089e3f65acdd1ef8716cc73a3eca24a6b845e4 # v1
+        with:
+          # --codes prints the W/E identifier per warning so any failure
+          # output points straight at .luacheckrc tunables.
+          # --no-color keeps the GitHub Actions log readable.
+          args: "mod/ue4ss/Mods/PalLLM/Scripts --codes --no-color"

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PalLLM favicon. Same friendly Pal face as the welcome-page avatar.
+  Pure SVG, no external assets, scales cleanly to any size. Browsers
+  rasterize this for the tab icon; the manifest declares it as
+  `purpose: "any maskable"` so installed-PWA launchers can mask it
+  to a circle without clipping the face.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+    <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#d8ecdf"/>
+            <stop offset="1" stop-color="#2e7e4d"/>
+        </linearGradient>
+    </defs>
+    <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+    <g fill="#ffffff" stroke="#ffffff" stroke-linecap="round">
+        <circle cx="22" cy="28" r="3.5" stroke="none"/>
+        <circle cx="42" cy="28" r="3.5" stroke="none"/>
+        <path d="M22 40 Q32 48 42 40" stroke-width="3" fill="none"/>
+        <path d="M14 22 Q18 14 24 18" stroke-width="2.5" fill="none"/>
+        <path d="M50 22 Q46 14 40 18" stroke-width="2.5" fill="none"/>
+    </g>
+</svg>

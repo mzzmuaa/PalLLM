@@ -1,0 +1,56 @@
+# Keep the Docker build context lean. Without this, `docker build` would copy
+# bin/, obj/, .git/, artifact screenshots, and any local environment files
+# into the image's build stage — slower builds and potential leakage of
+# local state into published layers.
+
+# Build outputs
+**/bin/
+**/obj/
+**/[Rr]elease/
+**/[Dd]ebug/
+*.user
+*.userosscache
+
+# VCS and editor metadata
+**/.git/
+**/.github/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.suo
+**/*.sln.docstates
+
+# Local audit / test artifacts
+artifacts/
+**/TestResults/
+**/*.VisualState.xml
+
+# Logs and temp files
+**/*.log
+**/*.tmp
+**/*.bak
+**/*.swp
+**/*~
+
+# OS junk
+**/.DS_Store
+**/Thumbs.db
+
+# Release zips + local secrets
+*.zip
+.env
+.env.*
+
+# Anything the mod-side or scripts directory contains that the sidecar does
+# not need at runtime. UE4SS Lua belongs in the Palworld install, not in the
+# sidecar image.
+PalLLM/mod/
+PalLLM/scripts/
+PalLLM/docs/
+PalLLM/artifacts/
+PalLLM/*.md
+PalLLM/install.bat
+PalLLM/dashboard-*.png
+
+# .NET publish output that sneaks in on re-run
+**/publish/

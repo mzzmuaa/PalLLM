@@ -1,0 +1,62 @@
+Welcome to PalLLM
+==================
+
+You just unzipped a local-first AI companion for Palworld.
+Everything runs on your computer; no account, no subscription.
+
+The single thing to do
+-----------------------
+Double-click  play.bat
+
+That's it. The launcher will:
+  - auto-detect Palworld
+  - install or refresh the PalLLM mod
+  - start the sidecar
+  - open the dashboard at http://localhost:5088
+  - launch the game
+
+If you'd rather see what each file does before clicking play.bat,
+read PLAYER_README.txt next to this file - it has a 60-second
+quickstart, prerequisites, troubleshooting, and a full file list.
+
+Other one-click files
+----------------------
+  install.bat     - install the mod only (skip the launcher)
+  uninstall.bat   - cleanly remove PalLLM (chat history preserved)
+  support.bat     - bundle logs + health into a zip for support
+  recover.bat     - last-resort reset if something is stuck
+
+Doc map (for end users)
+------------------------
+  PLAYER_README.txt        - 60-second quickstart + troubleshooting
+  docs/PITCH.md            - plain-English tour of what PalLLM does
+  docs/FAQ.md              - common first-time questions
+  docs/QUICKSTART.md       - first-run tutorial for players
+  docs/EASY_MODE.md        - absolute-beginner walkthrough
+  docs/UNINSTALL.md        - clean uninstall walkthrough
+
+For coding agents picking up this zip
+--------------------------------------
+This zip is dual-audience by design. If you're a coding agent
+(Claude Code, Cursor, Copilot, Codex, Aider, etc.) reading this:
+  AGENTS.md                - root agent briefing (read first)
+  CLAUDE.md                - Claude-Code-specific shortcut
+  agents.json              - machine-readable capability manifest
+  pal.json                 - machine-readable verb manifest
+  docs/INDEX.md            - the doc map (40+ docs)
+  docs/HANDOFF.md          - "what just landed" + audited state
+  docs/CODE_MAP.md         - symbol-to-file navigation
+  docs/CONVENTIONS.md      - the four patterns the repo uses
+  docs/COOKBOOK.md         - "how do I add X?" recipes
+
+For 2026 model wiring (vision / audio / multi-model):
+  docs/BLACKWELL_RECIPES.md       - vLLM + NVFP4 + EAGLE-3 + xgrammar
+  docs/MULTIMODAL_RECIPES.md      - vision / audio / realtime WS
+  docs/AGENTIC_PATTERNS_2026.md   - tool-use patterns
+  docs/MEMORY_RECIPES.md          - long-running companion memory
+
+Privacy in one sentence
+------------------------
+PalLLM emits zero outbound traffic by default. Inference, vision,
+TTS, and telemetry are all opt-in. See docs/PRIVACY.md for the
+full inventory of every data-emitting surface.

@@ -1,0 +1,63 @@
+# Dependabot keeps third-party dependencies current so a published release
+# doesn't drift into known-vulnerable package versions between audit passes.
+# Schedule is weekly on Monday morning (UTC) to avoid PR storms while still
+# surfacing CVE updates within days. All groupings open one PR per ecosystem
+# per week rather than one PR per package, to keep review load bounded.
+#
+# Security-advisory updates are separate from version updates: Dependabot
+# opens a PR immediately when a CVE is published against any dependency,
+# regardless of the weekly schedule.
+#
+# Reference: https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
+version: 2
+
+updates:
+  # NuGet packages (only the test project has PackageReferences; the
+  # Domain/Sidecar projects have zero NuGet deps by design).
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps(test)"
+      include: "scope"
+    groups:
+      nunit-stack:
+        patterns:
+          - "NUnit*"
+      microsoft-stack:
+        patterns:
+          - "Microsoft.*"
+
+  # GitHub Actions (CI + release workflows).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Docker base images in the repo-root Dockerfile. Catches .NET 10 runtime
+  # and SDK patch releases the moment they publish — critical given .NET 10
+  # security updates are released on a ~monthly cadence.
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "docker"
+      include: "scope"

@@ -1,0 +1,11 @@
+{
+  "// Comment": "Recommended VS Code extensions. Opening the repo prompts the user to install these. None are required to build / test PalLLM (everything works from CLI), but they make the IDE experience match the conventions in the repo.",
+  "recommendations": [
+    "ms-dotnettools.csdevkit",
+    "ms-dotnettools.csharp",
+    "ms-vscode.PowerShell",
+    "EditorConfig.EditorConfig",
+    "bierner.markdown-mermaid",
+    "yzhang.markdown-all-in-one"
+  ]
+}

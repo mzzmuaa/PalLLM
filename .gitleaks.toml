@@ -1,0 +1,35 @@
+title = "PalLLM gitleaks rules"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Global PalLLM allowlist"
+targetRules = []
+paths = [
+    '''^artifacts/''',
+    '''^mod/ue4ss/Mods/PalLLM/Bridge/''',
+    '''^src/.*/bin/''',
+    '''^src/.*/obj/''',
+    '''^tests/.*/bin/''',
+    '''^tests/.*/obj/'''
+]
+stopwords = [
+    "example",
+    "placeholder",
+    "YOUR-KEY-HERE",
+    "YOUR_API_KEY",
+    "example.com",
+    "sk-example",
+    "sk-test-",
+    "ghp_example",
+    "ghs_example",
+    "deployed-bearer-token",
+    "replace-with-a-strong-secret"
+]
+regexes = [
+    '''uses:\s+[\w.-]+/[\w.-]+@[0-9a-f]{40}''',
+    '''sha256:[0-9a-f]{64}''',
+    '''urn:uuid:[0-9a-fA-F-]{36}''',
+    '''LicenseRef-[\w.-]+'''
+]

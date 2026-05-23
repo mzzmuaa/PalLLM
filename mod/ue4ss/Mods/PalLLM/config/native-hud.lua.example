@@ -1,0 +1,13 @@
+-- Copy to native-hud.lua and keep the most likely Palworld HUD widget first.
+return {
+    native_hud_render_enabled = false,
+    native_hud_widget_targets = {
+        -- "/Game/UI/WBP_HudRoot.WBP_HudRoot_C",
+    },
+
+    -- Keep native audio off until a Palworld mixer callback is live-proven.
+    -- The callback must only return true after the engine-side mixer accepts
+    -- the raw PCM buffer.
+    native_audio_mixer_enabled = false,
+    native_audio_mixer_callback_name = "PalLLM_NativeAudioMixer_PlayRawPcm",
+}

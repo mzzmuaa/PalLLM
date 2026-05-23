@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://palllm.dev/schemas/personality-pack-v1.schema.json",
+  "title": "PalLLM Personality Pack Manifest",
+  "description": "The pack.json file at the root of a personality pack directory. PalLLM packs live under runtime-root/Packs/personalities/<id>/. Source of truth: src/PalLLM.Domain/Packs/PersonalityPack.cs (PersonalityPackManifest + PersonalityPackValidator).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["SchemaVersion", "Id", "DisplayName", "Author", "Version", "PromptPath", "ContentHash"],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "VoiceRefPath": { "type": "string", "minLength": 1 }
+        },
+        "required": ["VoiceRefPath"]
+      },
+      "then": {
+        "required": ["VoiceConsent"],
+        "properties": {
+          "VoiceConsent": {
+            "type": "string",
+            "enum": ["self_recorded", "licensed", "synthetic", "public_domain"]
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional pointer back to this schema. Sample packs under samples/packs/ embed this so editors with JSON Schema support can validate inline without a separate config."
+    },
+    "SchemaVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "Manifest schema version. Always 1 for now."
+    },
+    "Id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+      "minLength": 2,
+      "maxLength": 64,
+      "description": "Stable kebab-case identifier. Becomes the on-disk directory name."
+    },
+    "DisplayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "description": "Human-readable pack name shown in the dashboard."
+    },
+    "Tagline": {
+      "type": "string",
+      "maxLength": 160,
+      "description": "Short one-liner for the pack picker."
+    },
+    "Author": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "description": "Pack author or team name."
+    },
+    "Version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:[-+][A-Za-z0-9.-]+)?$",
+      "description": "Semver-style version string (e.g. '1.0.0' or '2.1.0-beta.1')."
+    },
+    "Description": {
+      "type": "string",
+      "maxLength": 4096,
+      "description": "Long-form description shown on the pack detail page."
+    },
+    "PromptPath": {
+      "type": "string",
+      "minLength": 1,
+      "default": "prompt.md",
+      "description": "Pack-relative path to the system-prompt fragment file. Required. Must resolve inside the pack root. The fragment is hard-capped at 8 KiB."
+    },
+    "VoiceHintPath": {
+      "type": ["string", "null"],
+      "description": "Optional pack-relative path to a voice-hint file consumed by TTS. Must resolve inside the pack root."
+    },
+    "VoiceRefPath": {
+      "type": ["string", "null"],
+      "pattern": "\\.(wav|mp3|flac|ogg|opus|m4a|aac)$",
+      "description": "Optional pack-relative path to a local voice reference used by opt-in TTS or voice-clone adapters. Must resolve inside the pack root, stay at or below 10 MiB, and use a supported local audio container; URLs are rejected by the validator. Requires VoiceConsent."
+    },
+    "VoiceConsent": {
+      "type": ["string", "null"],
+      "enum": ["self_recorded", "licensed", "synthetic", "public_domain", null],
+      "description": "Required when VoiceRefPath is set. Describes why the local voice reference is safe to use in a shareable pack."
+    },
+    "VoiceConsentNotes": {
+      "type": ["string", "null"],
+      "maxLength": 1024,
+      "description": "Optional short provenance note for the voice reference, such as a local recording note, license summary, or synthetic-voice generation note."
+    },
+    "PortraitPath": {
+      "type": ["string", "null"],
+      "description": "Optional pack-relative path to the portrait image. Must resolve inside the pack root."
+    },
+    "LoraAdapterPath": {
+      "type": ["string", "null"],
+      "pattern": "\\.safetensors$",
+      "description": "Optional pack-relative path to a local LoRA/personality adapter. Must resolve inside the pack root and is included in ContentHash; remote adapter paths are rejected."
+    },
+    "MemoryNamespace": {
+      "type": ["string", "null"],
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+      "minLength": 2,
+      "maxLength": 64,
+      "description": "Optional kebab-case namespace for pack-specific long-term memory or adapter cache identity."
+    },
+    "AudioSamples": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "\\.(ogg|opus)$"
+      },
+      "uniqueItems": true,
+      "description": "Pack-relative paths to optional sample audio clips. Must resolve inside the pack root and each file must stay at or below 10 MiB. Only .ogg and .opus accepted for sample clips; other formats fail validation."
+    },
+    "SafetyFlags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "description": "Self-declared safety classifiers ('mature-themes', 'combat-heavy', 'family-friendly', etc.). Operators can filter by these in the dashboard."
+    },
+    "ContentHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Lower-case hex SHA-256 of the canonical content blob (sorted file paths + file bytes). The validator recomputes this from a streaming local read and refuses to load a pack whose declared and actual hashes diverge — this catches tampering without requiring a key infrastructure."
+    }
+  }
+}

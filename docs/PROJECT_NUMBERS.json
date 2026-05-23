@@ -1,0 +1,50 @@
+{
+  "$schema": "./schemas/project-numbers.schema.json",
+  "$comment": "Machine-readable rolling state for PalLLM. Single source of truth for any number that appears in multiple docs. Drift gates verify the docs match these numbers (and the underlying code). Bump in lockstep with code changes.",
+
+  "project": "PalLLM",
+  "kind": "local-first LLM companion runtime",
+  "license": "MIT",
+  "baselineDate": "2026-05-17",
+
+  "tests": 1309,
+  "driftGates": "16/16",
+  "buildWarnings": 0,
+  "apiRoutes": 57,
+  "operationalRoutes": 6,
+  "mcpProtocolRoutes": 1,
+  "mcpTools": 38,
+  "mcpResources": 6,
+  "mcpResourceTemplates": 1,
+  "mcpPrompts": 4,
+  "fallbackStrategies": 19,
+  "featureCatalog": 122,
+  "featureReady": 119,
+  "featureScaffolded": 2,
+  "featureDeferred": 1,
+  "adrsAccepted": 6,
+  "docsCount": 69,
+  "honestRoadmap": "76.2%",
+
+  "runtime": {
+    "framework": "net10.0",
+    "host": "ASP.NET Core minimal APIs",
+    "lua": "5.4 via UE4SS",
+    "mcpProtocolVersion": "2025-06-18",
+    "openApiVersion": "3.1"
+  },
+
+  "linksToSourceOfTruth": {
+    "tests": "tests/PalLLM.Tests/*.cs ([Test] + [TestCase] executable NUnit case count)",
+    "apiRoutes": "src/PalLLM.Sidecar/Program.cs (api.Map* call count)",
+    "featureCatalog": "src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs (Id = entries)",
+    "fallbackStrategies": "src/PalLLM.Domain/Runtime/FallbackBehaviorEngine.cs (Try_* methods)",
+    "adrsAccepted": "docs/adr/ (markdown files with Status: Accepted)"
+  },
+
+  "notes": [
+    "If you change any of the underlying code, bump the matching number here AND in every doc.",
+    "The drift gates in scripts/run_full_audit.ps1 enforce that the docs match. If they fail, the live count vs the doc count is mismatched and one of them needs to update.",
+    "Honest roadmap is player-experience-weighted, not feature-count-weighted. The remaining 24% is strictly live-Palworld native delivery work (HUD binding, native audio, action executor) that requires an in-game session to close."
+  ]
+}

@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://palllm.dev/schemas/project-numbers-v1.schema.json",
+  "title": "PalLLM Project Numbers (rolling state)",
+  "description": "Single source of truth for the cross-doc rolling counts (test count, drift gates, build warnings, API routes, MCP tool count, feature catalog, fallback strategy count, ADR count, honest roadmap percentage). The 16 drift gates in scripts/run_full_audit.ps1 enforce that docs match these numbers. Source of truth: docs/PROJECT_NUMBERS.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "project",
+    "kind",
+    "license",
+    "baselineDate",
+    "tests",
+    "driftGates",
+    "buildWarnings",
+    "apiRoutes",
+    "mcpTools",
+    "fallbackStrategies",
+    "featureCatalog",
+    "featureReady",
+    "featureScaffolded",
+    "featureDeferred",
+    "adrsAccepted",
+    "docsCount",
+    "honestRoadmap",
+    "linksToSourceOfTruth"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional pointer back to this schema. Editors with JSON Schema support use it to validate inline."
+    },
+    "$comment": {
+      "type": "string",
+      "description": "Optional human-readable comment. Ignored by validators."
+    },
+    "project": {
+      "type": "string",
+      "const": "PalLLM",
+      "description": "Project name. Pinned to the constant."
+    },
+    "kind": {
+      "type": "string",
+      "minLength": 1,
+      "description": "One-line description of what PalLLM is."
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "description": "SPDX license id."
+    },
+    "baselineDate": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO-8601 (yyyy-MM-dd) date of the most recent baseline roll. Cross-checked by Drift_Doc_freshness against per-doc 'Last audited' stamps and by the SelfDescriptionBuilder hardcoded-literals meta-test."
+    },
+    "tests": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Executable NUnit case count (Test + TestCase attributes). Cross-checked by Drift_Test_count_docs."
+    },
+    "driftGates": {
+      "type": "string",
+      "pattern": "^[0-9]+/[0-9]+$",
+      "description": "Drift gate result in 'passed/total' form, e.g. '16/16'."
+    },
+    "buildWarnings": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Warning count from dotnet build Release. Always 0; treat any non-zero as a regression."
+    },
+    "apiRoutes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "/api/* route count. Cross-checked by Drift_Api_route_count against api.Map* calls in Program.cs."
+    },
+    "operationalRoutes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Operational routes outside /api (root index, metrics, health, openapi)."
+    },
+    "mcpProtocolRoutes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Top-level MCP protocol mounts (typically 1 for /mcp)."
+    },
+    "mcpTools": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "MCP tool count ([McpServerTool] attributes). Cross-checked by SelfDescriptionBuilder_HardcodedLiterals_MatchProjectNumbers meta-test."
+    },
+    "mcpResources": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "MCP direct resource count."
+    },
+    "mcpResourceTemplates": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "MCP templated resource count."
+    },
+    "mcpPrompts": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "MCP prompt template count."
+    },
+    "fallbackStrategies": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Try_* method count in FallbackBehaviorEngine.cs. Cross-checked by Drift_Fallback_strategy_count and the SelfDescriptionBuilder meta-test."
+    },
+    "featureCatalog": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Feature catalog entry count (Id = entries in PalLlmFeatureCatalog.cs). Cross-checked by Drift_Feature_catalog_count."
+    },
+    "featureReady": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Feature catalog entries with status Ready."
+    },
+    "featureScaffolded": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Feature catalog entries with status Scaffolded."
+    },
+    "featureDeferred": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Feature catalog entries with status Deferred."
+    },
+    "adrsAccepted": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Markdown files under docs/adr/ with Status: Accepted."
+    },
+    "docsCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Doc count (root markdown + docs/ markdown)."
+    },
+    "honestRoadmap": {
+      "type": "string",
+      "pattern": "^[0-9]+(\\.[0-9]+)?%$",
+      "description": "Player-experience-weighted roadmap percentage, e.g. '76.2%'."
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "framework": { "type": "string", "minLength": 1 },
+        "host": { "type": "string", "minLength": 1 },
+        "lua": { "type": "string", "minLength": 1 },
+        "mcpProtocolVersion": { "type": "string", "minLength": 1 },
+        "openApiVersion": { "type": "string", "minLength": 1 }
+      },
+      "description": "Runtime/framework version anchors. Should agree with .csproj TargetFramework, the lua workflow, and the MCP server config."
+    },
+    "linksToSourceOfTruth": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Map of count-name -> human-readable source-of-truth pointer. Documents which file each count is gated against."
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Free-form notes about the rolling state."
+    }
+  }
+}

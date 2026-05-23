@@ -1,0 +1,10 @@
+{
+  "_comment": "Ready-to-paste VS Code MCP server entry for PalLLM. Copy to .vscode/mcp.json in your workspace (or to the global MCP settings) and reload the window. VS Code surfaces PalLLM's tools under the GitHub Copilot Chat agent mode once the server is reachable.",
+  "_comment_auth": "If PalLLM is running with PalLLM:Auth:ApiKey set, add the Authorization header via VS Code's per-server header configuration. See https://code.visualstudio.com/docs/copilot/chat/mcp-servers for the current supported schema.",
+  "servers": {
+    "palllm": {
+      "type": "http",
+      "url": "http://localhost:5088/mcp"
+    }
+  }
+}

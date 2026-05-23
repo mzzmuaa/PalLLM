@@ -1,0 +1,19 @@
+# Disable blank issues so every report arrives with at least one of the
+# three templates filled in. This cuts triage time dramatically without
+# locking anyone out — if none of the templates fit, the "Open a blank
+# issue" escape hatch in the UI is still reachable via the contact_links
+# below pointing at a Discussion.
+blank_issues_enabled: false
+
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/UE4SS-RE/RE-UE4SS/security/advisories/new
+    about: |
+      Please do NOT open a public issue for security vulnerabilities.
+      See SECURITY.md for the private disclosure channel.
+  - name: Operations / install questions
+    url: https://github.com/%OWNER%/%REPO%/blob/main/docs/OPERATIONS.md
+    about: |
+      The OPERATIONS doc covers health probes, metrics, retention tuning,
+      the opt-in feature matrix, container deployment, and troubleshooting.
+      Please skim it before opening an issue.

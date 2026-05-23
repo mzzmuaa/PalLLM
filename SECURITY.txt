@@ -1,0 +1,15 @@
+# RFC 9116 security.txt — discovery file for security researchers.
+# Full policy lives in SECURITY.md; this file is the machine-readable
+# pointer that scanners (nuclei, ZAP, etc.) and humans hit first.
+
+Contact: https://github.com/<owner>/<repo>/security/advisories/new
+Policy: https://github.com/<owner>/<repo>/blob/main/SECURITY.md
+Expires: 2027-04-25T00:00:00Z
+Preferred-Languages: en
+Acknowledgments: https://github.com/<owner>/<repo>/blob/main/CHANGELOG.md
+Canonical: https://github.com/<owner>/<repo>/blob/main/SECURITY.txt
+
+# Note for the maintainer publishing a fork:
+# Replace <owner>/<repo> with your actual GitHub coordinates before
+# pushing. The Expires date should be bumped on every release; a
+# stale Expires invalidates the file per RFC 9116.
