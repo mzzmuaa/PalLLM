@@ -44,6 +44,33 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
+- **Pass 367 - First private GitHub publish.** Created the canonical
+  remote at `https://github.com/mzzmuaa/PalLLM` (private) and pushed the
+  initial commit `9ad833b` plus the `v0.1.0-internal` tag. Added a
+  repo-root `.gitattributes` pinning LF in the index for code/docs and
+  CRLF for Windows wrappers (`.bat`, `.cmd`), with binary patterns for
+  models / images / archives and Linguist hints so the GitHub language
+  bar reflects C# + PowerShell + Lua honestly. Extended `.gitignore` to
+  guarantee runtime data, sessions, `Runtime/Inbox`,
+  `Runtime/Outbox`, `Runtime/Failed`, `Runtime/Pack`, `dashboard-*.png`,
+  and any future `appsettings.Production.json` / `appsettings.Local.json`
+  never end up tracked. Refreshed `.gitleaks.toml` stopwords so the
+  test-fixture placeholders (`sk-test-`, `deployed-bearer-token`,
+  `replace-with-a-strong-secret`) do not trip the scanner; a full
+  `gitleaks protect --staged` against the entire 460-file initial set
+  finished `no leaks found`. Repo settings configured via `gh api`:
+  merge style `squash + rebase`, merge-commit disabled,
+  `delete_branch_on_merge` on, `allow_update_branch` on, wiki off,
+  projects off, discussions on, issues on. Dependabot security updates
+  enabled at the repo level. Secret scanning, secret-scanning push
+  protection, and branch-protection rulesets are unavailable on private
+  repos at the GitHub Free tier - documented as a "upgrade to Pro or
+  make the repo public" decision rather than a build defect. CodeQL,
+  pre-commit gitleaks, luacheck, and the 16 drift gates continue to
+  cover the same risk surface locally and in CI. No code or test
+  changes; test count stays `1309` and the audit stays `16 / 16` at
+  `../artifacts/full-audit/20260523-153307/RESULTS.md`.
+
 - **Pass 366 - Post-Codex review + close pal-cleanup safety-test gap.**
   Reviewed every file Codex touched in Passes 361-365 against the
   drift-gate contract and the production-readiness rubric. All 1308 tests

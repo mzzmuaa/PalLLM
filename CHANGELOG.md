@@ -18,6 +18,66 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 367 - First private GitHub publish (2026-05-23)
+
+**Context.** Operator verified GitHub access in a separate session and
+asked for a private remote stood up under industry best practices for
+PalLLM. This pass converts the local-only repo into a published private
+repo while keeping the gitleaks / drift-gate / hygiene contract intact.
+
+**Repo metadata.** Canonical URL: `https://github.com/mzzmuaa/PalLLM`.
+Visibility: private. Default branch: `main`. License surface: MIT
+(already in `LICENSE`). Initial commit `9ad833b` covers `460` tracked
+files (`8.8 MB`). Tag `v0.1.0-internal` marks the import point.
+
+**New files.**
+- `.gitattributes` — pins LF in the index for source/docs, CRLF for
+  Windows wrappers (`.bat`, `.cmd`), and marks `.gguf` / `.uasset` /
+  `.pak` / archives as binary. Linguist hints collapse generated
+  `docs/openapi/`, schemas, and bridge envelopes so the language bar
+  reports C# / PowerShell / Lua honestly.
+
+**Updated files.**
+- `.gitignore` — runtime data safety net. Added `/Runtime/`,
+  `**/Runtime/{Sessions,ReleaseEvidence,Inbox,Outbox,Failed,Pack,Screenshots}/`,
+  `session.json`, `dashboard-*.png`, and
+  `appsettings.Production.json` / `appsettings.Local.json` patterns so
+  any future runtime artifact accidentally written under the repo root
+  stays untracked.
+- `.gitleaks.toml` — added `sk-test-`, `deployed-bearer-token`, and
+  `replace-with-a-strong-secret` to the stopword list so existing
+  test-fixture placeholders pass. Full
+  `gitleaks protect --staged --config .gitleaks.toml` reported
+  `no leaks found` against the 460-file initial set.
+
+**GitHub configuration applied via `gh api`.**
+- Merge style: squash (default) + rebase enabled, merge-commit
+  disabled.
+- `delete_branch_on_merge = true`, `allow_update_branch = true`.
+- Squash PR title default = PR title; squash message default = PR body.
+- Issues on, discussions on, wiki off, projects off.
+- Dependabot security updates enabled (vulnerability alerts +
+  automated security PRs against the existing `.github/dependabot.yml`).
+
+**Not applied — GitHub Free tier private-repo limits.**
+- Secret-scanning + push protection: requires GitHub Advanced Security,
+  not available on Free private repos.
+- Branch protection rulesets: requires GitHub Pro on private repos
+  (returns HTTP 403 with "Upgrade to GitHub Pro or make this repository
+  public to enable this feature").
+
+Local equivalents that already cover the same risk surface and continue
+to run: `gitleaks` via `pre-commit`, CodeQL `security-extended`,
+`luacheck`, the 16 drift gates in `scripts/run_full_audit.ps1`, and the
+checked-in `docs/openapi/` + `docs/schemas/` snapshots. These hold the
+line until an operator decides to upgrade to Pro or flip the repo to
+public; the decision is documented in HANDOFF as a deliberate trade-off,
+not a build defect.
+
+**Tests / verification.** No source or test changes; test count stays
+`1309`. Audit stays green at the Pass 366 pointer
+(`artifacts/full-audit/20260523-153307/RESULTS.md`).
+
 ### Pass 366 - Post-Codex review + close pal-cleanup safety-test gap (2026-05-23)
 
 **Context.** Codex extended the repo through Passes 361-365 while this
