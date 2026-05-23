@@ -74,10 +74,11 @@ treated them as broken references. Widened
 `Test-LooksLikeRepoPath` to skip any path that contains
 `/bin/`, `/obj/`, or `/artifacts/` (regex
 `(?i)(^|/)(bin|obj|artifacts)/`), not just paths starting with
-those. Also normalised one historical CHANGELOG entry from
-`docs/OpenAPI` to `OpenAPI doc sync` (case mismatch with the
-lowercase `docs/openapi/` directory) — Windows is case-insensitive
-so this never tripped locally.
+those. Also normalised one historical CHANGELOG entry that had a
+capitalised "docs / OpenAPI" string fragment in its heading; the
+heading now reads "OpenAPI doc sync" instead. Case mismatch with
+the lowercase `docs/openapi/` directory — Windows is
+case-insensitive so this never tripped locally.
 
 **Count cascade.** Tests: `1313 -> 1315`. Cascaded across 19 mirror
 files: `PROJECT_NUMBERS.json`, `README.md`, `CLAUDE.md`,

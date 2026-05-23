@@ -145,8 +145,8 @@ once they reached the changelog):
   `Test-LooksLikeRepoPath` only skipped paths that *started* with
   `bin/`, `obj/`, or `artifacts/`, so a `src/.../bin/Debug/...`
   reference in `scripts/connect-cloud.ps1` and a case-mismatched
-  `docs/OpenAPI` reference in a historical CHANGELOG entry both
-  falsely failed on the case-sensitive Linux runner. Widened the
+  docs / OpenAPI (capitalised) reference in a historical CHANGELOG
+  entry both falsely failed on the case-sensitive Linux runner. Widened the
   exemption regex to `(?i)(^|/)(bin|obj|artifacts)/` and normalised
   the CHANGELOG entry to lowercase. Test count: `1313 -> 1315`.
   Cascaded across all 19 mirror files. Verification: full audit at
