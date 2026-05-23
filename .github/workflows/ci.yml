@@ -219,11 +219,21 @@ jobs:
           # Extract every relative file link from root markdown + docs/.
           # Skips URLs, anchors, and query strings; resolves each against the
           # repo root and docs/ so "foo.md" and "docs/foo.md" both work.
+          # Pass 374a: also skip references into artifacts/ — that
+          # directory is gitignored and exists only after a local
+          # audit run, so audit-pointer links in HANDOFF.md and
+          # CHANGELOG.md historical entries would falsely fail on a
+          # fresh CI checkout. The PowerShell mirror audit
+          # (Drift_Dangling_markdown_links in scripts/run_full_audit.ps1)
+          # passes locally because the local tree has artifacts/.
           missing=0
           while read -r link; do
             [ -z "$link" ] && continue
             [[ "$link" == http* ]] && continue
             [[ "$link" == mailto:* ]] && continue
+            # Pass 374a: artifacts/ and ../artifacts/ are gitignored audit outputs.
+            [[ "$link" == artifacts/* ]] && continue
+            [[ "$link" == ../artifacts/* ]] && continue
             found=no
             for base in . docs; do
               path="$base/$link"
