@@ -91,7 +91,10 @@ $quotedTokenPattern = @'
 '@
 
 $markdownLinkPattern = '\[[^\]]+\]\(([^)]+)\)'
-$lineRefPattern = '([.][A-Za-z0-9]{1,8}):\d+(?:-\d+)?$'
+# Pass 372: also strip `:26,31` (comma-separated line+column) and
+# `:26:5` (compiler-style line:column) tails in addition to the older
+# `:26` and `:26-31` forms.
+$lineRefPattern = '([.][A-Za-z0-9]{1,8}):\d+(?:[-,:]\d+)?$'
 $ignoredCharPattern = '[*?\[\]{}<>|$]'
 
 function Get-ScanFiles {
@@ -250,16 +253,17 @@ function Resolve-RepoPath {
     }
 
     if ([regex]::IsMatch($normalized, '^[A-Za-z]:/')) {
-        try {
-            $resolved = [System.IO.Path]::GetFullPath($normalized)
-        } catch {
-            return $null
-        }
-        if (-not $resolved.StartsWith($RootPath, [System.StringComparison]::OrdinalIgnoreCase)) {
-            return $null
-        }
-
-        return $resolved
+        # Pass 372 (CI parity): a Windows drive-letter prefix means
+        # "absolute path on the operator's machine, not a repo-relative
+        # reference." On Windows, Path.GetFullPath honours the prefix
+        # and the StartsWith check below correctly excludes it. On
+        # Linux, Path.GetFullPath treats `G:/SteamLibrary` as a
+        # bare relative segment and resolves it against the runner's
+        # cwd (`/home/runner/work/PalLLM/PalLLM/G:/SteamLibrary`),
+        # which then matches RootPath and the audit yells about the
+        # missing file. Skip drive-letter references unconditionally
+        # — they are never repo-local by construction.
+        return $null
     }
 
     if ($normalized.StartsWith("/", [System.StringComparison]::Ordinal)) {
