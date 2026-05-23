@@ -1,0 +1,28 @@
+# PalLLM Code Owners
+#
+# GitHub uses this file to auto-request reviews from the listed accounts
+# whenever a matching path is touched in a pull request. Because this is
+# currently a solo project, the maintainer owns every path; future
+# contributors should add narrower entries above the catch-all (more
+# specific rules win — see GitHub docs).
+#
+# Reference: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Catch-all: every change requires the maintainer's review.
+*  @mzzmuaa
+
+# Security-sensitive seams — never silently rewritten by automation.
+SECURITY.md         @mzzmuaa
+SECURITY.txt        @mzzmuaa
+.github/workflows/  @mzzmuaa
+.github/dependabot.yml @mzzmuaa
+.gitleaks.toml      @mzzmuaa
+.pre-commit-config.yaml @mzzmuaa
+scripts/run_full_audit.ps1 @mzzmuaa
+
+# Architecture Decision Records — every ADR is a contract, treat
+# changes with extra care.
+docs/adr/  @mzzmuaa
+
+# Portable adapter seam (ADR 0002) — DO NOT RENAME without an ADR.
+src/PalLLM.Domain/Portable/ @mzzmuaa

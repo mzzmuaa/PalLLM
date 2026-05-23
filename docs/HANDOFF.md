@@ -44,6 +44,41 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
+- **Pass 368 - Activate GitHub Pro features on private repo.** Operator
+  upgraded to GitHub Pro, unlocking branch / tag protection rulesets
+  and a couple of smaller settings on the private repo. Took full
+  advantage: applied two active rulesets, added a `CODEOWNERS` file,
+  set repo topics for discoverability, and required web-UI commit
+  signoff. Ruleset `main-protection` (id `16782050`) targets the
+  default branch and enforces `deletion`, `non_fast_forward`,
+  `required_linear_history`, and `required_status_checks` (build+test
+  windows-latest, build+test ubuntu-latest, doc drift audit, CodeQL
+  analyse C#, luacheck Lua 5.4); `strict_required_status_checks_policy`
+  is on so a PR has to be up-to-date with main before merge, and
+  `do_not_enforce_on_create` lets the initial branch create through
+  without status checks queued. Ruleset `release-tags-protection`
+  (id `16782052`) targets `refs/tags/v*` and blocks `deletion`,
+  `non_fast_forward`, and `update`, so the `v0.1.0-internal` tag and
+  every future release tag are locked. `bypass_actors` allows the
+  repo-admin role through so an emergency hotfix can still land. New
+  file `.github/CODEOWNERS` makes `@mzzmuaa` the catch-all reviewer and
+  pins extra-careful paths (`SECURITY.md`, `.github/workflows/`,
+  `.github/dependabot.yml`, `.gitleaks.toml`,
+  `.pre-commit-config.yaml`, `scripts/run_full_audit.ps1`,
+  `docs/adr/`, `src/PalLLM.Domain/Portable/`) so future PRs auto-route
+  the right review notification. `web_commit_signoff_required` set to
+  `true` so any commit authored via the GitHub web UI carries a
+  `Signed-off-by` trailer. Repo topics added:
+  `palworld llm ue4ss dotnet local-first gguf llamacpp asp-net-core
+  minimal-api ai-companion`. Secret scanning + push protection
+  re-attempted: still `422 Not available` even on Pro - those features
+  remain Enterprise-only on private repos. Private-vulnerability
+  reporting endpoint returned `404` for the personal-account variant
+  (likely org-only feature). Local gitleaks via `pre-commit` continues
+  to cover the same risk surface. No source or test changes; test
+  count stays `1309`; audit stays `16 / 16` at
+  `../artifacts/full-audit/20260523-154629/RESULTS.md`.
+
 - **Pass 367 - First private GitHub publish.** Created the canonical
   remote at `https://github.com/mzzmuaa/PalLLM` (private) and pushed the
   initial commit `9ad833b` plus the `v0.1.0-internal` tag. Added a

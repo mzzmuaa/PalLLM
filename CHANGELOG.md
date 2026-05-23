@@ -18,6 +18,68 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 368 - Activate GitHub Pro features on private repo (2026-05-23)
+
+**Context.** Operator upgraded the GitHub account to Pro after Pass
+367, unlocking branch / tag protection rulesets and a few smaller
+private-repo settings. This pass cashes in everything Pro makes
+available on the personal-account tier and documents what stays
+locked behind Enterprise.
+
+**Rulesets created.**
+- `main-protection` (id `16782050`, target `branch`, condition
+  `~DEFAULT_BRANCH`):
+  - `deletion` — main cannot be deleted.
+  - `non_fast_forward` — main cannot be force-pushed.
+  - `required_linear_history` — matches the squash + rebase merge
+    policy (no merge commits).
+  - `required_status_checks` with
+    `strict_required_status_checks_policy=true` and
+    `do_not_enforce_on_create=true`. Required checks:
+    - `build + test (windows-latest)`
+    - `build + test (ubuntu-latest)`
+    - `doc drift audit`
+    - `CodeQL analyse (C#)`
+    - `luacheck (Lua 5.4)`
+  - `bypass_actors`: repository admin (actor id `5`, mode
+    `always`) so an emergency hotfix can still land without a green
+    PR if every check is degraded.
+- `release-tags-protection` (id `16782052`, target `tag`, pattern
+  `refs/tags/v*`): blocks `deletion`, `non_fast_forward`, and
+  `update`. Same admin bypass. The existing `v0.1.0-internal` tag
+  and every future `v*` release tag are immutable.
+
+**New file.** `.github/CODEOWNERS` — catch-all reviewer routing
+plus extra-careful paths for security-sensitive seams:
+`SECURITY.md`, `SECURITY.txt`, `.github/workflows/`,
+`.github/dependabot.yml`, `.gitleaks.toml`,
+`.pre-commit-config.yaml`, `scripts/run_full_audit.ps1`,
+`docs/adr/`, `src/PalLLM.Domain/Portable/`. Future PRs touching
+these paths will auto-request `@mzzmuaa` as reviewer.
+
+**Repo settings applied via `gh api` / `gh repo edit`.**
+- `web_commit_signoff_required = true` — commits authored via the
+  GitHub web UI must include a `Signed-off-by` trailer.
+- Topics: `palworld`, `llm`, `ue4ss`, `dotnet`, `local-first`,
+  `gguf`, `llamacpp`, `asp-net-core`, `minimal-api`,
+  `ai-companion`.
+
+**Still blocked even on Pro (Enterprise-only on private repos).**
+- GitHub-native secret scanning (`security_and_analysis.secret_scanning`)
+  - returns `422 "Secret scanning is not available for this
+  repository"`. Coverage stays with the `pre-commit` gitleaks hook
+  and `.gitleaks.toml` locally + in CI.
+- Secret scanning push protection
+  (`security_and_analysis.secret_scanning_push_protection`) - same
+  reason, accepted by the PATCH but reports back disabled.
+- Private vulnerability reporting endpoint - returned `404` for the
+  personal-account variant. Likely available on org-owned repos
+  only.
+
+**Tests / verification.** No source, test, or workflow changes;
+test count stays `1309`. Audit stays green at
+`artifacts/full-audit/20260523-154629/RESULTS.md`.
+
 ### Pass 367 - First private GitHub publish (2026-05-23)
 
 **Context.** Operator verified GitHub access in a separate session and
