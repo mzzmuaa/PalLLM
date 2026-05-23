@@ -44,6 +44,31 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
+- **Pass 371 - Close the last CI failure + queue the monolith-extraction
+  plan.** Pass 370 made Linux `build + test` green and made
+  `scripts/export-openapi.ps1 -Verify` green, but a fourth Linux-only
+  failure remained: the inline bash step "Assert doc counts agree with
+  code" in `.github/workflows/ci.yml` reported `Operational route
+  drift: code=5, API=6, ROADMAP=6`. Root cause: the dashboard root
+  route migrated from `UseDefaultFiles() + UseStaticFiles()` (the old
+  middleware pair) to `app.MapGet("/", ...)` + `app.MapStaticAssets(...)`
+  some passes ago, but the CI bash counter still looked for the old
+  middleware pair and missed the `MapGet("/")` line. The PowerShell
+  audit in `scripts/run_full_audit.ps1` already counts the new pattern
+  (line 371). Updated the CI bash counter to match (`MapGet("/")` added,
+  `UseDefaultFiles`/`UseStaticFiles` fallback removed). Bash counter
+  now reports `6` locally, matching the docs. Also queued the
+  monolith-extraction plan as `docs/REFACTORING_ROADMAP.md` - a phased
+  plan for splitting `PalLlmRuntime.cs` (`4,744` lines) and
+  `Program.cs` (`2,105` lines) using C# `partial class` companions and
+  `IServiceCollection`/`IEndpointRouteBuilder` extension methods. The
+  doc identifies 9 PalLlmRuntime companion files + 10 Program.cs
+  service/route files, with phased landing order and verification
+  checklists. Cascaded `docsCount` `69 -> 70` in `PROJECT_NUMBERS.json`
+  and added the new doc to `docs/INDEX.md`. Local audit at
+  `../artifacts/full-audit/20260523-162023/RESULTS.md` stays
+  `16 / 16` PASS; test count `1309`.
+
 - **Pass 370 - Pass 369 follow-up: three more Linux-only CI bugs.**
   Pass 369's push exposed three more failures that Windows-local audits
   never catch. (1) `scripts/export-openapi.ps1 -Verify` compared the

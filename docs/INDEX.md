@@ -206,6 +206,7 @@ right doc depends on what you're trying to do right now, not who you are.
 - [`FALLBACK_AI_RESEARCH.md`](FALLBACK_AI_RESEARCH.md) - the published game-AI ideas behind the 19 deterministic strategies.
 - [`CORE_LIBRARY.md`](CORE_LIBRARY.md) - the portable adapter surface (inlined in one self-contained file) and how other runtimes can re-harvest it.
 - [`ROADMAP.md`](ROADMAP.md) - phased delivery plan, current audited status, next build order.
+- [`REFACTORING_ROADMAP.md`](REFACTORING_ROADMAP.md) - phased monolith-extraction plan for `PalLlmRuntime.cs` (4,744 lines) and `Program.cs` (2,105 lines). Uses C# `partial class` companions so the public surface, DI registrations, and tests don't move while the internal layout improves. Read this before proposing "should we split the runtime?" - the plan is already written and phased.
 - [`COMPANION_INTELLIGENCE.md`](COMPANION_INTELLIGENCE.md) - post-foundation PalLLM-specific "pseudo AGI" ideas adapted from the sibling Byte prompt packs without breaking PalLLM's scope guardrails.
 
 ## Audience shortcuts

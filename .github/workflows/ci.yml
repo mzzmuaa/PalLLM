@@ -126,10 +126,13 @@ jobs:
           fi
 
           # 1b. Operational + protocol route counts must agree with API.md and ROADMAP.md.
-          code_operational_routes=$(grep -cE 'app\.MapGet\("/metrics"|app\.MapHealthChecks\(|app\.MapOpenApi' src/PalLLM.Sidecar/Program.cs)
-          if grep -q 'app\.UseDefaultFiles()' src/PalLLM.Sidecar/Program.cs && grep -q 'app\.UseStaticFiles()' src/PalLLM.Sidecar/Program.cs; then
-            code_operational_routes=$((code_operational_routes + 1))
-          fi
+          # Pass 370 (CI parity): the dashboard root route is now `app.MapGet("/", ...)`
+          # served alongside `app.MapStaticAssets(...)` rather than the older
+          # `UseDefaultFiles() + UseStaticFiles()` middleware pair. Count the
+          # MapGet("/") line directly so the CI bash counter matches the
+          # PowerShell audit in `scripts/run_full_audit.ps1` (which already
+          # uses the same pattern).
+          code_operational_routes=$(grep -cE 'app\.MapGet\("/metrics"|app\.MapGet\("/"|app\.MapHealthChecks\(|app\.MapOpenApi' src/PalLLM.Sidecar/Program.cs)
           code_protocol_routes=$(grep -cE 'app\.MapMcp\("/mcp"\)' src/PalLLM.Sidecar/Program.cs)
           api_routes=$(grep -oE 'Total `/api` routes: [0-9]+' docs/API.md | grep -oE '[0-9]+' | head -1)
           api_operational_routes=$(grep -oE 'Operational routes outside `/api`: [0-9]+' docs/API.md | grep -oE '[0-9]+' | head -1)

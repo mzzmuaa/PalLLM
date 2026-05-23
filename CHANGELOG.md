@@ -18,6 +18,51 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 371 - Close the last CI failure + queue monolith-extraction plan (2026-05-23)
+
+**Context.** Pass 370 made both `build + test (ubuntu-latest)` and
+`scripts/export-openapi.ps1 -Verify` green on Linux. One more
+Linux-only failure remained: the inline bash step "Assert doc counts
+agree with code" in `.github/workflows/ci.yml` reported
+`Operational route drift: code=5, API=6, ROADMAP=6`.
+
+**Root cause.** The dashboard root migrated from
+`UseDefaultFiles() + UseStaticFiles()` (old middleware) to
+`app.MapGet("/", ...)` + `app.MapStaticAssets(...)` some passes ago.
+The PowerShell audit in `scripts/run_full_audit.ps1` (line 371) was
+updated at the time to count the new pattern, but the inline bash
+counter in CI was not — it still looked for the old middleware pair
+and missed the `MapGet("/")` line. So Linux reported 5 operational
+routes while every doc (and the PowerShell audit) reported 6.
+
+**Fix.** Updated the CI bash regex to match the PowerShell audit:
+added `app\.MapGet\("/"` to the operational-route pattern and removed
+the now-stale `UseDefaultFiles + UseStaticFiles` fallback. Local
+verification: `bash -c "grep -cE ..."` now returns `6`.
+
+**Bonus: monolith-extraction roadmap.** Added
+`docs/REFACTORING_ROADMAP.md` — a phased plan for splitting
+`PalLlmRuntime.cs` (`4,744` lines) and `Program.cs` (`2,105` lines)
+using C# `partial class` companions plus `IServiceCollection` and
+`IEndpointRouteBuilder` extension methods. Phase 1 identifies 9
+companion files for `PalLlmRuntime` (`.Helpers`, `.Inference`,
+`.Snapshot`, `.Outbox`, `.Bridge`, `.UiProbe`, `.BridgeBoot`,
+`.Prompt`), phased in landing order from smallest blast radius to
+largest. Phase 2 identifies 10 files for `Program.cs` (4 service-
+collection extensions + 5 route registrations + 1 trimmed
+orchestrator). Each phase has a verification checklist that
+pins the audit gates. The roadmap is `~3 KB`, single-screen
+reviewable. No code changes — this is a queued plan, not an
+executed refactor.
+
+**Cascade.** New doc added to `docs/INDEX.md` (the catalog test
+caught the gap), and `docsCount` in `docs/PROJECT_NUMBERS.json`
+bumped `69 -> 70`.
+
+**Verification.** Full audit at
+`artifacts/full-audit/20260523-162023/RESULTS.md` passed `16 / 16`.
+Test count stays `1309`. No production code touched.
+
 ### Pass 370 - Pass 369 follow-up: three more Linux-only CI bugs (2026-05-23)
 
 **Context.** Pass 369 fixed two of the Linux-CI failures, but the push
