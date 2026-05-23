@@ -8,7 +8,7 @@ subset of [`AGENTS.md`](AGENTS.md) with Claude-specific shortcuts.
 - **Name:** PalLLM
 - **Kind:** local-first LLM companion runtime (Palworld + UE4SS)
 - **Runtime:** .NET 10 LTS, ASP.NET Core minimal APIs, Lua 5.4 via UE4SS
-- **Test count:** `1313` passing (see `README.md` badge for live)
+- **Test count:** `1315` passing (see `README.md` badge for live)
 - **Docs root:** `docs/INDEX.md`
 
 ## Working loop

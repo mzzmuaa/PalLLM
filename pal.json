@@ -29,7 +29,7 @@
       "tagline": "Day-to-day code + test + audit loop.",
       "verbs": [
         { "verb": "build", "summary": "dotnet build (Release)", "command": "dotnet build PalLLM.sln --configuration Release --nologo" },
-        { "verb": "test", "summary": "dotnet test (Release, quiet) -- expects 1313 / 1313", "command": "dotnet test PalLLM.sln --configuration Release --nologo --verbosity quiet" },
+        { "verb": "test", "summary": "dotnet test (Release, quiet) -- expects 1315 / 1315", "command": "dotnet test PalLLM.sln --configuration Release --nologo --verbosity quiet" },
         { "verb": "audit", "summary": "full drift audit -- build + tests + 16 gates", "script": "scripts/run_full_audit.ps1" },
         { "verb": "fast-audit", "summary": "drift gates only -- skip coverage / SBOM / packaging / tests", "script": "scripts/run_full_audit.ps1" },
         { "verb": "cleanup", "summary": "preview/remove generated audit coverage and build outputs (-Apply to delete)", "script": "scripts/pal-cleanup.ps1" },
@@ -94,6 +94,7 @@
         { "verb": "explain", "summary": "structured explanation of a file or directory", "script": "scripts/pal-explain.ps1" },
         { "verb": "where", "summary": "natural-language query -> ranked file paths", "script": "scripts/pal-where.ps1" },
         { "verb": "readiness", "summary": "candid scorecard matching docs/READINESS.md" },
+        { "verb": "handoff",   "summary": "one-screen briefing for an incoming coding agent (Codex et al)" },
         { "verb": "list", "summary": "human-readable verb table" },
         { "verb": "help", "summary": "help text plus the verb table" }
       ]

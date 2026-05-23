@@ -120,7 +120,7 @@ function Run-List {
             Tagline = 'Day-to-day code + test + audit loop.'
             Verbs = @(
                 @{ Verb = 'build';      Description = 'dotnet build (Release)' }
-                @{ Verb = 'test';       Description = 'dotnet test  (Release, quiet) -- expects 1313 / 1313' }
+                @{ Verb = 'test';       Description = 'dotnet test  (Release, quiet) -- expects 1315 / 1315' }
                 @{ Verb = 'audit';      Description = 'full drift audit -- build + tests + 16 gates (~30 s)' }
                 @{ Verb = 'fast-audit'; Description = 'drift gates only -- skip coverage / SBOM / packaging' }
                 @{ Verb = 'cleanup';    Description = 'preview/remove generated audit coverage and build outputs (-Apply to delete)' }
@@ -185,6 +185,7 @@ function Run-List {
                 @{ Verb = 'explain';   Description = 'structured explanation of a file or directory: kind, surface, deps, related docs/tests' }
                 @{ Verb = 'where';     Description = 'natural-language query -> ranked file paths (e.g. ''pal where chat hot path'')' }
                 @{ Verb = 'readiness'; Description = 'candid 10/10 scorecard per aspect (matches docs/READINESS.md)' }
+                @{ Verb = 'handoff';   Description = 'one-screen summary for an incoming coding agent (Codex et al)' }
                 @{ Verb = 'list';      Description = 'this table' }
                 @{ Verb = 'help';      Description = 'help text + the table' }
             )
@@ -856,6 +857,66 @@ function Run-CheckUpdates {
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
+function Run-Handoff {
+    # Pass 374: one-screen briefing for an incoming agent (Codex et
+    # al). Mirrors the "Codex handoff" section at the top of
+    # docs/HANDOFF.md without forcing the agent to open the file.
+    # Output is intentionally compact - call it, read it, then audit.
+    $numbersPath = Join-Path $repoRoot 'docs/PROJECT_NUMBERS.json'
+    $numbers = if (Test-Path -LiteralPath $numbersPath) {
+        Get-Content -LiteralPath $numbersPath -Raw | ConvertFrom-Json
+    } else { $null }
+
+    $currentSha = $null
+    try {
+        $currentSha = & git -C $repoRoot rev-parse --short HEAD 2>$null
+    } catch { $currentSha = $null }
+
+    Write-Host ""
+    Write-Host "PalLLM handoff briefing (Pass 374)" -ForegroundColor Cyan
+    Write-Host "==================================="
+    if ($numbers) {
+        Write-Host ("  Tests:           {0}" -f $numbers.tests)
+        Write-Host ("  Drift gates:     {0}" -f $numbers.driftGates)
+        Write-Host ("  Build warnings:  {0}" -f $numbers.buildWarnings)
+        Write-Host ("  API routes:      {0} /api + {1} ops + {2} mcp" -f `
+            $numbers.apiRoutes, $numbers.operationalRoutes, $numbers.mcpProtocolRoutes)
+        Write-Host ("  MCP tools:       {0}" -f $numbers.mcpTools)
+        Write-Host ("  Fallbacks:       {0} deterministic strategies" -f $numbers.fallbackStrategies)
+        Write-Host ("  Feature catalog: {0} entries ({1} ready / {2} scaffolded / {3} deferred)" -f `
+            $numbers.featureCatalog, $numbers.featureReady, $numbers.featureScaffolded, $numbers.featureDeferred)
+        Write-Host ("  ADRs accepted:   {0}" -f $numbers.adrsAccepted)
+        Write-Host ("  Honest roadmap:  {0}" -f $numbers.honestRoadmap)
+    }
+    if ($currentSha) {
+        Write-Host ("  HEAD:            {0}" -f $currentSha)
+    }
+    Write-Host ""
+    Write-Host "Verify baseline before changing anything:" -ForegroundColor Yellow
+    Write-Host "  pwsh ./pal.ps1 audit             # must report 16/16 PASS"
+    Write-Host "  pwsh ./pal.ps1 test              # must report all green"
+    Write-Host ""
+    Write-Host "Do-not-touch list (each backed by an ADR):" -ForegroundColor Yellow
+    Write-Host "  - src/PalLLM.Domain/Portable/PortableAdapterContracts.cs (ADR 0002)"
+    Write-Host "  - PalLlmRuntime.ChatAsync deterministic-first contract  (ADR 0001)"
+    Write-Host "  - One-way advisory bridge (sidecar -> game)             (ADR 0003)"
+    Write-Host "  - Default-off opt-in posture                            (ADR 0006)"
+    Write-Host "  - The four blocked sibling names                         (Pass 372 guard)"
+    Write-Host ""
+    Write-Host "Next queued work, in priority order:" -ForegroundColor Yellow
+    Write-Host "  1. REFACTORING_ROADMAP.md Phase 1a - extract PalLlmRuntime.Helpers.cs"
+    Write-Host "  2. Phase 1b through 1h - 6 more partial-class extractions"
+    Write-Host "  3. Phase 2 - Program.cs into service + route extension files"
+    Write-Host "  4. Live Palworld native-proof (requires running game; not autonomous)"
+    Write-Host "  5. Dependabot PR triage: gh pr list --repo mzzmuaa/PalLLM"
+    Write-Host ""
+    Write-Host "Deeper reading:" -ForegroundColor DarkGray
+    Write-Host "  - docs/HANDOFF.md (this verb is the TL;DR of its 'Codex handoff' section)"
+    Write-Host "  - docs/REFACTORING_ROADMAP.md (concrete phase plan)"
+    Write-Host "  - AGENTS.md (the full agent briefing)"
+    Write-Host ""
+}
+
 function Run-Readiness {
     # Programmatic version of docs/READINESS.md - prints the candid
     # 10/10 scorecard per aspect with the current state. Use to give a
@@ -1238,6 +1299,7 @@ switch ($Verb.ToLowerInvariant()) {
     'where'         { Invoke-PalVerb 'where'   { Run-Where }   "pal where 'fallback strategies'   # natural-language query" }
     'explain'       { Invoke-PalVerb 'explain' { Run-Explain } 'pal explain src/PalLLM.Sidecar/Program.cs' }
     'readiness'     { Run-Readiness }
+    'handoff'       { Run-Handoff }
     'list'       { Run-List }
     'help'       { Run-Help }
     default {
@@ -1256,7 +1318,7 @@ switch ($Verb.ToLowerInvariant()) {
                  'demo','campfire','fortune','whisper','quest','tale',
                  'patrol-report','pack','benchmark','welcome','next','news',
                  'harvest','health','proof','logs','preflight','where','explain',
-                 'list','help'
+                 'handoff','list','help'
         $best = $known | Where-Object { $_.StartsWith($Verb.ToLower()) } | Select-Object -First 1
         if ($best) {
             Write-Host "Did you mean: pal $best ?" -ForegroundColor Yellow

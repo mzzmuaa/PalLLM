@@ -104,7 +104,7 @@ Total estimate: `~600 + 400 + 600 + 400 + 500 + 800 + 700 + 400 + 500 = ~4,900` 
       stay private).
 - [ ] `git log --stat` shows zero changes outside
       `src/PalLLM.Domain/Runtime/PalLlmRuntime*.cs`.
-- [ ] `dotnet test` passes exactly the same `1313` tests with the
+- [ ] `dotnet test` passes exactly the same `1315` tests with the
       same names.
 - [ ] Audit gate `Drift_Hot_file_line_count` passes — the *primary*
       `PalLlmRuntime.cs` is now well under its budget, and the

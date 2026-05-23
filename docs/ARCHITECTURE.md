@@ -25,7 +25,7 @@ Current solution shape:
 
 Audit-backed test status:
 
-- `1313` tests passed on `2026-05-23`
+- `1315` tests passed on `2026-05-23`
 
 HTTP ingress is bounded before and after JSON binding. The sidecar applies
 `PalLLM:Http:ApiRequestBodyMaxBytes` (`10 MiB` default) to `/api` and `/mcp`

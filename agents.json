@@ -30,7 +30,7 @@
 
   "rollingState": {
     "$comment": "Cross-checked against PROJECT_NUMBERS.json + the live code by drift gates. Bump in lockstep with any code change.",
-    "tests":1313,
+    "tests":1315,
     "driftGates": "16/16",
     "buildWarnings": 0,
     "apiRoutes": 57,
@@ -145,7 +145,7 @@
     "$comment": "All 16 must pass for a change to ship. Same set as scripts/run_full_audit.ps1.",
     "buildAndTest": [
       { "id": "Build_Release",     "what": "dotnet build PalLLM.sln --configuration Release",                  "fixHint": "Inspect the build output; this codebase ships at 0 warnings, every warning is a regression." },
-      { "id": "Tests",             "what": "dotnet test PalLLM.sln (1313 expected)",                            "fixHint": "Failing tests describe the broken invariant; the test name is the contract." }
+      { "id": "Tests",             "what": "dotnet test PalLLM.sln (1315 expected)",                            "fixHint": "Failing tests describe the broken invariant; the test name is the contract." }
     ],
     "drift": [
       { "id": "Drift_Mojibake",                  "what": "No mojibake byte sequences in source or docs." },

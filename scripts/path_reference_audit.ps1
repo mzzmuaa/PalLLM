@@ -210,6 +210,17 @@ function Test-LooksLikeRepoPath {
         }
     }
 
+    # Pass 374 (CI parity): also skip references that contain `/bin/`,
+    # `/obj/`, or `/artifacts/` anywhere in the path — these are build
+    # outputs / audit outputs that aren't tracked, so checking them
+    # against the working tree falsely fails on a fresh CI checkout
+    # (where `src/.../bin/Debug/...` doesn't exist yet). On Windows
+    # the same path *does* exist after a local `dotnet build`, which
+    # is why the local audit didn't catch this earlier.
+    if ([regex]::IsMatch($normalized, '(?i)(^|/)(bin|obj|artifacts)/')) {
+        return $false
+    }
+
     if ($normalized.StartsWith("--", [System.StringComparison]::Ordinal)) {
         return $false
     }

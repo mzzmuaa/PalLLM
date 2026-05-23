@@ -1066,6 +1066,52 @@ public class LlamaCppBundlingTests
     }
 
     [Test]
+    public void HandoffDoc_ExposesCodexHandoffSection()
+    {
+        // Pass 374: docs/HANDOFF.md must have a "Codex handoff" section
+        // near the top that an incoming agent can read in under a minute
+        // and have everything it needs to start safely. Pinning the
+        // section ensures the briefing doesn't drift back into prose-only
+        // mode that takes longer to digest.
+        string text = File.ReadAllText(LocateRepoFile("docs", "HANDOFF.md"));
+
+        Assert.That(text, Does.Contain("Codex handoff"),
+            "HANDOFF.md must declare a 'Codex handoff' section so " +
+            "an incoming agent's first read is targeted.");
+        Assert.That(text, Does.Contain("do not touch without an ADR"),
+            "HANDOFF.md Codex section must enumerate the do-not-touch surfaces.");
+        Assert.That(text, Does.Contain("verification ritual"),
+            "HANDOFF.md Codex section must spell out the per-pass verification ritual.");
+        Assert.That(text, Does.Contain("pal.ps1 handoff"),
+            "HANDOFF.md Codex section must point at the `pal handoff` verb.");
+        Assert.That(text, Does.Contain("REFACTORING_ROADMAP.md"),
+            "HANDOFF.md Codex section must point at the refactoring roadmap as the next queued work.");
+    }
+
+    [Test]
+    public void PalScript_ExposesHandoffVerb()
+    {
+        // Pass 374: `pal handoff` must exist as a verb and produce a
+        // self-contained briefing. We assert against the script source
+        // because running the verb in-process here would couple the
+        // test to PowerShell + git availability.
+        string palScript = File.ReadAllText(LocateRepoFile("pal.ps1"));
+
+        Assert.That(palScript, Does.Contain("Run-Handoff"),
+            "pal.ps1 must define a Run-Handoff function.");
+        Assert.That(palScript, Does.Contain("'handoff'"),
+            "pal.ps1 verb table must contain a 'handoff' entry.");
+        Assert.That(palScript, Does.Contain("Verify baseline before changing"),
+            "Run-Handoff must explicitly tell the next agent to run the audit first.");
+        Assert.That(palScript, Does.Contain("Do-not-touch list"),
+            "Run-Handoff must surface the do-not-touch surfaces inline.");
+
+        string palJson = File.ReadAllText(LocateRepoFile("pal.json"));
+        Assert.That(palJson, Does.Contain("handoff").Or.Contain("\"handoff\""),
+            "pal.json verb manifest must include the handoff verb so agents reading the JSON catalogue see it.");
+    }
+
+    [Test]
     public void ReadmeQuickstart_DocumentsLoweredHardwareTier()
     {
         // README.md's hardware section must reflect the Pass 373 lowered

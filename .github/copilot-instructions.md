@@ -9,7 +9,7 @@ substantive lives there.
 
 ## TL;DR for Copilot
 
-- Test count: `1313` (verify via `pal.ps1 test`)
+- Test count: `1315` (verify via `pal.ps1 test`)
 - Drift gates: `16 / 16` (run via `pal.ps1 audit`)
 - Build warnings: `0` (enforced by `Directory.Build.props`)
 - Hot files: `PalLlmRuntime.cs` (~4729 lines, every method
