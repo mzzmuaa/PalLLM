@@ -18,6 +18,53 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 369 - Fix two Linux-only test bugs surfaced by first CI run (2026-05-23)
+
+**Context.** Pass 368's main-branch ruleset wires required status
+checks into the merge gate. The very first run against
+`ubuntu-latest` failed two tests that had silently been Windows-only
+since they were written. Local Windows audits never caught them
+because `dotnet test` only runs on the operator's host. This pass
+removes the OS coupling without touching any production code.
+
+**Bug 1 - PalLlmOptionsModelsDirTests (Pass 340 era).**
+`DiffusionModelsDir_TracksExternalModelsRoot_WhenSet` and
+`DiffusionModelsDir_HonorsWhitespaceTrimming_OnExternalModelsRoot`
+asserted against literal `@"D:\Models\Diffusion"`, but
+`PalLlmOptions.DiffusionModelsDir` is built with
+`Path.Combine(externalModelsRoot, "Diffusion")`. On Linux,
+`Path.Combine` uses `/` as the separator, so the actual value is
+`"D:\\Models/Diffusion"` even though the behavior is identical:
+"diffusion weights live in a `Diffusion` subdirectory under the
+configured chat-model root." Both tests now compute the expected
+value with the same `Path.Combine` the implementation uses.
+
+**Bug 2 - OpenApiSnapshotTests (Pass 248 era).**
+`OpenApiEndpoint_MatchesCommittedSnapshot` failed with:
+
+```
+Expected: "...SumSeconds\r\n            + long Ch..."
+But was:  "...SumSeconds\n            + long Chat..."
+```
+
+The OpenAPI generator captures XML doc-comment summaries verbatim
+inside JSON string values. The committed snapshot was originally
+generated on Windows, so multi-line summaries carry `\r\n`. On a
+Linux runner the same generator emits `\n`. The contract is
+byte-identical otherwise. Hardened `CanonicalizeJson` to replace
+`\\r\\n -> \\n` and `\r\n -> \n` before comparison, keeping the
+snapshot platform-agnostic without forcing the operator to
+regenerate it every time the host changes.
+
+**Verification.**
+- Targeted local Windows run: `dotnet test --filter
+  "FullyQualifiedName~OpenApiSnapshotTests|FullyQualifiedName~PalLlmOptionsModelsDirTests"`
+  passed `12 / 12`.
+- Full audit at
+  `artifacts/full-audit/20260523-160235/RESULTS.md` passed
+  `16 / 16`.
+- No production code changed; test count stays `1309`.
+
 ### Pass 368 - Activate GitHub Pro features on private repo (2026-05-23)
 
 **Context.** Operator upgraded the GitHub account to Pro after Pass

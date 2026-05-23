@@ -56,7 +56,17 @@ public sealed class OpenApiSnapshotTests
             WriteCanonical(document.RootElement, writer, isRoot: true);
         }
 
-        return Encoding.UTF8.GetString(stream.ToArray());
+        // Pass 369: the OpenAPI generator captures XML doc-comment summaries
+        // verbatim, so multi-line summaries land inside JSON string values
+        // with whichever line ending the *generator host* used. A Windows
+        // host writes "\r\n"; a Linux host writes "\n". The committed
+        // snapshot was originally generated on Windows; running the same
+        // test against a freshly-generated document on a Linux CI runner
+        // therefore drifts on the embedded line endings even though the
+        // API contract is byte-identical. Normalize "\r\n" -> "\n" before
+        // comparison so the canonicalization stays platform-agnostic.
+        string canonical = Encoding.UTF8.GetString(stream.ToArray());
+        return canonical.Replace("\\r\\n", "\\n").Replace("\r\n", "\n");
     }
 
     private static void WriteCanonical(JsonElement element, Utf8JsonWriter writer, bool isRoot = false)

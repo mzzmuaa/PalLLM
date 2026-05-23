@@ -44,6 +44,31 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
+- **Pass 369 - Triage post-publish CI: fix two Linux-only test bugs.**
+  Pass 368 wired up the new ruleset, which means CI now runs on every
+  push against both `windows-latest` and `ubuntu-latest`. The very
+  first run surfaced two pre-existing bugs that local Windows audits
+  never caught: (1) `PalLlmOptionsModelsDirTests.DiffusionModelsDir_TracksExternalModelsRoot_WhenSet`
+  and the sibling whitespace-trimming test asserted against a literal
+  `@"D:\Models\Diffusion"`, but `PalLlmOptions.DiffusionModelsDir`
+  is built with `Path.Combine`, which substitutes `/` on Linux -
+  expected `"D:\\Models\\Diffusion"` vs actual `"D:\\Models/Diffusion"`.
+  Fixed both tests to compute expected with the same `Path.Combine`
+  the implementation uses, with an inline comment explaining the
+  cross-platform rationale. (2) `OpenApiSnapshotTests.OpenApiEndpoint_MatchesCommittedSnapshot`
+  failed because the committed `docs/openapi/palllm-sidecar-v1.json`
+  was generated on Windows so multi-line XML doc-comment summaries
+  carry embedded `\r\n` inside JSON string values; the same generator
+  on a Linux runner emits `\n` instead. Hardened `CanonicalizeJson`
+  to normalize `\\r\\n -> \\n` (and `\r\n -> \n`) before comparison so
+  the snapshot stays platform-agnostic. Local Windows targeted test
+  run: `12 / 12` passed (3 OpenApiSnapshotTests + 9
+  PalLlmOptionsModelsDirTests). Full audit at
+  `../artifacts/full-audit/20260523-160235/RESULTS.md` stays
+  `16 / 16` PASS, test count `1309`. No production code changed; this
+  pass is purely test-portability hardening exposed by the new CI
+  surface.
+
 - **Pass 368 - Activate GitHub Pro features on private repo.** Operator
   upgraded to GitHub Pro, unlocking branch / tag protection rulesets
   and a couple of smaller settings on the private repo. Took full

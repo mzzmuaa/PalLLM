@@ -144,7 +144,13 @@ public class PalLlmOptionsModelsDirTests
             ExternalModelsRoot = @"D:\Models",
         };
 
-        Assert.That(options.DiffusionModelsDir, Is.EqualTo(@"D:\Models\Diffusion"),
+        // Pass 369: build the expected value with Path.Combine so the test
+        // matches the same DirectorySeparatorChar the implementation uses
+        // on the host. On Linux runners Path.Combine swaps in '/', and a
+        // hard-coded "D:\\Models\\Diffusion" assertion would fail there
+        // even though the behaviour is correct on both platforms.
+        string expected = Path.Combine(@"D:\Models", "Diffusion");
+        Assert.That(options.DiffusionModelsDir, Is.EqualTo(expected),
             "DiffusionModelsDir must be a Diffusion subdirectory under the resolved ModelsDir, not a separate root.");
     }
 
@@ -156,7 +162,10 @@ public class PalLlmOptionsModelsDirTests
             ExternalModelsRoot = "  D:\\Models  ",
         };
 
-        Assert.That(options.DiffusionModelsDir, Is.EqualTo(@"D:\Models\Diffusion"),
+        // Pass 369: see sibling test above for why Path.Combine is used
+        // to compute the expected value instead of a literal string.
+        string expected = Path.Combine(@"D:\Models", "Diffusion");
+        Assert.That(options.DiffusionModelsDir, Is.EqualTo(expected),
             "Whitespace trimming on the chat-model root must propagate to the diffusion path.");
     }
 
