@@ -2797,7 +2797,7 @@
             }
           }
         },
-        "description": "Cumulative Prometheus-style histogram record. double ChatLatencyHistogram.SumSeconds\r\n            + long ChatLatencyHistogram.Count give average; each LatencyHistogramBucket\r\n            entry records \"count of observations with duration &lt;= UpperBoundSeconds\"."
+        "description": "Cumulative Prometheus-style histogram record. double ChatLatencyHistogram.SumSeconds\n            + long ChatLatencyHistogram.Count give average; each LatencyHistogramBucket\n            entry records \"count of observations with duration &lt;= UpperBoundSeconds\"."
       },
       "ChatPlanRequest": {
         "type": "object",
@@ -3010,28 +3010,28 @@
               "null",
               "string"
             ],
-            "description": "Advisory — the DuoTaskKind the Pass-16 ChatTaskKindInferer\r\nassigned to this turn. Null on turns where the runtime skipped\r\nadvisory inference (rate-limited, missing DI, etc.). Purely\r\nobservational: chat routing has already happened by the time\r\nthis lands in the response."
+            "description": "Advisory — the DuoTaskKind the Pass-16 ChatTaskKindInferer\nassigned to this turn. Null on turns where the runtime skipped\nadvisory inference (rate-limited, missing DI, etc.). Purely\nobservational: chat routing has already happened by the time\nthis lands in the response."
           },
           "CooperationPattern": {
             "type": [
               "null",
               "string"
             ],
-            "description": "Advisory — the DuoCooperationPattern the Pass-8 planner picked\r\nfor this turn given the inferred task kind + current role\r\ncoverage. Populated on every chat turn starting Pass 21; null\r\nonly when the planner throws (which is deterministic so should\r\nnever happen in practice). Does NOT affect actual inference\r\nrouting today — the single-lane `_inferenceClient` still\r\nhandles every dispatch. Pass 22 added `DispatchedRoleChain` to\r\nexpose the concrete role chain the planner's pattern would\r\ninvoke once multi-role dispatch lands."
+            "description": "Advisory — the DuoCooperationPattern the Pass-8 planner picked\nfor this turn given the inferred task kind + current role\ncoverage. Populated on every chat turn starting Pass 21; null\nonly when the planner throws (which is deterministic so should\nnever happen in practice). Does NOT affect actual inference\nrouting today — the single-lane `_inferenceClient` still\nhandles every dispatch. Pass 22 added `DispatchedRoleChain` to\nexpose the concrete role chain the planner's pattern would\ninvoke once multi-role dispatch lands."
           },
           "DispatchedRoleChain": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "Advisory — the ordered role chain the Pass-22 ChatDispatchPlanner\r\nwould invoke for this turn, given current role bindings + the\r\nplanner's pattern. Empty when the planner chose\r\nDeterministicOnly or both roles are unbound. The runtime still\r\ndispatches through the single-lane inference client today, so\r\nthis is observational; the field is here so operators + AI\r\nagents can see the concrete execution plan and so a future pass\r\ncan flip the single-lane passthrough to actually invoke the\r\nchain recorded here without a breaking contract change."
+            "description": "Advisory — the ordered role chain the Pass-22 ChatDispatchPlanner\nwould invoke for this turn, given current role bindings + the\nplanner's pattern. Empty when the planner chose\nDeterministicOnly or both roles are unbound. The runtime still\ndispatches through the single-lane inference client today, so\nthis is observational; the field is here so operators + AI\nagents can see the concrete execution plan and so a future pass\ncan flip the single-lane passthrough to actually invoke the\nchain recorded here without a breaking contract change."
           },
           "DispatchMode": {
             "type": [
               "null",
               "string"
             ],
-            "description": "Advisory — short dispatch-mode bucket (\"deterministic-only\",\r\n\"single-role\", \"duo-sequential\", \"duo-parallel\", \"duo-fanout\",\r\n\"duo-tournament\", \"duo-background\", \"duo-watchdog\",\r\n\"duo-appeal\"). Correlates with the Pass-22\r\n`ChatDispatchDecision.Mode`. Null when no decision was\r\ncaptured for this turn."
+            "description": "Advisory — short dispatch-mode bucket (\"deterministic-only\",\n\"single-role\", \"duo-sequential\", \"duo-parallel\", \"duo-fanout\",\n\"duo-tournament\", \"duo-background\", \"duo-watchdog\",\n\"duo-appeal\"). Correlates with the Pass-22\n`ChatDispatchDecision.Mode`. Null when no decision was\ncaptured for this turn."
           }
         }
       },
@@ -3326,7 +3326,7 @@
       },
       "DuoTaskKind": {
         "type": "integer",
-        "description": "The task shape the caller wants to accomplish. Used by the planner\r\nto pick the right cooperation pattern. Derived from the 2035\r\narchitecture brief's \"best division of labor\" table so every common\r\ngame / app / coding / media task has a named shape."
+        "description": "The task shape the caller wants to accomplish. Used by the planner\nto pick the right cooperation pattern. Derived from the 2035\narchitecture brief's \"best division of labor\" table so every common\ngame / app / coding / media task has a named shape."
       },
       "FallbackStrategyCount": {
         "required": [
@@ -3377,7 +3377,7 @@
             "type": "string"
           }
         },
-        "description": "Internal bridge-authored record for one known base / camp / outpost in the\r\ncurrent world snapshot. Published through the neutral\r\n`GameBaseSnapshot` schema id on the public OpenAPI surface."
+        "description": "Internal bridge-authored record for one known base / camp / outpost in the\ncurrent world snapshot. Published through the neutral\n`GameBaseSnapshot` schema id on the public OpenAPI surface."
       },
       "GameCharacterSnapshot": {
         "title": "GameCharacterSnapshot",
@@ -3540,7 +3540,7 @@
             }
           }
         },
-        "description": "Internal bridge-authored character snapshot.\r\n\r\nThe current live bridge is game-specific, but the publication-facing\r\nHTTP/OpenAPI contract exposes this shape under the neutral\r\nGameCharacterSnapshot schema id so external consumers can depend on\r\na target-agnostic contract."
+        "description": "Internal bridge-authored character snapshot.\n\nThe current live bridge is game-specific, but the publication-facing\nHTTP/OpenAPI contract exposes this shape under the neutral\nGameCharacterSnapshot schema id so external consumers can depend on\na target-agnostic contract."
       },
       "GameWorldSnapshot": {
         "title": "GameWorldSnapshot",
@@ -3709,7 +3709,7 @@
             }
           }
         },
-        "description": "Internal bridge-authored snapshot of the current game world.\r\n\r\nThe sidecar currently fills this from the shipped Palworld bridge,\r\nbut the publication-facing HTTP/OpenAPI contract exposes the same shape\r\nunder the neutral GameWorldSnapshot schema id."
+        "description": "Internal bridge-authored snapshot of the current game world.\n\nThe sidecar currently fills this from the shipped Palworld bridge,\nbut the publication-facing HTTP/OpenAPI contract exposes the same shape\nunder the neutral GameWorldSnapshot schema id."
       },
       "HealthSuggestion": {
         "required": [
@@ -3736,7 +3736,7 @@
             "type": "string"
           }
         },
-        "description": "One actionable next-step hint surfaced in IReadOnlyList&lt;HealthSuggestion&gt; RuntimeHealth.Suggestions.\r\n            string HealthSuggestion.Code is a stable kebab-case identifier (e.g. \"no-packs-loaded\",\r\n            \"inference-circuit-open\", \"bridge-idle\") so dashboards and CI tooling can\r\n            match on it without parsing the Message.string HealthSuggestion.Message is a single sentence explaining the situation in plain\r\n            English.string? HealthSuggestion.Command is an optional copy-paste command (a pal verb,\r\n            a PowerShell one-liner, etc.) the operator can run to address it. Null when no\r\n            single-shot remediation exists.string HealthSuggestion.Severity is one of \"info\" / \"warn\" / \"urgent\"\r\n            and lets every consumer (dashboard, MCP client, pal next, pal doctor) render\r\n            matching visual treatment without duplicating a code-to-severity map. The builder\r\n            is the source of truth so a new hint code automatically lights up the right colour\r\n            across every surface without coordinated edits."
+        "description": "One actionable next-step hint surfaced in IReadOnlyList&lt;HealthSuggestion&gt; RuntimeHealth.Suggestions.\n            string HealthSuggestion.Code is a stable kebab-case identifier (e.g. \"no-packs-loaded\",\n            \"inference-circuit-open\", \"bridge-idle\") so dashboards and CI tooling can\n            match on it without parsing the Message.string HealthSuggestion.Message is a single sentence explaining the situation in plain\n            English.string? HealthSuggestion.Command is an optional copy-paste command (a pal verb,\n            a PowerShell one-liner, etc.) the operator can run to address it. Null when no\n            single-shot remediation exists.string HealthSuggestion.Severity is one of \"info\" / \"warn\" / \"urgent\"\n            and lets every consumer (dashboard, MCP client, pal next, pal doctor) render\n            matching visual treatment without duplicating a code-to-severity map. The builder\n            is the source of truth so a new hint code automatically lights up the right colour\n            across every surface without coordinated edits."
       },
       "HttpValidationProblemDetails": {
         "type": "object",
@@ -5808,7 +5808,7 @@
             "format": "float"
           }
         },
-        "description": "Pass 34 / C1 — request shape for `POST /api/chat/party`.\r\nFans out a single utterance across several character ids so a\r\nwhole party of companions can reply to the same player prompt in\r\nsequence. Uses the existing ChatRequest machinery\r\nper-character — so every reply still goes through the task-aware\r\nexecution profile, the Pass-8 planner, rate limiting, and\r\ndeterministic fallback.\r\n\r\nDeliberately NOT a contract change on ChatRequest:\r\nthe per-turn shape stays identical so single-character callers\r\nsee zero behaviour change. Party chat is an orchestration on top."
+        "description": "Pass 34 / C1 — request shape for `POST /api/chat/party`.\nFans out a single utterance across several character ids so a\nwhole party of companions can reply to the same player prompt in\nsequence. Uses the existing ChatRequest machinery\nper-character — so every reply still goes through the task-aware\nexecution profile, the Pass-8 planner, rate limiting, and\ndeterministic fallback.\n\nDeliberately NOT a contract change on ChatRequest:\nthe per-turn shape stays identical so single-character callers\nsee zero behaviour change. Party chat is an orchestration on top."
       },
       "PresentationCuePlan": {
         "type": "object",
@@ -5931,7 +5931,7 @@
             ]
           }
         },
-        "description": "Wire-level request shape for `POST /api/promotion/apply/preview`.\r\nCallers name the task class + pattern id they want a preview for;\r\nthe server looks up the matching candidate in the live ledger and\r\nbuilds the preview from the derived PromotionSuggestion."
+        "description": "Wire-level request shape for `POST /api/promotion/apply/preview`.\nCallers name the task class + pattern id they want a preview for;\nthe server looks up the matching candidate in the live ledger and\nbuilds the preview from the derived PromotionSuggestion."
       },
       "PromotionApplyRequest": {
         "type": "object",
@@ -7905,17 +7905,17 @@
             "items": {
               "$ref": "#/components/schemas/FallbackStrategyCount"
             },
-            "description": "Per-strategy usage counter from the deterministic fallback director.\r\n            Rendered as labeled Prometheus counters (`palllm_fallback_strategy_total{strategy=\"...\"}`).\r\n            Empty dictionary when no fallback replies have been served yet."
+            "description": "Per-strategy usage counter from the deterministic fallback director.\n            Rendered as labeled Prometheus counters (`palllm_fallback_strategy_total{strategy=\"...\"}`).\n            Empty dictionary when no fallback replies have been served yet."
           },
           "ModelTierTransitionCounts": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ModelTierTransitionCount"
             },
-            "description": "Per-transition counter for model-tier graduations. Each entry records\r\n            a directional transition (for example, `small -&gt; large`) along with how many times that\r\n            transition fired since startup. Rendered as labeled Prometheus counters\r\n            (`palllm_model_tier_transition_total{from=\"...\",to=\"...\"}`)."
+            "description": "Per-transition counter for model-tier graduations. Each entry records\n            a directional transition (for example, `small -&gt; large`) along with how many times that\n            transition fired since startup. Rendered as labeled Prometheus counters\n            (`palllm_model_tier_transition_total{from=\"...\",to=\"...\"}`)."
           },
           "ChatLatency": {
-            "description": "Cumulative Prometheus-style histogram of end-to-end chat latency\r\n            in seconds. Buckets cover the realistic range for PalLLM: sub-10ms for\r\n            fallback-only paths, up to 60s for inference-backed paths on large models.",
+            "description": "Cumulative Prometheus-style histogram of end-to-end chat latency\n            in seconds. Buckets cover the realistic range for PalLLM: sub-10ms for\n            fallback-only paths, up to 60s for inference-backed paths on large models.",
             "$ref": "#/components/schemas/ChatLatencyHistogram"
           },
           "Suggestions": {
@@ -7923,7 +7923,7 @@
             "items": {
               "$ref": "#/components/schemas/HealthSuggestion"
             },
-            "description": "Operator-actionable next-step hints derived from the current snapshot.\r\n            Empty when the runtime is healthy. Each entry carries a stable `Code` for\r\n            programmatic consumption (dashboards, `pal next` advisor, MCP tools), a\r\n            human-readable `Message`, and an optional `Command` the operator can\r\n            copy-paste to address it. This is the single source of \"what should I do\r\n            right now?\" for both /api/health curl callers and the Field Console."
+            "description": "Operator-actionable next-step hints derived from the current snapshot.\n            Empty when the runtime is healthy. Each entry carries a stable `Code` for\n            programmatic consumption (dashboards, `pal next` advisor, MCP tools), a\n            human-readable `Message`, and an optional `Command` the operator can\n            copy-paste to address it. This is the single source of \"what should I do\n            right now?\" for both /api/health curl callers and the Field Console."
           }
         }
       },

@@ -74,14 +74,22 @@ try {
         throw "Build completed but no generated OpenAPI document named 'palllm-sidecar-v1.json' was found under $tempDirectory."
     }
 
-    $generatedContent = [System.IO.File]::ReadAllText($generated.FullName).Replace("`r`n", "`n")
+    # Pass 369: normalize line endings at two levels.
+    # 1. The file's own newlines ("`r`n" -> "`n").
+    # 2. JSON-escaped CR + LF sequences inside string values ("\\r\\n" -> "\\n").
+    #    The OpenAPI generator captures XML doc-comment summaries verbatim,
+    #    and on Windows the trailing newline of each summary line gets
+    #    JSON-escaped as "\\r\\n" while a Linux host emits just "\\n". Both
+    #    are semantically identical descriptions; normalizing here keeps
+    #    the snapshot portable across CI runners.
+    $generatedContent = [System.IO.File]::ReadAllText($generated.FullName).Replace("`r`n", "`n").Replace('\r\n', '\n')
 
     if ($Verify) {
         if (-not (Test-Path $SnapshotPath)) {
             throw "Committed snapshot missing at $SnapshotPath. Run scripts/export-openapi.ps1 once to create it."
         }
 
-        $snapshotContent = [System.IO.File]::ReadAllText($SnapshotPath).Replace("`r`n", "`n")
+        $snapshotContent = [System.IO.File]::ReadAllText($SnapshotPath).Replace("`r`n", "`n").Replace('\r\n', '\n')
         if (-not [string]::Equals($generatedContent, $snapshotContent, [System.StringComparison]::Ordinal)) {
             throw "Committed snapshot drift detected at $SnapshotPath. Re-run scripts/export-openapi.ps1 and commit the updated file."
         }

@@ -44,6 +44,36 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
+- **Pass 370 - Pass 369 follow-up: three more Linux-only CI bugs.**
+  Pass 369's push exposed three more failures that Windows-local audits
+  never catch. (1) `scripts/export-openapi.ps1 -Verify` compared the
+  committed snapshot byte-for-byte after a file-level `\r\n -> \n`
+  normalization, but the OpenAPI generator embeds 384 JSON-escaped
+  `\\r\\n` sequences inside multi-line summary string values. On Windows
+  those are `\\r\\n`; on Linux they're `\\n`. Added a second
+  `.Replace('\r\n', '\n')` after the file-level normalization so both
+  hosts compare against the same canonical form. Regenerated the
+  committed `docs/openapi/palllm-sidecar-v1.json` with the new
+  normalization (Python confirms `0` literal `\r\n` sequences remain).
+  (2) `RuntimeTests.RuntimeWarningLogs_StayStableAndDoNotEchoRawExceptionText`
+  had a sub-block that opened a `FileShare.Read` handle and expected
+  `ClearOutbox()` to log "Failed to clear outbox entry locked.json: ..."
+  - Windows mandatory locking blocks the delete, POSIX advisory locking
+  does not, so on Linux there's no warning to find and `LINQ.Single`
+  throws "Sequence contains no matching element". Wrapped that block
+  in `if (OperatingSystem.IsWindows())` with a comment explaining the
+  contract is OS-specific. (3)
+  `RuntimeTests.SaveSession_WritesCompactMemoryPayloadWithoutEmbeddings`
+  expected "Session save failed: session file could not be written."
+  but on Linux gets "Session save failed: session directory is
+  unavailable." (the "blocked root is a file, not a directory" check
+  trips earlier than the file-write check). Both phrasings are
+  intentional and both omit the local path; relaxed the assertion to
+  `Is.AnyOf(...)` so the test pins the contract on both runners. Local
+  Windows targeted run: `3 / 3` passed. Full audit at
+  `../artifacts/full-audit/20260523-161235/RESULTS.md` stays
+  `16 / 16` PASS, test count `1309`. No production code changed.
+
 - **Pass 369 - Triage post-publish CI: fix two Linux-only test bugs.**
   Pass 368 wired up the new ruleset, which means CI now runs on every
   push against both `windows-latest` and `ubuntu-latest`. The very

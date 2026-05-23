@@ -18,6 +18,57 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 370 - Pass 369 follow-up: three more Linux-only CI bugs (2026-05-23)
+
+**Context.** Pass 369 fixed two of the Linux-CI failures, but the push
+exposed three more that the first triage missed. Same theme: the
+codebase had silent Windows-only assumptions in places no Windows-local
+audit could catch.
+
+**Bug 1 - export-openapi.ps1 -Verify drift in JSON string values.**
+The script already normalized file-level `\r\n -> \n`, but the OpenAPI
+generator embeds 384 JSON-escaped `\\r\\n` sequences inside multi-line
+XML doc-comment summaries. On a Windows host those escape `\r\n`; on
+a Linux host they escape `\n`. The `-Verify` byte-level comparison
+fails on the embedded escapes even though the file-level newlines are
+already normalized. Added a second `.Replace('\r\n', '\n')` after the
+file-level normalization so both hosts compare against the same
+canonical form. Regenerated `docs/openapi/palllm-sidecar-v1.json` on
+Windows with the new normalization; Python confirms `0` literal
+`\r\n` sequences remain in the committed file.
+
+**Bug 2 - RuntimeWarningLogs_StayStableAndDoNotEchoRawExceptionText.**
+Test opened a file with `FileShare.Read` and expected `ClearOutbox()`
+to log a "Failed to clear outbox entry locked.json: ..." warning.
+Windows uses mandatory locking, so the delete fails and the warning
+fires. POSIX (Linux, macOS) uses advisory locking only, so the delete
+succeeds, no warning is emitted, and `LINQ.Single` throws "Sequence
+contains no matching element". Wrapped the locked-file sub-block in
+`if (OperatingSystem.IsWindows())` with an inline comment explaining
+why the contract is OS-specific. The Windows-only assertion still
+pins the sanitised-message contract on the OS where the runtime
+actually ships.
+
+**Bug 3 - SaveSession_WritesCompactMemoryPayloadWithoutEmbeddings.**
+Test pointed `PalSavedRoot` at a file (not a directory) and expected
+`"Session save failed: session file could not be written."`. On Linux
+the production code's "blocked root is a file, not a directory"
+check trips earlier than the file-write check, so the actual message
+is `"Session save failed: session directory is unavailable."` Both
+phrasings are intentional and both omit the local path. Relaxed the
+assertion to `Is.AnyOf(...)` so the test pins the cross-platform
+contract: stable, sanitised, no path echo.
+
+**Verification.**
+- Targeted local Windows run: `dotnet test --filter
+  "FullyQualifiedName~RuntimeTests.RuntimeWarningLogs_StayStableAndDoNotEchoRawExceptionText|FullyQualifiedName~RuntimeTests.SaveSession_WritesCompactMemoryPayloadWithoutEmbeddings|FullyQualifiedName~OpenApiSnapshotTests"`
+  passed `3 / 3`.
+- Full audit at `artifacts/full-audit/20260523-161235/RESULTS.md`
+  passed `16 / 16`.
+- No production code changed (the test logic changes are scoped to
+  test files + an export-script normalization tweak + the
+  regenerated snapshot file). Test count stays `1309`.
+
 ### Pass 369 - Fix two Linux-only test bugs surfaced by first CI run (2026-05-23)
 
 **Context.** Pass 368's main-branch ruleset wires required status
