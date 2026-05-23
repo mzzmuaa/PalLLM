@@ -3,7 +3,7 @@
 ![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)
 ![.NET 10](https://img.shields.io/badge/.NET-10.0--LTS-blueviolet.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Container-lightgrey.svg)
-![Tests](https://img.shields.io/badge/tests-1310%20passing-success.svg)
+![Tests](https://img.shields.io/badge/tests-1313%20passing-success.svg)
 ![MCP](https://img.shields.io/badge/MCP-2025--06--18-purple.svg)
 ![Coverage](https://img.shields.io/badge/coverage-86.9%25%20line%20%7C%2070.4%25%20branch-brightgreen.svg)
 ![Status](https://img.shields.io/badge/roadmap-76.2%25%20honest-blue.svg)
@@ -54,9 +54,9 @@ PalLLM v1.0 ships configured for a specific reference rig. See
 [`docs/MINIMUM_REQUIREMENTS.md`](docs/MINIMUM_REQUIREMENTS.md) for
 the full spec.
 
-- **GPU:** single 24 GB VRAM Ampere-class card (e.g. RTX 3090) or better
-- **RAM:** 32 GB DDR4 or better
-- **CPU:** Zen 3 + 3D V-Cache (e.g. Ryzen 7 5800X3D) or comparable
+- **GPU:** 12 GB VRAM Ampere-class card (e.g. RTX 3060 12 GB) or newer
+- **RAM:** 16 GB DDR4 / DDR5 or better
+- **CPU:** 6-core x86 (Zen 3 / 11th-gen Core era) or better, AVX2 required
 - **OS:** Windows 10 / 11 x64
 - **Disk:** ~80 GB free for the bundled engine + curated models
 
@@ -72,7 +72,7 @@ an LLM (see the "Is this ready to use?" section below).
 **Sidecar + dashboard + MCP surface: yes, today.** The packaged
 `PalLLM-v1.0.0.zip` installs via `install.bat`, launches via
 `play.bat`, and serves the Field Console at
-`http://localhost:5088`. 1310 NUnit tests pass. 16/16 drift gates
+`http://localhost:5088`. 1313 NUnit tests pass. 16/16 drift gates
 green. 57 `/api` routes + 38 MCP tools all respond on a cold-boot
 of the packaged single-file `.exe`.
 
@@ -158,7 +158,7 @@ into Palworld; the mod consumes outbox files at its own cadence.
 > honesty pass). Sidecar runtime is effectively production-ready; the
 > remaining ~24pp live in the UE4SS Lua mod (native HUD binding, native
 > audio playback, full action executor coverage).
-> `1310` tests passing. `57` `/api` routes + complete `MCP` server at `/mcp`
+> `1313` tests passing. `57` `/api` routes + complete `MCP` server at `/mcp`
 > (`38` tools, `6` direct resources + `1` template, `4` prompts). `122`
 > feature-catalog entries (`119 ready / 2 scaffolded / 1 deferred`).
 > `19` deterministic fallback strategies.
@@ -395,7 +395,7 @@ so monitoring and the public contract still reach the sidecar; flip
 
 ```powershell
 dotnet build D:\Coding\PalLLM\PalLLM.sln
-dotnet test  D:\Coding\PalLLM\PalLLM.sln      # 1310 passing
+dotnet test  D:\Coding\PalLLM\PalLLM.sln      # 1313 passing
 dotnet run   --project D:\Coding\PalLLM\src\PalLLM.Sidecar\PalLLM.Sidecar.csproj
 ```
 
@@ -446,7 +446,7 @@ Verified test status on `2026-05-17`:
 
 ```text
 $ dotnet test D:\Coding\PalLLM\PalLLM.sln
-Passed!  - Failed: 0, Passed: 1310, Skipped: 0, Total: 1310
+Passed!  - Failed: 0, Passed: 1313, Skipped: 0, Total: 1313
 ```
 
 ## Portable adapter surface

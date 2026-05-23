@@ -24,7 +24,7 @@ D:\Coding\PalLLM\
 |   |   +-- Mcp/                    -> MCP tools + resources + prompts (38 tools)
 |   |   +-- wwwroot/                -> Field Console dashboard (static HTML/JS/CSS)
 |   +-- mod/ue4ss/Mods/PalLLM/      -> Lua bridge (Windows-only, Palworld-specific)
-+-- tests/PalLLM.Tests/             -> NUnit, 1310 tests, one file per subsystem
++-- tests/PalLLM.Tests/             -> NUnit, 1313 tests, one file per subsystem
 +-- scripts/                        -> PowerShell: install, doctor, smoke, audit, package
 +-- docs/                           -> Di�taxis-organised documentation
 ```

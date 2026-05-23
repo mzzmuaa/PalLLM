@@ -18,9 +18,10 @@ Passes 339-355 built broad multi-hardware / multi-model support
 under the working assumption that "more configs supported = better
 project." A senior-dev review (Pass 353) flagged this as scope
 sprawl: each path multiplies test surface, doc surface, and bug
-variance. Pass 356 narrowed v1.0 to a single reference rig
-(RTX 3090 / 32 GB DDR4 / 5800X3D). The code for the broader
-matrix wasn't deleted because:
+variance. Pass 356 narrowed v1.0 to a single reference rig; Pass 373
+lowered that rig to RTX 3060 12 GB / 16 GB DDR4 / 6-core x86 at full
+feature parity. The code for the broader matrix wasn't deleted
+because:
 
 1. **It's tested.** Ripping working tested code is debt of its
    own kind — undoing the work is harder than disabling it.

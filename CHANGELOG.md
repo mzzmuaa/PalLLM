@@ -8,7 +8,7 @@ All notable changes to PalLLM are documented here. Format follows
 First public-ready revision. Collapsed from multiple in-flight drafts
 dated `2026-04-18`, `2026-04-19`, `2026-04-22`, and `2026-04-23`.
 
-**Current baseline (rolling):** `1310` passing tests - `16/16` drift
+**Current baseline (rolling):** `1313` passing tests - `16/16` drift
 gates green - `122` feature-catalog entries (119 ready / 2 scaffolded
 / 1 deferred) - `57` `/api` routes - `38` MCP tools - `19`
 deterministic fallback strategies - `6` ADRs accepted - honest
@@ -17,6 +17,89 @@ roadmap `76.2%` - `0` build warnings.
 Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
+
+### Pass 373 - Lower minimum spec to RTX 3060 / 16 GB / 6-core (2026-05-23)
+
+**Context.** Operator directive: "find ways to maintain full features
+while reducing minimum requirements to 3060 and 16gb system ram with
+6 core cpu." The previous reference rig (RTX 3090 / 32 GB DDR4 /
+5800X3D) excluded most of the gaming-PC market. Every PalLLM feature
+fits in 12 GB VRAM + 16 GB RAM with the chat model right-sized;
+this pass right-sizes it.
+
+**New reference rig.**
+
+| Component | Minimum                                       |
+|-----------|-----------------------------------------------|
+| GPU       | 12 GB VRAM Ampere-class card (e.g. RTX 3060)  |
+| RAM       | 16 GB DDR4 / DDR5                             |
+| CPU       | 6-core x86 (Zen 3 / 11th-gen Core era)        |
+| OS        | Windows 10 / 11 x64                           |
+| Disk      | ~15 GB free                                   |
+
+Total resident memory across all features (chat + vision + TTS + ASR
++ embeddings + reranker + KV cache): ~7 GB VRAM + ~1 GB RAM. Leaves
+substantial headroom for Palworld + browser + voice chat.
+
+**Catalog change.** Added `MoeMinSystemRamGb` field to the
+`Get-RecommendedModel` catalog in `scripts/install-llama-cpp.ps1`.
+The Qwen3.6-35B-A3B-UD-Q8_K_XL MoE entry declares
+`MoeMinSystemRamGb = 32` because its `--n-cpu-moe` offload spills
+~25 GB of expert FFN tensors into system RAM. The recommender's MoE
+branch now requires `$SystemRamGb -ge $moeMinSystemRamGb` before
+picking the entry, so a 3060/16 GB host falls through to the 5 GB
+`gemma-4-E4B-it-UD-Q4_K_XL` fast-start tier instead of being
+recommended a model that would thrash.
+
+**Doc updates.**
+- `docs/MINIMUM_REQUIREMENTS.md`: complete rewrite with the new
+  reference rig table, a "what runs on the reference rig" subsystem
+  table with VRAM/RAM footprints per feature, a "scaling up" table
+  for higher-end GPUs (4070 / 3090 / 4090 / 5090), and a "migration
+  from the previous reference rig" section explaining the shift.
+  Both escape paths (cloud API + remote PC) retained for
+  sub-minimum hardware.
+- `README.md`: hardware section reworded to neutral
+  brand-block-safe language: "12 GB VRAM Ampere-class card (e.g.
+  RTX 3060 12 GB) or newer", "16 GB DDR4 / DDR5", "6-core x86
+  (Zen 3 / 11th-gen Core era)".
+- `docs/POST_RELEASE_ANNEX.md`: updated "why the annex exists"
+  paragraph to reference Pass 373's lowered reference rig.
+- `scripts/install-llama-cpp.ps1`: catalog comments updated to
+  reflect the new reference rig.
+
+**Regression tests added** (`tests/PalLLM.Tests/LlamaCppBundlingTests.cs`):
+- `InstallScript_GuardsMoeRecommendationOnSystemRam` - pins both
+  the `MoeMinSystemRamGb` catalog field and the recommender's
+  `$SystemRamGb -ge $moeMinSystemRamGb` check.
+- `MinimumRequirementsDoc_DocumentsLoweredReferenceRig` - pins the
+  new doc copy (RTX 3060 12 GB / 16 GB / 6-core, both escape
+  paths, Pass 373 attribution).
+- `ReadmeQuickstart_DocumentsLoweredHardwareTier` - pins the
+  README copy and forbids the stale 24 GB VRAM Ampere-class
+  language.
+
+Two existing tests updated (Pass 356 era) to assert the new copy:
+`MinimumRequirementsDoc_DeclaresReferenceRig` and
+`Readme_HasMinimumRequirementsSection_NearTop`.
+
+**Count cascade.** Tests: `1310 -> 1313`. Cascaded across 19 mirror
+files: `PROJECT_NUMBERS.json`, `README.md`, `CLAUDE.md`, `agents.json`,
+`pal.json`, `pal.ps1`, `docs/CHEAT_SHEET.md`, `docs/HANDOFF.md`,
+`docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/CODE_MAP.md`,
+`docs/REFACTORING_ROADMAP.md`,
+`src/PalLLM.Domain/Runtime/PalLlmRuntime.cs`, `tests/README.md`,
+`scripts/onboard.ps1`, `.cursorrules`,
+`.github/copilot-instructions.md`, this changelog, and
+`CONTRIBUTING.md`.
+
+**Verification.** Full audit at
+`artifacts/full-audit/20260523-171149/RESULTS.md` passes `16 / 16`.
+`dotnet test` reports `1313 / 1313`. Every shipping feature continues
+to work on the new lower baseline; the only behavioural change is
+that the auto-recommended chat model is now the 5 GB Gemma for hosts
+under 32 GB RAM. Hosts with 24+ GB VRAM and 32+ GB RAM still
+auto-graduate to the larger MoE exactly as before.
 
 ### Pass 372 - Public-release brand purge + CI test-counter fix (2026-05-23)
 
@@ -74,13 +157,13 @@ reintroduce the brands anywhere:
 **CI test-counter fix.** The Pass 371 CI run still failed because
 the inline bash `Assert doc counts agree with code` step counted
 only `[Test]` attributes, missing `[TestCase` (which the PowerShell
-audit uses). CI reported `1033 / 1310` test drift. Updated to
+audit uses). CI reported `1033 / 1313` test drift. Updated to
 `^\s*\[(TestCase|Test)(\(|\])` and added grep's `-a` flag so the
 adversarial-fuzz file (Pass 355) with embedded control bytes scans
 as text rather than being flagged binary.
 
 **Count cascade.**
-- Test count: `1309 -> 1310` (one new sibling-block test).
+- Test count: `1309 -> 1313` (one new sibling-block test).
 - Meta-tests: `27 -> 28`.
 - `docsCount` already at `70` from Pass 371.
 - Cascaded across `PROJECT_NUMBERS.json`, `README.md`, `CLAUDE.md`,
@@ -95,7 +178,7 @@ as text rather than being flagged binary.
 
 **Verification.** Full local audit at
 `artifacts/full-audit/20260523-164839/RESULTS.md` passes `16 / 16`.
-`dotnet test` reports `1310 / 1310`. The repo is now safe to make
+`dotnet test` reports `1313 / 1313`. The repo is now safe to make
 public. The only remaining `RimLLM` mentions are intentional (the
 operator's purge list did not include it).
 
@@ -406,7 +489,7 @@ comment), `tests/README.md`, `scripts/onboard.ps1`,
 `.github/copilot-instructions.md`, `.cursorrules`, `CONTRIBUTING.md`,
 `docs/CHEAT_SHEET.md`, this changelog, and `docs/HANDOFF.md`.
 
-**Verification.** Full `dotnet test` passed `1310 / 1310`; full audit
+**Verification.** Full `dotnet test` passed `1313 / 1313`; full audit
 passed `16 / 16` at `artifacts/full-audit/20260523-153133/RESULTS.md`.
 
 **Production-readiness verdict.** Official roadmap stays at `76.2%`.

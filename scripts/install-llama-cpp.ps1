@@ -442,6 +442,13 @@ function Get-RecommendedModel {
             DiskGb       = 39
             MinVramGb    = 18
             MoeMinVramGb = 8
+            # Pass 373: MoE partial-offload needs to keep ~25 GB of expert
+            # FFN tensors resident in system RAM (model is 39 GB on disk,
+            # ~14 GB lives in VRAM after --n-cpu-moe ~25, rest in RAM). On
+            # a 16 GB RAM machine that would thrash. Skip this entry on
+            # hosts below 32 GB RAM so the recommender falls back to the
+            # 5 GB Gemma fast-start tier instead.
+            MoeMinSystemRamGb = 32
             ContextSize  = 16384
             GpuLayers    = 99
             IsMoE        = $true
@@ -489,13 +496,15 @@ function Get-RecommendedModel {
         # niche (coding, research) and their disk footprint is
         # large — the operator must have curated them deliberately.
         #
-        # Pass 356: heavyweight families MARKED PostRelease=$true.
+        # Pass 356/373: heavyweight families MARKED PostRelease=$true.
         # They remain in the catalog so the operator's manual
         # `connect-llamacpp.ps1 -ModelProfile <family>` still works,
         # but Get-RecommendedModel skips them when the host is the
-        # v1.0 reference rig (RTX 3090 + 32 GB RAM, total 56 GB
-        # memory budget — these models exceed that even with
-        # aggressive partial offload).
+        # v1.0 reference rig (RTX 3060 12 GB + 16 GB RAM, total
+        # 28 GB memory budget — these models exceed that by a wide
+        # margin even with aggressive partial offload, and the
+        # MoeMinSystemRamGb gate added in Pass 373 also keeps them
+        # off 32 GB / 24 GB-VRAM hosts unless explicitly requested).
         @{
             Family       = 'Qwen3-Coder-Next-UD-Q6_K_XL (coding, multi-shard)'
             Path         = 'Qwen\Qwen3-Coder-Next\UD-Q6_K_XL\Qwen3-Coder-Next-UD-Q6_K_XL-00001-of-00003.gguf'
@@ -622,7 +631,17 @@ function Get-RecommendedModel {
         # MoE-partial-fit path: model is MoE and the operator has enough
         # VRAM for active tensors + KV (but not the full expert library).
         # Compute --n-cpu-moe N: deeper layers' experts go to CPU.
-        if ($entry.IsMoE -and $VramGb -ge $entry.MoeMinVramGb) {
+        #
+        # Pass 373: also require enough system RAM for the offloaded
+        # expert tensors. The catalog entry's MoeMinSystemRamGb names
+        # the floor; below that, partial-offload thrashes instead of
+        # streaming, so we skip the entry and let the recommender
+        # consider the next-smaller model (or the fast-start tier).
+        # Entries without MoeMinSystemRamGb default to 0 (no RAM gate).
+        $moeMinSystemRamGb = if ($entry.ContainsKey('MoeMinSystemRamGb')) {
+            [int]$entry.MoeMinSystemRamGb
+        } else { 0 }
+        if ($entry.IsMoE -and $VramGb -ge $entry.MoeMinVramGb -and $SystemRamGb -ge $moeMinSystemRamGb) {
             # Heuristic: start with N = (model layers / 2), then trim
             # toward 0 as VRAM grows. 8 GB → ~50 layers offloaded;
             # 16 GB → ~25 layers offloaded; 24+ GB → 0 (full GPU).
@@ -791,12 +810,13 @@ function Get-AssetNames {
 $detectedVendor = Get-DetectedGpuVendor
 $resolvedBackend = Select-Backend -Requested $Backend -Vendor $detectedVendor
 
-# Pass 356/357: shipping-target check. PalLLM v1.0 ships configured
-# for a single reference rig (RTX 3090 / 32 GB DDR4 / 5800X3D,
-# Windows). Below-reference hardware is NOT supported as a local
-# inference target -- Pass 357 hardens this from "warn and proceed"
-# to "skip local recommendation, point at the two shipping escape
-# paths: cloud API or remote PC."
+# Pass 356/357/373: shipping-target check. PalLLM v1.0 ships
+# configured for a reference rig (NVIDIA RTX 3060 12 GB / 16 GB
+# DDR4 / 6-core x86, Windows — Pass 373 lowered the bar from the
+# original 3090/32GB target). Below-reference hardware is NOT
+# supported as a local inference target -- Pass 357 hardens this
+# from "warn and proceed" to "skip local recommendation, point at
+# the two shipping escape paths: cloud API or remote PC."
 #
 # Off-target paths can be re-promoted post-release (see
 # docs/POST_RELEASE_ANNEX.md); for now, off-target hosts get a

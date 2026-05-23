@@ -805,20 +805,25 @@ public class LlamaCppBundlingTests
         string path = LocateRepoFile("docs", "MINIMUM_REQUIREMENTS.md");
         string text = File.ReadAllText(path);
 
-        // The reference rig is load-bearing for v1.0 shipping scope.
-        // Each component must be named so the spec is unambiguous.
-        Assert.That(text, Does.Contain("RTX 3090"),
-            "MINIMUM_REQUIREMENTS.md must name the GPU baseline (RTX 3090).");
-        Assert.That(text, Does.Contain("32 GB DDR4"),
-            "MINIMUM_REQUIREMENTS.md must name the RAM baseline (32 GB DDR4).");
-        Assert.That(text, Does.Contain("5800X3D"),
-            "MINIMUM_REQUIREMENTS.md must name the CPU baseline (5800X3D).");
+        // Pass 373: reference rig lowered from RTX 3090 / 32 GB / 5800X3D
+        // to RTX 3060 12 GB / 16 GB / 6-core. The doc must name each
+        // component of the new baseline unambiguously. The 3090 path is
+        // retained as a higher-tier auto-graduation row in the same doc.
+        Assert.That(text, Does.Contain("RTX 3060 12 GB"),
+            "MINIMUM_REQUIREMENTS.md must name the new GPU baseline (RTX 3060 12 GB).");
+        Assert.That(text, Does.Contain("16 GB DDR4").Or.Contain("16 GB DDR5").Or.Contain("16 GB DDR4 / DDR5"),
+            "MINIMUM_REQUIREMENTS.md must name the new RAM baseline (16 GB DDR4/DDR5).");
+        Assert.That(text, Does.Contain("6-core"),
+            "MINIMUM_REQUIREMENTS.md must name the new CPU baseline (6-core).");
         Assert.That(text, Does.Contain("Windows 10").Or.Contain("Windows 11"),
             "MINIMUM_REQUIREMENTS.md must name the OS baseline (Windows 10/11).");
+        // The 35B-A3B model is now the auto-graduation target for 24 GB
+        // VRAM + 32 GB RAM hosts, not the v1.0 shipping default; it must
+        // still be named in the doc as the next-tier model.
         Assert.That(text, Does.Contain("Qwen3.6-35B-A3B-UD-Q8_K_XL"),
-            "MINIMUM_REQUIREMENTS.md must name the quality-tier model that runs on the reference rig.");
-        Assert.That(text, Does.Contain("Gemma-4-E4B-it-UD-Q4_K_XL").Or.Contain("gemma-4-E4B-it-UD-Q4_K_XL"),
-            "MINIMUM_REQUIREMENTS.md must name the fast-start tier.");
+            "MINIMUM_REQUIREMENTS.md must still name the larger MoE model as the next-tier auto-graduation target.");
+        Assert.That(text, Does.Contain("gemma-4-E4B-it-UD-Q4_K_XL"),
+            "MINIMUM_REQUIREMENTS.md must name the small-tier model that ships on the new reference rig.");
     }
 
     [Test]
@@ -851,8 +856,9 @@ public class LlamaCppBundlingTests
 
         Assert.That(text, Does.Contain("Minimum requirements"),
             "README.md must include a 'Minimum requirements' section.");
-        Assert.That(text, Does.Contain("RTX 3090"),
-            "README's minimum-requirements section must name the GPU baseline.");
+        // Pass 373: lowered minimum names the RTX 3060 12 GB baseline.
+        Assert.That(text, Does.Contain("RTX 3060 12 GB"),
+            "README's minimum-requirements section must name the new GPU baseline (RTX 3060 12 GB).");
         Assert.That(text, Does.Contain("MINIMUM_REQUIREMENTS.md"),
             "README must link to MINIMUM_REQUIREMENTS.md as the authoritative deep-dive.");
         Assert.That(text, Does.Contain("POST_RELEASE_ANNEX.md"),
@@ -998,6 +1004,82 @@ public class LlamaCppBundlingTests
             "POST_RELEASE_ANNEX.md must have a section labelling cloud + remote PC as the shipping replacement for below-reference local inference.");
         Assert.That(text, Does.Contain("connect-cloud.ps1"),
             "POST_RELEASE_ANNEX.md must reference connect-cloud.ps1.");
+    }
+
+    // ---------- Pass 373: lower minimum spec to RTX 3060 / 16 GB / 6-core ----------
+
+    [Test]
+    public void InstallScript_GuardsMoeRecommendationOnSystemRam()
+    {
+        // Pass 373: the 35B-A3B MoE model has roughly 25 GB of expert FFN
+        // tensors that --n-cpu-moe pushes into system RAM. On a 16 GB host
+        // that thrashes. The catalog entry must carry a MoeMinSystemRamGb
+        // floor and Get-RecommendedModel must consult it before picking
+        // the MoE entry. Without both, a 3060/16GB rig would be steered
+        // toward the 35B model and grind to a halt.
+        string script = ReadInstallScript();
+
+        Assert.That(script, Does.Contain("MoeMinSystemRamGb"),
+            "Catalog entries must declare a MoeMinSystemRamGb floor so " +
+            "Get-RecommendedModel can skip MoE picks that don't fit the host's RAM.");
+
+        // The Qwen3.6-35B-A3B catalog entry specifically must carry the
+        // 32 GB floor — that's the model whose offload tensors don't fit
+        // the new 16 GB reference rig.
+        int qwenIndex = script.IndexOf("'Qwen3.6-35B-A3B-UD-Q8_K_XL", StringComparison.Ordinal);
+        Assert.That(qwenIndex, Is.GreaterThanOrEqualTo(0), "Qwen3.6-35B-A3B entry missing from catalog.");
+        // Look ahead ~1.5 KB for the MoeMinSystemRamGb assignment within
+        // the same hashtable literal (the entry has a long comment block).
+        string qwenBlock = script.Substring(qwenIndex, Math.Min(1500, script.Length - qwenIndex));
+        Assert.That(qwenBlock, Does.Match(@"MoeMinSystemRamGb\s*=\s*32\b"),
+            "Qwen3.6-35B-A3B-UD-Q8_K_XL must declare MoeMinSystemRamGb = 32 " +
+            "(its --n-cpu-moe offload would thrash a 16 GB host).");
+
+        // The recommender's MoE branch must consult MoeMinSystemRamGb.
+        Assert.That(script, Does.Match(@"\$SystemRamGb\s+-ge\s+\$moeMinSystemRamGb"),
+            "Get-RecommendedModel's MoE branch must require " +
+            "$SystemRamGb -ge $moeMinSystemRamGb before recommending a MoE entry.");
+    }
+
+    [Test]
+    public void MinimumRequirementsDoc_DocumentsLoweredReferenceRig()
+    {
+        // Pass 373: docs/MINIMUM_REQUIREMENTS.md must declare the new
+        // RTX 3060 / 16 GB / 6-core reference rig and keep both escape
+        // paths (cloud API + remote PC) for sub-minimum hardware.
+        string text = File.ReadAllText(LocateRepoFile("docs", "MINIMUM_REQUIREMENTS.md"));
+
+        Assert.That(text, Does.Contain("RTX 3060 12 GB"),
+            "MINIMUM_REQUIREMENTS.md must name the RTX 3060 12 GB reference card.");
+        Assert.That(text, Does.Contain("16 GB"),
+            "MINIMUM_REQUIREMENTS.md must name the 16 GB RAM minimum.");
+        Assert.That(text, Does.Contain("6-core"),
+            "MINIMUM_REQUIREMENTS.md must name the 6-core CPU minimum.");
+        Assert.That(text, Does.Contain("gemma-4-E4B-it-UD-Q4_K_XL"),
+            "MINIMUM_REQUIREMENTS.md must name the small-tier model that ships on the new reference rig.");
+        Assert.That(text, Does.Contain("connect-cloud.ps1"),
+            "MINIMUM_REQUIREMENTS.md must keep the cloud-API escape path callout.");
+        Assert.That(text, Does.Contain("connect-llamacpp.ps1"),
+            "MINIMUM_REQUIREMENTS.md must keep the remote-PC escape path callout.");
+        Assert.That(text, Does.Contain("Pass 373"),
+            "MINIMUM_REQUIREMENTS.md must reference Pass 373 in its migration callout.");
+    }
+
+    [Test]
+    public void ReadmeQuickstart_DocumentsLoweredHardwareTier()
+    {
+        // README.md's hardware section must reflect the Pass 373 lowered
+        // minimum — no stale 24 GB VRAM Ampere-class copy that would
+        // scare off 3060 / 4060 / 4070 operators who actually do fit
+        // the new minimum.
+        string readme = File.ReadAllText(LocateRepoFile("README.md"));
+
+        Assert.That(readme, Does.Contain("RTX 3060 12 GB"),
+            "README.md must name the RTX 3060 12 GB reference card after Pass 373.");
+        Assert.That(readme, Does.Contain("16 GB DDR"),
+            "README.md must name the 16 GB RAM minimum after Pass 373.");
+        Assert.That(readme, Does.Not.Contain("24 GB VRAM Ampere-class"),
+            "Stale 24 GB VRAM Ampere-class copy must not remain in README.md after Pass 373.");
     }
 
     // ---------- Helpers ----------

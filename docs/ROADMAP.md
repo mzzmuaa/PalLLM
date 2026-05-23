@@ -22,7 +22,7 @@ Verified directly against the current tree and a fresh test run:
   - deferred: `autopilot-port`
 - `19` deterministic fallback strategies in
   `src/PalLLM.Domain/Runtime/FallbackBehaviorEngine.cs`
-- `1310` passing NUnit tests from `dotnet test PalLLM.sln`
+- `1313` passing NUnit tests from `dotnet test PalLLM.sln`
 - first-pass player/operator tooling in `scripts/install-mod.ps1`,
   `scripts/play-palllm.ps1`,
   `scripts/doctor.ps1`, `scripts/run-sidecar-smoke.ps1`,

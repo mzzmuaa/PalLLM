@@ -120,7 +120,7 @@ function Run-List {
             Tagline = 'Day-to-day code + test + audit loop.'
             Verbs = @(
                 @{ Verb = 'build';      Description = 'dotnet build (Release)' }
-                @{ Verb = 'test';       Description = 'dotnet test  (Release, quiet) -- expects 1310 / 1310' }
+                @{ Verb = 'test';       Description = 'dotnet test  (Release, quiet) -- expects 1313 / 1313' }
                 @{ Verb = 'audit';      Description = 'full drift audit -- build + tests + 16 gates (~30 s)' }
                 @{ Verb = 'fast-audit'; Description = 'drift gates only -- skip coverage / SBOM / packaging' }
                 @{ Verb = 'cleanup';    Description = 'preview/remove generated audit coverage and build outputs (-Apply to delete)' }

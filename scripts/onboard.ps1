@@ -8,7 +8,7 @@
     confirm the repo builds and works on their machine:
 
       1. dotnet build (Release) - verifies .NET 10 SDK + dependencies
-      2. dotnet test  (Release) - confirms 1310 / 1310 tests pass
+      2. dotnet test  (Release) - confirms 1313 / 1313 tests pass
       3. drift audit (without coverage / SBOM / packaging for speed) -
          confirms 16 / 16 gates green
       4. boots the sidecar in the background and opens the Field
@@ -113,7 +113,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Pass "Build succeeded"
 
 # -- Step 3 ---------------------------------------------------------
-Write-Step "3" "dotnet test (Release) - 1310 expected"
+Write-Step "3" "dotnet test (Release) - 1313 expected"
 $testOutput = & dotnet test $slnPath --configuration Release --nologo --verbosity quiet --no-build 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Host $testOutput

@@ -10,7 +10,7 @@ agent sees.
 ## Project facts (verify via `pal.ps1`)
 
 - .NET 10 LTS, ASP.NET Core minimal APIs, NUnit 3.x, Lua 5.1
-- 1310 tests, 16 / 16 drift gates, 0 build warnings
+- 1313 tests, 16 / 16 drift gates, 0 build warnings
 - 57 `/api/*` routes, 38 MCP tools, 19 deterministic fallback
   strategies, 122 feature-catalog entries, 6 ADRs
 
@@ -18,7 +18,7 @@ agent sees.
 
 ```powershell
 pwsh ./pal.ps1 build      # quick build check
-pwsh ./pal.ps1 test       # 1310 / 1310 expected
+pwsh ./pal.ps1 test       # 1313 / 1313 expected
 pwsh ./pal.ps1 audit      # 16 drift gates -- fail = stop
 ```
 
