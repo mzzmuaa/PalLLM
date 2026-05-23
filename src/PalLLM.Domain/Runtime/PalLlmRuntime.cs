@@ -22,7 +22,7 @@ using PalLLM.Domain.Packs;
 //            GetMemorySnapshot. ~3863 lines but every method is documented
 //            inline and the file's structure mirrors the runtime composition.
 //            Touch only what you're changing.
-//   gate:    Drift_Test_count_docs (1309 expected); ChatAsync behaviour pinned
+//   gate:    Drift_Test_count_docs (1310 expected); ChatAsync behaviour pinned
 //            by PalLlmRuntimeChatTests + neighbouring suites.
 //   adr:     0001-deterministic-first-reply-pipeline.md (load-bearing for
 //            the chat hot path), 0005-ttl-cache-for-posture-surfaces.md.

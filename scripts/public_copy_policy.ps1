@@ -72,8 +72,13 @@ function Get-PublicCopyPolicy {
 
     $blockedSiblingProjectPatterns = @(
         [pscustomobject]@{
-            Pattern = '\b(?:RimLLM|OmniForge|DeepForge|byte-forge|byte-forward|byte-synthesis|byte-qwen-frontier|byte-qwen-modernize|byte-council)\b|D:[\\/]+Coding[\\/]+(?:Byte|RimLLM|OmniForge|DeepForge)'
-            Message = "Public-facing copy should not mention sibling project names, local sibling paths, or imported prompt-pack identities."
+            # Pass 372 widening: the repo is going public, so guard
+            # against any sibling-project leak — bare project names,
+            # bare prompt-pack identifiers, and local sibling paths.
+            # Match `Byte` only when capitalised (the noun "byte" is
+            # legitimate technical vocabulary and stays case-sensitive).
+            Pattern = '(?:\bByte\b|\bOmniForge\b|\bDeepForge\b|\bVulcan\b|\bRimLLM\b|\bbyte-(?:forge|forward|synthesis|qwen-frontier|qwen-modernize|council)\b)|D:[\\/]+Coding[\\/]+(?:Byte|RimLLM|OmniForge|DeepForge|Vulcan)'
+            Message = "Public-facing copy should not mention sibling project names, local sibling paths, or imported prompt-pack identities. Pass 372 widened the block list to include `Byte` (capitalised), `Vulcan`, and bare `OmniForge`/`DeepForge` so the repo can be made public without leaking the maintainer's other private projects."
         }
     )
 

@@ -41,7 +41,7 @@ proven native HUD delivery points to the next release-smoke lane. This keeps
 dashboards, support bundles, and automation from maintaining separate
 diagnosis-to-command maps.
 
-Focused sibling scan impact: RimLLM, OmniForge, Byte, and DeepForge reinforced
+Focused sibling scan impact: RimLLM, external sibling research reinforced
 the generic pattern of machine-readable release evidence with explicit next
 actions. PalLLM lifted no sibling code, prompts, names, branding, product
 identity, or unrelated IP.
@@ -120,7 +120,7 @@ OOM/backoff evidence, strict-route parser stability, route p95 TTFT/ITL/E2E
 latency, and PalLLM fallback counters. No request shape, route count, model
 default, or deterministic fallback path changed.
 
-Focused sibling scan impact: RimLLM and OmniForge reinforced the same generic
+Focused sibling scan impact: RimLLM and an external asset-generation sibling reinforced the same generic
 rule: FP4/FP8 and speculative decoding need hardware, quality, and telemetry
 gates before they become defaults. PalLLM lifted no sibling code, prompts,
 names, branding, product identity, or unrelated IP.
@@ -156,7 +156,7 @@ from `/api/bridge/proof`. `/api/release/readiness` now preserves those fields in
 `NativeProofEvidence`, so a failed live Palworld proof run can be diagnosed from
 the durable JSON alone without treating console output as source of truth.
 
-Focused sibling scan impact: DeepForge's playable-proof scripts and RimLLM's
+Focused sibling scan impact: an external project's playable-proof scripts and RimLLM's
 release-evidence/replay notes reinforced the generic transition-log pattern.
 PalLLM lifted no sibling code, prompts, names, branding, product identity, or
 unrelated IP.
@@ -223,7 +223,7 @@ async-transfer, cache-namespace, load/store failure, and local-prefix rollback
 receipts. No route count, MCP tool count, feature-catalog entry, OpenAPI schema,
 request shape, or deterministic fallback behavior changed.
 
-Focused sibling scan impact: DeepForge and OmniForge reinforced the generic
+Focused sibling scan impact: external sibling research reinforced the generic
 lesson that split prefill/decode and KV offload need route-SLO proof, topology
 receipts, rollback canaries, and sanitized evidence before any promotion. Hermes
 Gateway and RimLLM reinforced runtime-detected KV/cache capability guardrails.
@@ -271,7 +271,7 @@ entry, OpenAPI schema, request shape, or deterministic fallback behavior changed
 
 Focused sibling scan impact: RimLLM reinforced the generic pattern that
 schema-bearing inference should include schema digest plus route/model identity
-in cache and proof keys, while OmniForge reinforced schema-backed handoff
+in cache and proof keys, while an external asset-generation sibling reinforced schema-backed handoff
 contracts. PalLLM lifted no sibling code, prompts, names, branding, product
 identity, or unrelated IP.
 
@@ -314,7 +314,7 @@ proof-contract hardening only: no route count, MCP tool count, feature-catalog
 entry, OpenAPI schema, request shape, or deterministic fallback behavior
 changed.
 
-Focused sibling scan impact: Hermes Gateway, RimLLM, and DeepForge reinforced
+Focused sibling scan impact: Hermes Gateway, RimLLM, and an action-RPG sibling runtime reinforced
 generic evidence-ledger, histogram, and "model work must not block live
 gameplay" patterns. PalLLM lifted no sibling code, prompts, names, branding,
 product identity, or unrelated IP.
@@ -346,7 +346,7 @@ guidance/profile hardening only: no route count, MCP tool count,
 feature-catalog entry, OpenAPI schema, request shape, or deterministic fallback
 behavior changed.
 
-Focused sibling scan impact: DeepForge and RimLLM independently reinforced the
+Focused sibling scan impact: an action-RPG sibling runtime and RimLLM independently reinforced the
 same generic native-MTP lesson: a drafter must have its own manifest/proof
 chain instead of piggybacking on a broad speculation flag. PalLLM lifted no
 sibling code, prompts, names, branding, product identity, or unrelated IP.
@@ -413,7 +413,7 @@ off by default and qualify against this local reranker with replay evidence.
 
 Active `D:\Coding` sibling scans reinforced the same bounded pattern:
 `RimLLM` has useful embedding-circuit-breaker notes for future external
-embedding work, while `OmniForge` keeps model-profile metadata for embedding
+embedding work, while `an external asset-generation sibling` keeps model-profile metadata for embedding
 and rerank-style lanes. No sibling code, prompts, names, branding, or product
 identity was lifted into PalLLM.
 
@@ -464,7 +464,7 @@ contract text, companion identity, traits, skills, and authored pack lore now
 come before the volatile `Turn context` block (`Task tag`, world state, visual
 context, relationship, and memory snippets). No request-body fields, route
 counts, MCP tools, fallback decisions, or public contracts changed. Sibling
-scan impact: RimLLM/DeepForge/OmniForge all reinforced cache-proof and
+scan impact: RimLLM/external sibling research all reinforced cache-proof and
 publication-hygiene patterns, but PalLLM lifted no code, prompts, names,
 branding, or product identity.
 
@@ -534,9 +534,9 @@ inside the in-process Lua callback; bridge events keep content-free format,
 timing, and failure-code metadata. `/api/bridge/proof` now reports these
 callback states with route-specific next actions.
 
-Focused sibling scan impact: Byte reinforced "no silent model/fallback
+Focused sibling scan impact: the external prompt-pack project reinforced "no silent model/fallback
 changes" and hardware-fit checks, Hermes Gateway reinforced p50/p95/p99
-latency proof instead of averages, DeepForge reinforced that LLM dialogue must
+latency proof instead of averages, an action-RPG sibling runtime reinforced that LLM dialogue must
 never block player-facing loops, and RimLLM reinforced exact route smoke proof
 before promoting model-runtime features. PalLLM adopted only those generic
 proof-gating ideas; no sibling code, prompts, names, branding, or product
@@ -573,7 +573,7 @@ turns still return while the stream is unhealthy. This gives future Palworld
 proof clips a modern low-latency lane without letting stateful video streams
 queue ahead of deterministic companion chat.
 
-Focused sibling scan impact: DeepForge, Byte, and Hermes Gateway reinforced
+Focused sibling scan impact: external sibling research, and Hermes Gateway reinforced
 the same generic pattern - proof lanes need explicit admission limits,
 fallback evidence, and p50/p95/p99 receipts. No sibling code, prompts, names,
 branding, or product identity were lifted into PalLLM.
@@ -643,7 +643,7 @@ summarizes it in `/api/bridge/proof` beside the existing outbox and delivery
 lag fields. No Lua payload field, audio bytes, generated text, local paths,
 raw upstream logs, prompts, names, branding, or product identity are added.
 
-Focused sibling scan impact: Byte, OmniForge, DeepForge, and the prompt-pack
+Focused sibling scan impact: external sibling research, and the prompt-pack
 experiments reinforced no-silent-fallback gates, schema-backed proof receipts,
 release smoke artifacts, and slot/latency measurements. PalLLM adopted only
 the generic "derive route-owned latency proof from already-tracked events"
@@ -688,7 +688,7 @@ fields are computed by the sidecar, clamped to one day, and never require Lua
 to send audio bytes, generated text, local paths, raw upstream logs, prompts,
 names, branding, or product identity.
 
-Focused sibling scan impact: OmniForge and DeepForge reinforced schema-backed
+Focused sibling scan impact: external sibling research reinforced schema-backed
 latency receipts for media/runtime promotion, while RimLLM reinforced exact
 route proof before advertising native-runtime speedups. PalLLM adopted only
 the generic "derive compact timing proof at the owning lane" idea; no sibling
@@ -739,7 +739,7 @@ native in-world audio seam, without storing audio bytes, generated text, local
 paths, raw upstream logs, sibling code, prompts, names, branding, or product
 identity.
 
-Focused sibling scan impact: DeepForge, OmniForge, and RimLLM reinforced only
+Focused sibling scan impact: external sibling research reinforced only
 generic ideas: distinguish live proof from synthetic proof, make cancellation
 state observable, and keep latency/posture summaries machine-readable. PalLLM
 adopted only the content-free remaining-buffer receipt shape; no sibling code,
@@ -787,7 +787,7 @@ barge-in/cancellation design, and low-latency promotion decisions without
 persisting audio bytes, generated text, local paths, raw upstream logs, sibling
 code, prompts, names, branding, or product identity.
 
-Focused sibling scan impact: DeepForge and RimLLM reinforced only generic
+Focused sibling scan impact: an action-RPG sibling runtime and RimLLM reinforced only generic
 voice queue, cancellation, and stale-speech rejection patterns. PalLLM adopted
 only the content-free buffer-duration receipt shape; no sibling code, prompts,
 names, branding, or product identity was lifted.
@@ -913,7 +913,7 @@ the fields as sanitized short codes (`signed_integer`, `float`,
 no audio bytes, generated text, local paths, raw upstream logs, sibling code,
 prompts, names, branding, or product identity are stored.
 
-Focused sibling scan impact: OmniForge and DeepForge reinforced only generic
+Focused sibling scan impact: external sibling research reinforced only generic
 audio-output transport probes, sidecar proof manifests, latency/voice-budget
 receipts, and model-native speech gating. PalLLM adopted only the generic idea
 that native audio proof needs explicit sample interpretation before promotion;
@@ -957,8 +957,8 @@ give a future native mixer concrete buffer lifetime and cancellation evidence:
 how many complete sample frames exist and whether a partial trailing frame must
 block promotion.
 
-Focused sibling scan impact: OmniForge reinforced the generic pattern of
-source-frame-count receipts for media timeline proof, and DeepForge reinforced
+Focused sibling scan impact: an external asset-generation sibling reinforced the generic pattern of
+source-frame-count receipts for media timeline proof, and an action-RPG sibling runtime reinforced
 time-to-first-audio plus real-time-factor proof before claiming generated
 speech lanes. PalLLM adopted only the generic frame-count receipt idea; no
 sibling code, prompts, names, branding, or product identity was lifted.
@@ -1002,7 +1002,7 @@ live-proven, but incomplete sample frames now report
 `FailureCode=raw_pcm_block_alignment_invalid` before proof can claim a
 mixer-ready artifact.
 
-Focused sibling scan impact: DeepForge and OmniForge reinforced only the
+Focused sibling scan impact: external sibling research reinforced only the
 generic pattern of no-raw-audio receipts, explicit audio-output transport
 proof, and time-to-first-audio evidence. PalLLM adopted no sibling code,
 prompts, names, branding, or product identity.
@@ -1032,7 +1032,7 @@ bridge-event schema without storing audio bytes, generated text, local paths,
 raw upstream logs, sibling code, prompts, names, branding, or product identity.
 
 Focused sibling scan impact: RimLLM reinforced the generic need to reject
-partial PCM frames before engine playback, and OmniForge reinforced redacted
+partial PCM frames before engine playback, and an external asset-generation sibling reinforced redacted
 audio-output receipts with compact metadata. PalLLM adopted only those generic
 receipt/validation patterns; no sibling code, prompts, names, branding, or
 product identity was lifted.
@@ -1069,8 +1069,8 @@ WAV exists" from "the future native mixer knows the expected byte cadence and
 block alignment" without storing audio bytes, generated text, local paths, raw
 upstream logs, sibling code, prompts, names, branding, or product identity.
 
-Focused sibling scan impact: OmniForge reinforced stable media receipts,
-DeepForge reinforced explicit audio-output boundary proof, RimLLM reinforced
+Focused sibling scan impact: an external asset-generation sibling reinforced stable media receipts,
+an action-RPG sibling runtime reinforced explicit audio-output boundary proof, RimLLM reinforced
 model/audio capability truth, and the prompt-pack scan reinforced byte-stable
 contract fragments for cache reuse. PalLLM adopted only the generic
 content-free proof-receipt idea and did not lift sibling code, prompts, names,
@@ -1143,9 +1143,9 @@ PCM remains proof-only with `FailureCode=raw_pcm_native_mixer_required` because
 bare bytes are not self-describing; a native mixer still has to prove its own
 format contract before raw PCM can become player-facing.
 
-Focused sibling scan impact: OmniForge reinforced schema-backed media receipts
+Focused sibling scan impact: an external asset-generation sibling reinforced schema-backed media receipts
 with no raw media in support artifacts, RimLLM reinforced bounded PCM WAVE
-header validation before playback, and DeepForge reinforced sample-rate/channel
+header validation before playback, and an action-RPG sibling runtime reinforced sample-rate/channel
 metadata as a native-audio proof concern. PalLLM adopted only the generic
 content-free WAV metadata receipt pattern and did not lift sibling code,
 prompts, names, branding, or product identity.
@@ -1182,9 +1182,9 @@ for the speech lane's next action while still keeping receipts content-free:
 request id, mode/hint, MIME/extension, artifact byte count, attempt count,
 elapsed milliseconds, result state, short reason, and code only.
 
-Focused sibling scan impact: OmniForge reinforced schema-backed media receipts
+Focused sibling scan impact: an external asset-generation sibling reinforced schema-backed media receipts
 with stable IDs/codes, RimLLM reinforced bounded audio validation before
-playback, and DeepForge reinforced cancellation/lifetime as native-audio proof
+playback, and an action-RPG sibling runtime reinforced cancellation/lifetime as native-audio proof
 concerns. PalLLM adopted only the generic stable-code receipt pattern and did
 not lift sibling code, prompts, names, branding, or product identity.
 
@@ -1221,9 +1221,9 @@ launch a desktop helper. That makes `/api/bridge/proof` explain the exact
 remaining blocker without persisting audio bytes, local paths, upstream logs,
 or sibling-project identity.
 
-Focused sibling scan impact: DeepForge and OmniForge reinforced only the
+Focused sibling scan impact: external sibling research reinforced only the
 generic pattern that native audio lanes need explicit sample-rate/admission
-policy and proof receipts before promotion; Byte reinforced local-first
+policy and proof receipts before promotion; the external prompt-pack project reinforced local-first
 bounded voice artifacts. PalLLM adopted only the proof boundary and did not
 lift sibling code, prompts, names, branding, or product identity.
 
@@ -1256,7 +1256,7 @@ namespace hash, cache-hit rate, cold/warm TTFT and E2E latency, queue depth,
 parser stability, attach/detach or backend-stop rollback, and PalLLM fallback
 counters before promotion.
 
-Focused sibling scan impact: DeepForge and RimLLM both carried generic
+Focused sibling scan impact: an action-RPG sibling runtime and RimLLM both carried generic
 hierarchical KV/offload proof-gate notes. PalLLM adopted only the general
 evidence boundary and did not lift sibling code, prompts, names, branding, or
 product identity.
@@ -1288,7 +1288,7 @@ KV-transfer latency/failure evidence, queue pressure, decode-only rollback,
 and PalLLM fallback counters before any P/D topology can handle live companion
 turns.
 
-Focused sibling scan impact: OmniForge and DeepForge independently landed
+Focused sibling scan impact: external sibling research independently landed
 generic P/D topology receipts with the same TTFT/ITL/E2E, KV-transfer,
 fallback, failure, and route-proof boundary. PalLLM adopted only that generic
 evidence posture and did not lift sibling code, prompts, names, branding, or
@@ -1323,8 +1323,8 @@ counters, extra-key classes, and parity against `/metrics`. Promotion fails if
 raw token ids, cache salts, media ids, LoRA names, prompt-embedding hashes, or
 raw event payloads enter support/public bundles.
 
-Focused sibling scan impact: DeepForge independently landed a KV-event
-router-index integrity policy, while Byte reinforced short-interval prefix and
+Focused sibling scan impact: an action-RPG sibling runtime independently landed a KV-event
+router-index integrity policy, while the external prompt-pack project reinforced short-interval prefix and
 KV pressure receipts from `/metrics`. PalLLM adopted only the generic current
 proof/redaction posture; no sibling code, prompts, names, branding, or product
 identity was lifted.
@@ -1388,7 +1388,7 @@ store health, quality/parser parity, fallback counters, and rollback behavior.
 KV blocks and store metadata are private runtime state; support/public bundles
 should preserve only hashes, metric receipts, and redacted config shapes.
 
-Sibling scan impact: DeepForge and Byte-style active projects reinforced the
+Sibling scan impact: external sibling research-style active projects reinforced the
 same generic rule for hierarchical or distributed KV cache: no cache win is
 credible without cold/warm latency, hit-rate, quality, failure, and rollback
 evidence. PalLLM adopted only that generic proof posture; no sibling code,
@@ -1419,7 +1419,7 @@ that normal `/api/chat` text fallback continues while realtime audio is
 unhealthy. Ordinary companion chat remains field-free and deterministic
 fallback-grade.
 
-Sibling scan impact: OmniForge had already converged on provider-free realtime
+Sibling scan impact: an external asset-generation sibling had already converged on provider-free realtime
 audio probe plans that carry the same `async_chunk` caveat. PalLLM adopted only
 that generic current-doc guardrail; no sibling code, prompts, names, branding,
 or product identity was lifted.
@@ -1452,9 +1452,9 @@ OpenAPI, schemas, and `/api/bridge/proof`. The receipt still stores no audio
 bytes, generated speech text, local file path, upstream logs, or sibling
 project identity.
 
-Sibling scan impact: OmniForge's media-smoke runtime receipts reinforce the
+Sibling scan impact: an external project's media-smoke runtime receipts reinforce the
 generic pattern of recording status, timing, byte counts, and stable proof
-fields without raw media. DeepForge and RimLLM continue to keep audio lanes
+fields without raw media. an action-RPG sibling runtime and RimLLM continue to keep audio lanes
 route-proof-gated. PalLLM adopted only that generic receipt posture; no sibling
 code, prompts, names, branding, or product identity was lifted.
 
@@ -1483,7 +1483,7 @@ model/language/prompt/response-format probes. This keeps the default local
 posture unchanged while giving operators a clean canary for pause-heavy
 player speech and longer clips.
 
-Sibling scan impact: Byte and DeepForge both reinforce adaptive VAD and
+Sibling scan impact: external sibling research both reinforce adaptive VAD and
 voice-turn proof, but their code and branded voice flows do not fit PalLLM's
 Palworld bridge. PalLLM adopted only the generic idea of explicit VAD/chunking
 proof before promotion; no sibling code, prompts, names, branding, or product
@@ -1515,9 +1515,9 @@ candidates, and partial metadata. It does not preserve raw audio, transcript
 text, segment text, word text, token ids, prompt hints, upstream verbose JSON,
 or upstream logs in health, metrics, proof bundles, or support evidence.
 
-Sibling scan impact: DeepForge's active multimodal policy work reinforced
+Sibling scan impact: an external project's active multimodal policy work reinforced
 media preflight receipts and uncertainty receipts; RimLLM's voice-lane notes
-reinforced proof-gating exact audio routes; Byte's rights/provenance work
+reinforced proof-gating exact audio routes; an external project's rights/provenance work
 reinforced local receipt posture. PalLLM adopted only the generic
 content-free receipt idea; no sibling code, prompts, names, branding, or
 product identity was lifted.
@@ -1548,8 +1548,7 @@ still avoiding raw audio, generated text, absolute file paths, upstream logs,
 or sibling-project identity.
 
 Sibling scan impact: RimLLM's TTS validation notes reinforced the generic
-"reject empty or malformed audio before playback" pattern, and OmniForge's
-media-smoke receipts reinforced recording byte counts and hashes instead of
+"reject empty or malformed audio before playback" pattern, and an external project's media-smoke receipts reinforced recording byte counts and hashes instead of
 raw audio. PalLLM adopted only the generic bounded-proof idea; no sibling code,
 prompts, names, branding, or product identity was lifted.
 
@@ -1578,10 +1577,10 @@ short reason. The sidecar folds that into `RuntimeHealth.BridgeLoop` and
 `/api/bridge/proof` as a separate proof lane. Release/support evidence still
 does not store audio bytes, TTS text, or absolute local audio paths.
 
-Sibling scan impact: Byte's voice lane stresses local-first audio, bounded
+Sibling scan impact: an external project's voice lane stresses local-first audio, bounded
 latency, and no silent microphone/audio persistence; RimLLM's recent TTS
 passes emphasize bounded playback helpers and lifecycle/cancellation receipts;
-OmniForge's media-smoke pattern keeps media proof schema-backed and
+an external project's media-smoke pattern keeps media proof schema-backed and
 provider-free. PalLLM adopted only the generic receipt posture; no sibling
 code, prompts, names, branding, or product identity was lifted.
 
@@ -1610,7 +1609,7 @@ headers. `RuntimeHealth`, `/metrics`, and proof-bundle manifests count only
 whether those ASR receipts were present. They do not store raw audio, prompt
 hints, token text, transcripts, upstream logs, or unbounded headers.
 
-Sibling scan impact: OmniForge's active media-smoke path records provider
+Sibling scan impact: an external project's active media-smoke path records provider
 request IDs and processing durations, while RimLLM keeps voice transcription
 proof/cancellation evidence content-free. PalLLM adopted only that generic
 receipt pattern; no sibling code, prompts, names, branding, or product identity
@@ -1768,7 +1767,7 @@ format and speech response containers (`wav`, `mp3`, `opus`, `aac`, `flac`,
 successful audio with the bounded byte reader and still archives only
 content-free TTS success/failure counters in release proof bundles.
 
-Sibling scan impact: Byte, OmniForge, and DeepForge all keep voice lanes
+Sibling scan impact: external sibling research all keep voice lanes
 separate from ordinary chat and treat `/v1/audio/speech` proof as a dedicated
 runtime canary. PalLLM adopted only the generic compatibility shape; no sibling
 code, prompts, names, branding, or product identity were lifted.
@@ -1797,9 +1796,9 @@ for ASR. The proof manifest deliberately excludes raw audio, prompt hints,
 transcripts, and audio paths, so publication/support bundles can prove the ASR
 lane was exercised without carrying sensitive player speech.
 
-Sibling scan impact: OmniForge reinforced deterministic transcription profiles
-and live-mod proof bundles; Byte reinforced local-first transcription lanes;
-DeepForge reinforced audio turn endpointing and barge-in proof gates. PalLLM
+Sibling scan impact: an external asset-generation sibling reinforced deterministic transcription profiles
+and live-mod proof bundles; the external prompt-pack project reinforced local-first transcription lanes;
+an action-RPG sibling runtime reinforced audio turn endpointing and barge-in proof gates. PalLLM
 adopted only the generic release-evidence idea and did not lift sibling code,
 prompts, names, branding, or product identity.
 
@@ -1876,7 +1875,7 @@ promotion grounded in the same queue/TTFT/prefill/decode signals that current
 serving stacks use, without archiving prompts, completions, media, or raw
 server logs.
 
-Sibling scan impact: DeepForge's active resource audit repeatedly requires
+Sibling scan impact: an external project's active resource audit repeatedly requires
 TTFT, decode, queue, and route-keyed benchmark proof before promoting local
 serving policies, while RimLLM exposes queue state and cache-reuse posture in
 its runtime diagnostics. PalLLM adopted the generic evidence shape only; no
@@ -1916,8 +1915,8 @@ completion, or media content.
 
 Sibling scan impact: actively updated sibling repos under `D:\Coding`
 reinforced the same direction. RimLLM keeps latency-first foreground lanes and
-readiness-loop reductions prominent, OmniForge carries per-run latency
-posture fields, and DeepForge animation endpoints report latency totals.
+readiness-loop reductions prominent, an external asset-generation sibling carries per-run latency
+posture fields, and an action-RPG sibling runtime animation endpoints report latency totals.
 PalLLM adopted no sibling code, names, prompts, branding, or product identity.
 
 Primary sources:
@@ -1936,7 +1935,7 @@ vLLM serving docs expose matching `X-Request-Id` support behind
 `--enable-request-id-headers`, and current OpenTelemetry GenAI conventions
 already keep response ids, response models, finish reasons, and token counts as
 low-content model-operation receipts. Sibling scans of actively updated
-projects under `D:\Coding` reinforced the same pattern: OmniForge and DeepForge
+projects under `D:\Coding` reinforced the same pattern: external sibling research
 both use request IDs for log/support correlation, while keeping raw prompt or
 media payloads out of portable handoff artifacts.
 
@@ -1982,7 +1981,7 @@ older local endpoints keep the same behavior.
 
 Sibling scan impact: actively updated sibling repos under `D:\Coding`
 reinforced the same direction. BYTE has explicit reasoning-token capability
-flags and finish-reason telemetry, while DeepForge readiness artifacts mention
+flags and finish-reason telemetry, while an action-RPG sibling runtime readiness artifacts mention
 cached-token evidence. PalLLM adopted no sibling code, names, prompts, branding,
 or product identity.
 
@@ -2016,7 +2015,7 @@ fallback, or player-chat defaults change.
 
 Sibling scan impact: actively updated sibling repos under `D:\Coding`
 reinforced the same low-cardinality pattern. BYTE records finish reasons in its
-GenAI telemetry helpers, and DeepForge's runtime optimizer docs call finish
+GenAI telemetry helpers, and an external project's runtime optimizer docs call finish
 reason evidence out beside route budgets and final-token receipts. PalLLM
 adopted no sibling code, names, prompts, branding, or product identity.
 
@@ -2423,7 +2422,7 @@ reject them, and too-aggressive values can flatten replies or suppress useful
 tactical repetition. PalLLM should therefore forward them only when explicitly
 configured and after the exact endpoint/model accepts the request shape.
 
-Sibling scan impact: OmniForge, RimLLM, and BYTE all use the same idea-level
+Sibling scan impact: external sibling research all use the same idea-level
 pattern of explicit sampler stacks with proof before promotion. PalLLM adopted
 only the generic pattern; no sibling code, branding, product identity, or
 project-specific defaults were lifted.
@@ -2461,7 +2460,7 @@ tactical terms, and strict endpoints can reject fields outside their proven
 schema. PalLLM should therefore forward it only when explicitly configured and
 bounded to the OpenAI-compatible `-2` to `2` range.
 
-Sibling scan impact: OmniForge and BYTE both reinforce keeping per-family
+Sibling scan impact: external sibling research both reinforce keeping per-family
 sampling decisions explicit and evidence-backed instead of treating one model
 family's profile as a universal runtime default. PalLLM adopted only that
 generic proof-before-default pattern; no sibling code, branding, or product
@@ -2524,7 +2523,7 @@ a safe default. Unsupported strict endpoints can reject unknown fields, and
 over-broad delimiters can clip useful companion text. The field therefore
 belongs behind explicit operator config and route replay evidence.
 
-Sibling scan impact: OmniForge reinforced proof receipts for latency changes,
+Sibling scan impact: an external asset-generation sibling reinforced proof receipts for latency changes,
 RimLLM reinforced backend-neutral player copy, and BYTE reinforced explicit
 budget/latency receipts. PalLLM used only those generic patterns; no sibling
 code, branding, or product identity was lifted.
@@ -2556,7 +2555,7 @@ the served model is not using priority scheduling. That makes request priority
 useful for PalLLM's player-facing companion lane, but only as an opt-in tied to
 the exact endpoint launch flags.
 
-Sibling scan impact: DeepForge had the directly relevant pattern: model routes
+Sibling scan impact: an action-RPG sibling runtime had the directly relevant pattern: model routes
 distinguish foreground and background work, and its optimizer notes lower
 priority values for vLLM/SGLang-style lower-value-first scheduling. PalLLM used
 only that generic scheduling pattern; no sibling code, branding, or product
@@ -2586,7 +2585,7 @@ and usage attributes, not provider-specific fingerprint tags. That makes the
 fingerprint useful as PalLLM-side proof metadata rather than a mandatory OTel
 tag.
 
-Sibling scan impact: OmniForge, BYTE, DeepForge, and RimLLM all reinforce the
+Sibling scan impact: external sibling research all reinforce the
 same generic pattern: replay claims should carry compact receipts, latency
 evidence, and proof artifacts instead of prose. PalLLM used only that pattern;
 no sibling code, branding, or product identity was lifted.
@@ -2705,7 +2704,7 @@ progress stream should be low-latency, but the expensive final-work lane still
 needs a bounded budget and a machine-readable timeout reason.
 
 Sibling scan impact: RimLLM's current changelog and research notes reinforced
-linked timeout tokens and bounded streaming/body phases. DeepForge reinforced
+linked timeout tokens and bounded streaming/body phases. an action-RPG sibling runtime reinforced
 that progress streams should not keep mutating or spinning after the relevant
 work is canceled. BYTE reinforced "stream progress early" as a UX pattern, but
 PalLLM kept the implementation scoped to Palworld chat SSE. No sibling code,
@@ -2736,7 +2735,7 @@ compressed or streamed payloads from bypassing ordinary field validation.
 OWASP API4 continues to recommend maximum sizes for incoming parameters and
 payloads as part of unrestricted resource-consumption defense.
 
-Sibling scan impact: OmniForge's hardening notes independently call out both
+Sibling scan impact: an external project's hardening notes independently call out both
 declared `Content-Length` and streamed/chunked request-body caps. That
 reinforced the pattern, but no code or project identity was lifted.
 
@@ -2774,8 +2773,8 @@ the concrete audio preprocessing contract for Gemma 3n rather than a generic
 family promise. That maps to one PalLLM rule: a model family name is a hint, not
 promotion evidence.
 
-Sibling scan impact: DeepForge and Byte both reinforced machine-readable
-publication hygiene and model-artifact provenance receipts. DeepForge also
+Sibling scan impact: external sibling research both reinforced machine-readable
+publication hygiene and model-artifact provenance receipts. an action-RPG sibling runtime also
 reinforced runtime capability handshake receipts: runtime version, model-card
 capability ids, launch flags, and media canaries must travel together. PalLLM
 adopted the idea only as PalLLM-specific serving-profile guidance; no sibling
@@ -2817,8 +2816,8 @@ operator prose. Google Gemma audio docs similarly tie audio capability to a
 specific preprocessing/runtime contract, not a generic family name.
 
 Sibling scan impact: RimLLM's latest handoff reinforced external-validation
-packets and "trust artifacts over narrative"; OmniForge reinforced runtime
-qualification/confidence/gate artifacts; DeepForge reinforced
+packets and "trust artifacts over narrative"; an external asset-generation sibling reinforced runtime
+qualification/confidence/gate artifacts; an action-RPG sibling runtime reinforced
 machine-readable readiness artifacts. No sibling code, identity, or branding
 was lifted.
 
@@ -2911,7 +2910,7 @@ the clip hash before promoting native audio-in. Pass 223 supersedes this pass's
 older single-rate guidance: Gemma 4 is `25` audio tokens/sec, while Gemma 3n is
 `6.25` audio tokens/sec.
 
-Sibling scan impact: OmniForge, DeepForge, RimLLM, and BYTE all reinforced
+Sibling scan impact: external sibling research all reinforced
 artifact-backed capability receipts and media/proof validation. PalLLM used the
 pattern only as PalLLM serving-profile receipts; no sibling code, branding, or
 project identity was lifted.
@@ -2949,7 +2948,7 @@ tie audio claims to exact preprocessing/runtime contracts. No new serving
 default was promoted because PalLLM still needs route-specific replay and
 fallback receipts before making model/runtime optimizations defaults.
 
-Sibling scan impact: RimLLM, BYTE, DeepForge, and OmniForge all reinforced
+Sibling scan impact: RimLLM, external sibling research all reinforced
 artifact-backed release handoffs and runtime qualification receipts. PalLLM
 used that only as a local release-readiness hardening pattern; no sibling code,
 branding, or project identity was lifted.

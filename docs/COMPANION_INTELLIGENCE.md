@@ -4,7 +4,7 @@ Last audited: `2026-05-21`
 
 This doc records the best "pseudo AGI" ideas that fit **PalLLM as a
 Palworld companion runtime**, based on a thorough sibling-project prompt-pack
-audit under `D:\Coding\Byte\docs\prompts`.
+audit under an external sibling-project tree.
 
 It is intentionally **not** the ship-critical queue. The current
 `76.2% -> 100%` path remains the live Palworld proof chain, native HUD
@@ -33,7 +33,7 @@ The fit is **not**:
 
 ## Audit summary
 
-The Byte prompt library contained `837` markdown files plus `14` zip
+The external prompt-pack project's library contained `837` markdown files plus `14` zip
 archives at the most recent re-count (`2026-05-21`). The archives are
 zip mirrors of the extracted prompt-pack directories, not hidden extra
 packs. The highest-signal material for PalLLM came from these
@@ -41,12 +41,12 @@ families (a sixth, `byte-qwen-pack-2026-04-25`, has since landed but
 was not part of the original signal pull and is left out for that
 reason):
 
-- `byte-forge-2026-04-24`: orchestration, critique, memory, world-model planning
-- `byte-forward-2026-04-24`: reflection, constitution, replay, batching, quant adaptation
-- `byte-synthesis-2026-04-24`: visible memory and explanatory surfaces
-- `byte-qwen-frontier-2026-04-27`: hierarchical memory, debate, escalation, anomaly detection, curiosity
-- `byte-qwen-modernize-2026-04-26`: planner/executor and critique-loop modernization
-- `_archive/byte-council-2026-04-24`: older multi-phase review loop, now mostly superseded by the newer forge/qwen packs
+- `external-pack-2026-04-24`: orchestration, critique, memory, world-model planning
+- `external-pack-2026-04-24`: reflection, constitution, replay, batching, quant adaptation
+- `external-pack-2026-04-24`: visible memory and explanatory surfaces
+- `external-pack-2026-04-27`: hierarchical memory, debate, escalation, anomaly detection, curiosity
+- `external-pack-2026-04-26`: planner/executor and critique-loop modernization
+- `_archive/external-pack-2026-04-24`: older multi-phase review loop, now mostly superseded by the newer forge/qwen packs
 
 The most reusable prompt IDs were:
 
@@ -68,7 +68,7 @@ PalLLM already has deterministic memory, relationship tracking, reflection,
 and session persistence. What it lacks is a player-visible answer to "what do
 you remember and why?"
 
-**Byte source patterns**
+**external source patterns**
 
 - `G24` agent success/failure memory
 - `T01` hierarchical memory
@@ -96,7 +96,7 @@ PalLLM already has `ProofPacketBuilder`, `WhyEngine`, bridge proof, release
 readiness, and rich health surfaces. A replay/rationale layer would make the
 system feel much smarter without granting more autonomy.
 
-**Byte source patterns**
+**external source patterns**
 
 - `F32` decision replay log
 - `U07` one-line rationale per action
@@ -124,7 +124,7 @@ allowlisted actions, dry-run posture, and explicit proof packets. It does not
 yet have a first-class "I'm not confident enough to do this without asking"
 layer.
 
-**Byte source patterns**
+**external source patterns**
 
 - `T09` confidence-calibrated escalation
 - `T02` multi-agent debate for high-stakes decisions
@@ -155,7 +155,7 @@ PalLLM already tracks `GameWorldSnapshot`, recent events, base discovery,
 travel, production, world narration, and action intents. That is enough to
 support a bounded world model.
 
-**Byte source patterns**
+**external source patterns**
 
 - `G50` world-model planning
 - `P29` graph/world linkage
@@ -185,7 +185,7 @@ PalLLM already has deterministic reflection, importance scoring, and session
 persistence. It can compact and narrativize memory locally without adding
 hidden state or new network requirements.
 
-**Byte source patterns**
+**external source patterns**
 
 - `F01` dream-cycle memory consolidation
 - `F04` self-critique reflection
@@ -211,7 +211,7 @@ PalLLM already has metrics, self-healing, proof surfaces, and a clear
 publication-safety posture. It can detect odd behavior and queue review items
 without becoming an unsupervised autopilot.
 
-**Byte source patterns**
+**external source patterns**
 
 - `U05` anomaly detection on long-run trajectories
 - `U06` curiosity-driven exploration in idle hours
@@ -241,7 +241,7 @@ PalLLM already has model-tier orchestration, hardware profiling, warmup, and
 recent-window inference performance tracking. The next step is making small
 local tasks cohere under load.
 
-**Byte source patterns**
+**external source patterns**
 
 - `F35` batched inference scheduler
 - `F36` adaptive quantization manager
@@ -259,7 +259,7 @@ This is the best performance-oriented AGI-lite idea for the current codebase.
 
 ## Ideas that do not fit PalLLM
 
-These appeared in the Byte packs but do not belong on PalLLM's mainline:
+These appeared in the external prompt-pack project's research but do not belong on PalLLM's mainline:
 
 - browser-use / computer-use agents
 - sandboxed code execution

@@ -1332,12 +1332,21 @@ public sealed class MetaTests
             "docs/PRIVACY.md",
         ];
 
+        // Pass 372: widened for the public-release brand purge. `Byte` is
+        // case-sensitive (the noun "byte" is legitimate technical
+        // vocabulary), the others are bespoke product names. The list
+        // protects the maintainer's other private projects from leaking
+        // into the public PalLLM repo.
         string[] blockedTerms =
         [
             "RimLLM",
             "OmniForge",
             "DeepForge",
+            "Vulcan",
             @"D:\Coding\Byte",
+            @"D:\Coding\OmniForge",
+            @"D:\Coding\DeepForge",
+            @"D:\Coding\Vulcan",
             "byte-forge",
             "byte-forward",
             "byte-synthesis",
@@ -1646,8 +1655,19 @@ public sealed class MetaTests
             "Public copy audit should guard release-facing repo docs against legal/IP/compliance overclaims.");
         Assert.That(publicCopyPolicy, Does.Contain("DeepForge"),
             "Public copy audit should block known sibling-project names in publication-facing surfaces.");
-        Assert.That(publicCopyPolicy, Does.Contain("byte-qwen-frontier"),
+        // Pass 372: the policy switched to a more compact alternation
+        // (`byte-(?:forge|forward|synthesis|qwen-frontier|qwen-modernize|council)`),
+        // so the literal "byte-qwen-frontier" substring no longer appears.
+        // The semantic assertion is still that imported sibling
+        // prompt-pack identities are blocked — pin each pack-name component
+        // separately so the policy can use any union representation.
+        Assert.That(publicCopyPolicy, Does.Contain("qwen-frontier").And.Contain("qwen-modernize")
+                .And.Contain("byte-").And.Contain("forge").And.Contain("council"),
             "Public copy audit should block imported sibling prompt-pack identities in publication-facing surfaces.");
+        Assert.That(publicCopyPolicy, Does.Contain("Vulcan"),
+            "Public copy audit should block `Vulcan` after the Pass 372 brand-purge widening.");
+        Assert.That(publicCopyPolicy, Does.Contain("\\bByte\\b"),
+            "Public copy audit should block bare `Byte` (case-sensitive) after the Pass 372 brand-purge widening.");
         Assert.That(publicCopyPolicy, Does.Contain("vLLM")
                 .And.Contain("SGLang")
                 .And.Contain("llama\\.cpp")
@@ -2254,5 +2274,166 @@ public sealed class MetaTests
             $"{registrationMarker} should set PooledConnectionIdleTimeout.");
         Assert.That(section, Does.Contain("SetHandlerLifetime(Timeout.InfiniteTimeSpan)"),
             $"{registrationMarker} should delegate handler rotation to SocketsHttpHandler pooling.");
+    }
+
+    [Test]
+    public void EveryTrackedFile_DoesNotMentionPrivateSiblingProjects()
+    {
+        // Pass 372 (public-release gate): walk every tracked text file in
+        // the repo and flag any mention of the maintainer's other private
+        // sibling projects (Byte, OmniForge, DeepForge, Vulcan). The
+        // existing PublicationFiles guard above only covers a handful of
+        // release-facing docs; this broader test guarantees the public
+        // GitHub repo never leaks the names from CHANGELOG history, dev
+        // docs, scripts, or source files. RimLLM stays out of the wider
+        // block because the maintainer's purge list did not include it.
+        //
+        // Files exempted (legitimate guard-pattern surfaces):
+        //   - scripts/public_copy_policy.ps1
+        //   - scripts/PalLLM.Tooling.ps1
+        //   - tests/PalLLM.Tests/MetaTests.cs (this file)
+        //   - scripts/purge-sibling-brands.py (the one-shot purge tool)
+        //   - any path under artifacts/ (audit reports may quote findings)
+
+        string[] exemptions =
+        [
+            "scripts/public_copy_policy.ps1",
+            "scripts/PalLLM.Tooling.ps1",
+            "scripts/purge-sibling-brands.py",
+            "tests/PalLLM.Tests/MetaTests.cs",
+        ];
+
+        string[] extensions =
+        [
+            ".cs", ".md", ".json", ".yaml", ".yml", ".ps1", ".psm1", ".psd1",
+            ".lua", ".ts", ".js", ".txt", ".bat", ".cmd", ".sh", ".py",
+        ];
+
+        // Case-sensitive: bare "Byte" is the project; lowercase "byte" is the noun.
+        var blockedPatterns = new[]
+        {
+            (Term: "Byte", IgnoreCase: false),
+            (Term: "OmniForge", IgnoreCase: true),
+            (Term: "DeepForge", IgnoreCase: true),
+            (Term: "Vulcan", IgnoreCase: true),
+        };
+
+        var skipDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "bin", "obj", "artifacts", "TestResults", "CoverageReport",
+            ".git", ".vs", ".vscode", "node_modules", "Runtime",
+        };
+
+        var offenses = new List<string>();
+
+        foreach (string filePath in EnumerateRepoTextFiles(RepoRoot, extensions, skipDirectories))
+        {
+            string relative = Path.GetRelativePath(RepoRoot, filePath).Replace('\\', '/');
+            if (exemptions.Any(e => string.Equals(relative, e, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            string[] lines;
+            try
+            {
+                lines = File.ReadAllLines(filePath);
+            }
+            catch (IOException)
+            {
+                // Skip files that are being held open by another process —
+                // these are typically generated artifacts, not human-edited source.
+                continue;
+            }
+
+            for (int idx = 0; idx < lines.Length; idx++)
+            {
+                string line = lines[idx];
+                foreach ((string term, bool ignoreCase) in blockedPatterns)
+                {
+                    // Word-boundary check so "Byte" matches the project but
+                    // "Byte" inside "ByteArray" or "byte-level" does not.
+                    StringComparison cmp = ignoreCase
+                        ? StringComparison.OrdinalIgnoreCase
+                        : StringComparison.Ordinal;
+                    int searchStart = 0;
+                    while (true)
+                    {
+                        int hit = line.IndexOf(term, searchStart, cmp);
+                        if (hit < 0)
+                        {
+                            break;
+                        }
+
+                        bool leftBoundary = hit == 0 || !IsWordChar(line[hit - 1]);
+                        bool rightBoundary = (hit + term.Length) == line.Length
+                            || !IsWordChar(line[hit + term.Length]);
+
+                        if (leftBoundary && rightBoundary)
+                        {
+                            offenses.Add($"{relative}:{idx + 1}: found '{term}' -> '{line.Trim()}'");
+                            break; // one hit per line+term is enough
+                        }
+
+                        searchStart = hit + 1;
+                    }
+                }
+            }
+        }
+
+        Assert.That(offenses, Is.Empty,
+            "No tracked file may mention the maintainer's private sibling projects " +
+            "(Byte, OmniForge, DeepForge, Vulcan). The Pass 372 brand purge cleaned " +
+            "the existing references; this guard prevents regression. Findings:\n" +
+            string.Join("\n", offenses));
+
+        static bool IsWordChar(char c) => char.IsLetterOrDigit(c) || c == '_';
+    }
+
+    private static IEnumerable<string> EnumerateRepoTextFiles(
+        string root,
+        string[] extensions,
+        HashSet<string> skipDirectories)
+    {
+        var stack = new Stack<string>();
+        stack.Push(root);
+        while (stack.Count > 0)
+        {
+            string current = stack.Pop();
+            IEnumerable<string> subdirs;
+            try
+            {
+                subdirs = Directory.EnumerateDirectories(current);
+            }
+            catch (IOException) { continue; }
+            catch (UnauthorizedAccessException) { continue; }
+
+            foreach (string subdir in subdirs)
+            {
+                string name = Path.GetFileName(subdir);
+                if (skipDirectories.Contains(name))
+                {
+                    continue;
+                }
+                stack.Push(subdir);
+            }
+
+            IEnumerable<string> files;
+            try
+            {
+                files = Directory.EnumerateFiles(current);
+            }
+            catch (IOException) { continue; }
+            catch (UnauthorizedAccessException) { continue; }
+
+            foreach (string file in files)
+            {
+                string ext = Path.GetExtension(file);
+                if (extensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
+                {
+                    yield return file;
+                }
+            }
+        }
     }
 }

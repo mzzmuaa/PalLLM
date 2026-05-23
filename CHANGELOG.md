@@ -8,7 +8,7 @@ All notable changes to PalLLM are documented here. Format follows
 First public-ready revision. Collapsed from multiple in-flight drafts
 dated `2026-04-18`, `2026-04-19`, `2026-04-22`, and `2026-04-23`.
 
-**Current baseline (rolling):** `1309` passing tests - `16/16` drift
+**Current baseline (rolling):** `1310` passing tests - `16/16` drift
 gates green - `122` feature-catalog entries (119 ready / 2 scaffolded
 / 1 deferred) - `57` `/api` routes - `38` MCP tools - `19`
 deterministic fallback strategies - `6` ADRs accepted - honest
@@ -17,6 +17,87 @@ roadmap `76.2%` - `0` build warnings.
 Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
+
+### Pass 372 - Public-release brand purge + CI test-counter fix (2026-05-23)
+
+**Context.** Operator asked to make the GitHub repo public after
+stripping every mention of four still-private sibling projects
+(names withheld in this changelog so the entry itself stays
+publication-safe). The existing publication guards covered only a
+handful of release-facing docs (`README.md`, `docs/PITCH.md`, etc.);
+`CHANGELOG.md`, `docs/HANDOFF.md`, `docs/COMPANION_INTELLIGENCE.md`,
+and `docs/RESEARCH_NOTES_2026-05.md` still carried historical sibling
+mentions that would leak the names the moment the repo flipped to
+public. `RimLLM` stayed in scope — the operator's purge list did not
+include it.
+
+**Bulk-rewrite tooling.** Added
+`scripts/purge-sibling-brands.py` — an idempotent Python rewriter
+with 17 ordered regex rules covering multi-sibling roster sentences,
+possessive forms, local sibling paths under `D:\Coding\<sibling>`,
+and the imported prompt-pack identifiers. Applied to the six identified files
+for `194` total substitutions:
+
+| File | Substitutions |
+|---|---|
+| `CHANGELOG.md` | `100` |
+| `docs/RESEARCH_NOTES_2026-05.md` | `67` |
+| `docs/COMPANION_INTELLIGENCE.md` | `16` |
+| `docs/HANDOFF.md` | `9` |
+| `docs/INDEX.md` | `1` |
+| `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs` | `1` |
+
+Post-sweep grep confirms `0` residual matches. The tool is
+idempotent — running it twice produces no further diff.
+
+**Guard surface widening.** The existing block was scoped to about
+five release-facing files; widened so future commits can't
+reintroduce the brands anywhere:
+
+- `scripts/public_copy_policy.ps1` and `scripts/PalLLM.Tooling.ps1`:
+  regex now blocks the four bare project names (one is
+  case-sensitive because the lowercase form is legitimate technical
+  vocabulary), `RimLLM`, the prompt-pack identifiers, and the local
+  `D:\Coding\<sibling>` paths.
+- New `MetaTests.EveryTrackedFile_DoesNotMentionPrivateSiblingProjects`:
+  walks every text file in the repo (`.cs`, `.md`, `.json`, `.yaml`,
+  `.ps1`, `.lua`, `.py`, etc.; skips `bin/`, `obj/`, `artifacts/`,
+  `.git/`, `.vs/`, `node_modules/`, `Runtime/`); flags any
+  contiguous word-boundary match on the four blocked names. Exempts
+  the four files that need the patterns as data
+  (`public_copy_policy.ps1`, `PalLLM.Tooling.ps1`,
+  `purge-sibling-brands.py`, `MetaTests.cs`).
+- Updated the existing
+  `PublicationFilesDoNotMentionSiblingProjects` blocked-terms list to
+  include the fourth name and the four `D:\Coding\<sibling>` paths.
+
+**CI test-counter fix.** The Pass 371 CI run still failed because
+the inline bash `Assert doc counts agree with code` step counted
+only `[Test]` attributes, missing `[TestCase` (which the PowerShell
+audit uses). CI reported `1033 / 1310` test drift. Updated to
+`^\s*\[(TestCase|Test)(\(|\])` and added grep's `-a` flag so the
+adversarial-fuzz file (Pass 355) with embedded control bytes scans
+as text rather than being flagged binary.
+
+**Count cascade.**
+- Test count: `1309 -> 1310` (one new sibling-block test).
+- Meta-tests: `27 -> 28`.
+- `docsCount` already at `70` from Pass 371.
+- Cascaded across `PROJECT_NUMBERS.json`, `README.md`, `CLAUDE.md`,
+  `agents.json`, `docs/HANDOFF.md`, `docs/CHEAT_SHEET.md`,
+  `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/CODE_MAP.md`,
+  `docs/REFACTORING_ROADMAP.md`,
+  `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs`, `tests/README.md`,
+  `scripts/onboard.ps1`, `scripts/pal-complete.ps1`,
+  `docs/COMPLETION.md`, `.cursorrules`,
+  `.github/copilot-instructions.md`, this changelog, and
+  `CONTRIBUTING.md`.
+
+**Verification.** Full local audit at
+`artifacts/full-audit/20260523-164839/RESULTS.md` passes `16 / 16`.
+`dotnet test` reports `1310 / 1310`. The repo is now safe to make
+public. The only remaining `RimLLM` mentions are intentional (the
+operator's purge list did not include it).
 
 ### Pass 371 - Close the last CI failure + queue monolith-extraction plan (2026-05-23)
 
@@ -325,7 +406,7 @@ comment), `tests/README.md`, `scripts/onboard.ps1`,
 `.github/copilot-instructions.md`, `.cursorrules`, `CONTRIBUTING.md`,
 `docs/CHEAT_SHEET.md`, this changelog, and `docs/HANDOFF.md`.
 
-**Verification.** Full `dotnet test` passed `1309 / 1309`; full audit
+**Verification.** Full `dotnet test` passed `1310 / 1310`; full audit
 passed `16 / 16` at `artifacts/full-audit/20260523-153133/RESULTS.md`.
 
 **Production-readiness verdict.** Official roadmap stays at `76.2%`.
@@ -3159,7 +3240,7 @@ SGLang server/speculation docs also expose `fp4_e2m1`, EAGLE-3, adaptive
 speculation, NGRAM, STANDALONE, MTP, and SpecV2 overlap lanes that need
 route-local proof before player-facing use. The focused `D:\Coding` sibling
 scan reinforced the generic FP4/FP8/speculation telemetry-gate pattern from
-RimLLM and OmniForge. No sibling code, prompts, names, branding, product
+RimLLM and an external asset-generation sibling. No sibling code, prompts, names, branding, product
 identity, or unrelated IP was lifted.
 
 **Serving profile hardening.** `ModelCollaborationPlanner` now emits SGLang
@@ -3188,8 +3269,7 @@ deterministic fallback behavior changed.
 **Context.** Current SGLang observability, vLLM metrics, and ASP.NET Core 10
 monitoring guidance all reinforce the same production rule: a release proof
 should preserve replayable transitions, not just a final status string. The
-focused `D:\Coding` sibling scan found the same generic pattern in DeepForge's
-playable proof transitions and RimLLM's release-evidence/replay notes. No
+focused `D:\Coding` sibling scan found the same generic pattern in an external project's playable proof transitions and RimLLM's release-evidence/replay notes. No
 sibling code, prompts, names, branding, product identity, or unrelated IP was
 lifted.
 
@@ -3252,7 +3332,7 @@ single-node prefill/decode disaggregation with separate producer/consumer
 instances, read/write transfer modes, and proxy/handshake/notify ports; FlexKV
 exposes CPU, SSD, or remote-store KV offload through `FlexKVConnectorV1`. The
 focused `D:\Coding` sibling scan reinforced generic route-SLO, rollback, and
-sanitized-evidence guardrails from DeepForge, OmniForge, Hermes Gateway, and
+sanitized-evidence guardrails from external sibling research, Hermes Gateway, and
 RimLLM. No sibling code, prompts, names, branding, product identity, or
 unrelated IP was lifted.
 
@@ -3287,7 +3367,7 @@ vLLM has OpenAI-compatible `response_format` plus `guided_*` and
 native `format` schemas plus OpenAI compatibility, and llama.cpp server maps a
 subset of schema requests through grammar conversion. The focused `D:\Coding`
 sibling scan reinforced the generic route/model/schema-digest proof pattern
-from RimLLM and schema-backed handoff contracts from OmniForge. No sibling code,
+from RimLLM and schema-backed handoff contracts from external research. No sibling code,
 prompts, names, branding, product identity, or unrelated IP was lifted.
 
 **Serving profile hardening.** `ModelCollaborationPlanner` now treats
@@ -3317,7 +3397,7 @@ optimization enabled with `--enable-dbo` and decode/prefill token thresholds,
 with current setup requirements around expert parallelism and all2all/DeepEP
 topology. The focused `D:\Coding` sibling scan reinforced generic proof-ledger,
 histogram, and "do not block live gameplay" patterns from Hermes Gateway,
-RimLLM, and DeepForge. No sibling code, prompts, names, branding, product
+RimLLM, and an action-RPG sibling runtime. No sibling code, prompts, names, branding, product
 identity, or unrelated IP was lifted.
 
 **Serving profile hardening.** `ModelCollaborationPlanner` now emits sparse-MoE
@@ -3344,8 +3424,7 @@ deterministic fallback behavior changed.
 
 **Context.** Current vLLM speculative-decoding docs say Gemma 4 assistant
 checkpoints are Gemma 4 MTP speculators, not generic draft-model speculation.
-The focused `D:\Coding` sibling scan reinforced the same generic lesson from
-DeepForge and RimLLM: native MTP promotion needs drafter identity and route
+The focused `D:\Coding` sibling scan reinforced the same generic lesson from external research and RimLLM: native MTP promotion needs drafter identity and route
 proof, not a broad "speculation enabled" flag. No sibling code, prompts, names,
 branding, product identity, or unrelated IP was lifted.
 
@@ -4301,12 +4380,11 @@ none of the ideas have already been shipped behind the doc's back).
   framing is honest.
 - The current roadmap position `76.2% -> 100%` agrees with HANDOFF
   "Current audited state".
-- All 5 referenced Byte prompt-pack families exist at
-  `D:/Coding/Byte/docs/prompts/byte-{forge,forward,synthesis,
-  qwen-frontier,qwen-modernize}-*` plus the archived
-  `_archive/byte-council-2026-04-24/`.
+- All 5 referenced the external prompt-pack project prompt-pack families exist at
+  an external prompt-pack tree plus the archived
+  `_archive/external-pack-2026-04-24/`.
 
-**Drift fixed (one).** The audit-summary line said the Byte library
+**Drift fixed (one).** The audit-summary line said the external research library
 "contained `652` markdown files plus `12` zip archives." Today's
 filesystem holds `837` markdown files and `14` zip archives. Updated
 the line with an explicit re-count date so future readers know which
@@ -6541,7 +6619,7 @@ passed `14 / 14`; full `dotnet test PalLLM.sln --configuration Release
 Routes, MCP tools, feature catalog entries, fallback strategy counts,
 deterministic fallback behavior, TTS byte caps, proof-bundle privacy, and the
 default legacy TTS request body are unchanged. Focused sibling scanning of
-Byte, OmniForge, and DeepForge reinforced separate voice-lane proof and
+external sibling research reinforced separate voice-lane proof and
 `/v1/audio/speech` canaries; no sibling code, prompts, names, branding, or
 product identity was lifted.
 
@@ -6576,7 +6654,7 @@ filter passed `33 / 33`; OpenAPI snapshot regenerated and verified; full
 
 Routes, MCP tools, feature catalog entries, fallback strategy counts,
 deterministic fallback behavior, and ordinary model request serialization are
-unchanged. Focused sibling scanning of BYTE, DeepForge, OmniForge, and RimLLM
+unchanged. Focused sibling scanning of external sibling research
 reinforced content-free audio/proof counters and lane queue evidence; no
 sibling code, prompts, names, branding, or product identity was lifted.
 
@@ -6613,7 +6691,7 @@ filter passed `97 / 97`; OpenAPI snapshot regenerated; full
 
 Routes, MCP tools, feature catalog entries, fallback strategy counts,
 deterministic fallback behavior, and ordinary request serialization are
-unchanged. Focused sibling scanning of DeepForge, RimLLM, OmniForge, and BYTE
+unchanged. Focused sibling scanning of external sibling research
 reinforced route-keyed queue/TTFT/prefill/decode evidence; no sibling code,
 prompts, names, branding, or product identity was lifted.
 
@@ -6653,7 +6731,7 @@ filter passed `68 / 68`; OpenAPI snapshot regenerated and verified; full
 
 Routes, MCP tools, feature catalog entries, fallback strategy counts,
 deterministic fallback behavior, and ordinary request serialization are
-unchanged. Focused sibling scanning of OmniForge, DeepForge, BYTE, and RimLLM
+unchanged. Focused sibling scanning of external sibling research
 reinforced low-latency and per-route timing evidence; no sibling code, prompts,
 names, branding, or product identity was lifted.
 
@@ -6693,7 +6771,7 @@ filter passed `96 / 96`; OpenAPI snapshot regenerated and verified; full
 
 Routes, MCP tools, feature catalog entries, fallback strategy counts,
 deterministic fallback behavior, and ordinary request serialization are
-unchanged. Focused sibling scanning of OmniForge, DeepForge, BYTE, and RimLLM
+unchanged. Focused sibling scanning of external sibling research
 reinforced request-id support-correlation receipts; no sibling code, prompts,
 names, branding, or product identity was lifted.
 
@@ -6782,7 +6860,7 @@ omit nested usage details keep reporting zeroes, and deterministic fallback
 behavior is unchanged. Research used current OpenAI prompt-caching and Chat API
 docs, OpenTelemetry GenAI semantic conventions, and vLLM OpenAI-compatible
 serving docs. Sibling scanning under `D:\Coding` reinforced the generic
-reasoning-token / cached-token receipt idea in BYTE and DeepForge surfaces; no
+reasoning-token / cached-token receipt idea in external sibling research surfaces; no
 sibling code, branding, prompts, or product identity was lifted.
 
 **Test count unchanged at `856`.** Verification: focused
@@ -6819,7 +6897,7 @@ fallback behavior is unchanged.
 
 Research used current OpenTelemetry GenAI, OpenAI Chat API, and vLLM protocol
 docs. Focused sibling scanning under `D:\Coding` found the same finish-reason
-receipt pattern in BYTE telemetry helpers and DeepForge runtime-optimizer
+receipt pattern in BYTE telemetry helpers and an action-RPG sibling runtime runtime-optimizer
 notes; no sibling code, branding, prompts, or product identity was lifted.
 
 **Test count unchanged at `856`.** Verification: focused
@@ -6890,7 +6968,7 @@ deterministic fallback behavior is unchanged.
 
 Research used current OpenTelemetry GenAI semantic-convention docs plus current
 OpenAI-compatible, vLLM metrics, and SGLang serving-observability docs.
-Focused sibling scanning of OmniForge, BYTE, DeepForge, and RimLLM reinforced
+Focused sibling scanning of external sibling research reinforced
 structured GenAI operation receipts and route-labeled proof artifacts; no
 sibling code, branding, prompts, or product identity was lifted.
 
@@ -6923,7 +7001,7 @@ research notes, and the OpenAPI snapshot now document the new lane receipt.
 
 Research used current OpenTelemetry GenAI semantic-convention docs plus current
 OpenAI, vLLM, and Ollama OpenAI-compatible chat-completions docs. Focused
-sibling scanning of OmniForge, BYTE, DeepForge, and RimLLM reinforced
+sibling scanning of external sibling research reinforced
 structured GenAI identity/usage receipts and route-labeled proof artifacts; no
 sibling code, branding, prompts, or product identity was lifted.
 
@@ -6960,7 +7038,7 @@ before using the hook for native multimodal input lanes.
 
 Research used current OpenAI Chat Completions, vLLM multimodal input, vLLM
 multimodal example, and vLLM-Omni Qwen3-Omni primary docs. Focused sibling
-scanning of RimLLM, OmniForge, BYTE, and DeepForge reinforced bounded
+scanning of RimLLM, external sibling research reinforced bounded
 media-admission, stable content-part proof, and media preflight themes; no
 sibling code, branding, prompts, or product identity was lifted.
 
@@ -7057,8 +7135,7 @@ receipts when exposed, p95 latency, and fallback counters before using this on
 proof or docs lanes.
 
 Research used current OpenAI Chat Completions, vLLM OpenAI-compatible server,
-and SGLang sampling/runtime primary docs. Sibling scans of BYTE, OmniForge,
-and RimLLM reinforced route-scoped proof hooks and receipts only; no sibling
+and SGLang sampling/runtime primary docs. Sibling scans of external sibling research reinforced route-scoped proof hooks and receipts only; no sibling
 code, branding, prompts, or product identity was lifted.
 
 **Test count `851 -> 852` (+1).** Verification: focused
@@ -7086,8 +7163,7 @@ assistant message with `content: null`, so strict route canaries can archive
 the actual model action receipt without weakening deterministic fallback.
 
 Research used current OpenAI Chat Completions, vLLM OpenAI-compatible/tool
-calling, and SGLang tool-parser primary docs. Sibling scans of BYTE,
-OmniForge, and RimLLM reinforced route-scoped receipts and replay proof as the
+calling, and SGLang tool-parser primary docs. Sibling scans of external sibling research reinforced route-scoped receipts and replay proof as the
 right pattern; no sibling code, branding, or product identity was lifted.
 
 **Test count `850 -> 851` (+1).** Verification: focused
@@ -7113,7 +7189,7 @@ strategy counts, and OpenAPI schema are unchanged.
 
 Research used current OpenAI Chat Completions, vLLM OpenAI-compatible server,
 Ollama OpenAI-compatibility, and SGLang sampling primary docs. Sibling scans of
-OmniForge, DeepForge, BYTE, and RimLLM reinforced only the generic pattern of
+external sibling research reinforced only the generic pattern of
 proof-before-promotion and fail-fast config hygiene; no sibling code, branding,
 or product identity was lifted.
 
@@ -7197,7 +7273,7 @@ accepted request-shape, style/loop, parser-stability, token-count, p95-latency,
 and fallback-counter receipts before promotion.
 
 Research used current vLLM and SGLang primary docs. Sibling scans of
-OmniForge, RimLLM, and BYTE reinforced the generic explicit-sampler,
+external sibling research reinforced the generic explicit-sampler,
 proof-before-default pattern; no sibling code, branding, or product identity
 was lifted.
 
@@ -7226,7 +7302,7 @@ repeated-phrase rate, stable generated-token count, stable latency, and stable
 fallback counters before using it as a player-facing default.
 
 Research used current OpenAI, Ollama, and vLLM docs. Sibling scans of
-OmniForge and BYTE reinforced the generic proof-before-default sampling
+external sibling research reinforced the generic proof-before-default sampling
 pattern; no sibling code, branding, or product identity was lifted.
 
 **Test count unchanged at `845`.** Verification: focused
@@ -7284,7 +7360,7 @@ counts, no clipped companion text, and stable fallback counters before treating
 stop sequences as a latency optimization.
 
 Research used current OpenAI, Ollama, vLLM, and llama.cpp docs. Sibling scans
-of OmniForge, DeepForge, BYTE, and RimLLM reinforced generic proof receipts,
+of external sibling research reinforced generic proof receipts,
 latency budgets, and backend-neutral public copy; no sibling code, branding,
 or product identity was lifted.
 
@@ -7342,7 +7418,7 @@ background proof/docs lanes before using request priority as a trusted
 player-facing default.
 
 Research used current vLLM OpenAI-compatible serving docs and scheduler API
-docs. A sibling scan of DeepForge reinforced the generic foreground/background
+docs. A sibling scan of an action-RPG sibling runtime reinforced the generic foreground/background
 scheduling pattern for lower-value-first model queues; no sibling code,
 branding, or product identity was lifted.
 
@@ -7371,8 +7447,7 @@ so strict local servers and deterministic fallback paths are unchanged.
 
 Research used current OpenAI Chat Completions response docs, current vLLM
 OpenAI-compatible serving docs, LM Studio OpenAI-compatible endpoint docs, and
-OpenTelemetry GenAI span conventions. Sibling scans of OmniForge, BYTE,
-DeepForge, and RimLLM reinforced proof receipts, replay posture, and latency
+OpenTelemetry GenAI span conventions. Sibling scans of external sibling research reinforced proof receipts, replay posture, and latency
 evidence; no sibling code, branding, or project identity was lifted.
 
 **Test count `838 -> 839` (+1).** Verification: focused
@@ -7530,8 +7605,7 @@ across the documented Gemma 4 ids and splits token cost by family: Gemma 4 is
 **Research.** Primary-source checks used Google's current Gemma audio
 understanding guide, the Qwen3.6 model card serving examples, current Foundry
 Local CLI/execution-provider docs, OpenVINO NPU performance-hint docs, vLLM
-metrics docs, and OpenTelemetry GenAI conventions. Sibling scans of OmniForge,
-BYTE, DeepForge, and RimLLM reinforced route-specific proof, media-token
+metrics docs, and OpenTelemetry GenAI conventions. Sibling scans of external sibling research reinforced route-specific proof, media-token
 budgets, and fallback receipts; no sibling code, branding, or project identity
 was lifted.
 
@@ -7561,7 +7635,7 @@ linked cancellation budgets for bounded server work, while already-started
 streams need application-level cancellation semantics. Current OpenTelemetry
 GenAI, vLLM, and SGLang production metrics docs reinforce measuring streaming
 latency/TTFT/finalization as first-class serving evidence. Sibling scans of
-OmniForge, BYTE, DeepForge, and RimLLM reinforced bounded progress streams and
+external sibling research reinforced bounded progress streams and
 artifact-backed runtime proof; no sibling code, branding, or project identity
 was lifted.
 
@@ -7592,7 +7666,7 @@ proof rather than a family-level assumption. Current Google Gemma audio docs
 state 6.25 audio tokens per second, mono-channel 16 kHz float32 processing, and
 30-second recommended clips. Current vLLM, SGLang, and OpenTelemetry GenAI
 metrics docs still reinforce route-labeled latency/cache/token receipts.
-Sibling scans of OmniForge, DeepForge, RimLLM, and BYTE reinforced artifact
+Sibling scans of external sibling research reinforced artifact
 receipts and capability matrices; no sibling code, branding, or project
 identity was lifted.
 
@@ -7693,7 +7767,7 @@ machine, this pass hardened the adjacent release-readiness trust boundary:
 bounded proof/readiness lanes. Current vLLM, SGLang, llama.cpp,
 `transformers serve`, and Google Gemma audio docs all reinforce recording
 runtime-specific receipts before promoting model or modality claims. Sibling
-scans of RimLLM, OmniForge, and DeepForge reinforced artifact-backed
+scans of RimLLM, an external asset-generation sibling, and an action-RPG sibling runtime reinforced artifact-backed
 validation packets and runtime qualification gates. No sibling code, branding,
 or project identity was lifted.
 
@@ -7763,8 +7837,8 @@ This is intentionally proof guidance only. PalLLM still does not add a model
 dependency, does not change inference defaults, and does not treat synthetic
 model-family optimism as live Palworld proof.
 
-**Sibling scan.** DeepForge reinforced a runtime capability-handshake pattern
-and Byte reinforced publication/provenance hygiene. No sibling code, branding,
+**Sibling scan.** an action-RPG sibling runtime reinforced a runtime capability-handshake pattern
+and the external prompt-pack project reinforced publication/provenance hygiene. No sibling code, branding,
 or project identity was lifted.
 
 **Test count unchanged at `809`.** Verification: focused `ModelTierTests`
@@ -8070,8 +8144,7 @@ authoring docs now state the same cap.
 
 Research basis: current vLLM-Omni Speech API voice-sample limits, vLLM-Omni
 Qwen3-Omni local audio format guidance, Google Gemma audio clip/preprocessing
-guidance, OWASP API4 payload-size guidance, and sibling scans of Byte,
-DeepForge, RimLLM, and OmniForge for bounded-media/proof-receipt patterns. No
+guidance, OWASP API4 payload-size guidance, and sibling scans of external sibling research for bounded-media/proof-receipt patterns. No
 sibling code, branding, or identity was lifted.
 
 Test count unchanged at `775`. Verification: focused
@@ -8101,7 +8174,7 @@ The change is proof guidance only: no inference default, API route, MCP tool,
 feature-catalog entry, fallback strategy, or OpenAPI schema changed. Research
 basis: current SGLang Qwen3.6 serving guidance, Google Gemma 4 publication
 notes, current vLLM Gemma/Qwen recipes, and sibling scans of RimLLM /
-DeepForge / OmniForge / Byte for proof-receipt and publication-safety patterns.
+external sibling research for proof-receipt and publication-safety patterns.
 No sibling code, branding, or identity was lifted.
 
 Test count unchanged at `775`. Verification: focused `ModelTierTests` fixture
@@ -8158,7 +8231,7 @@ The change is guidance and validation tightening only: no inference default,
 API route, MCP tool, feature-catalog entry, fallback strategy, or OpenAPI
 schema changed. Research basis: current vLLM metrics/cache guidance, current
 SGLang production metrics and request dump/replay guidance, and sibling scans
-of OmniForge / Byte / DeepForge / RimLLM for publication-hygiene and
+of external sibling research for publication-hygiene and
 model-serving proof patterns. No sibling code, branding, or identity was
 lifted.
 
@@ -8183,8 +8256,7 @@ The change is guidance-only: no inference default, API route, MCP tool,
 feature-catalog entry, fallback strategy, or OpenAPI schema changed.
 Research basis: current llama.cpp server docs for metrics and prompt-cache
 slot save/restore, current llama.cpp SWA prompt-cache fix discussion, current
-vLLM metrics/cache guidance, and sibling scans of RimLLM / DeepForge /
-OmniForge for proof-gated model-cache patterns. No sibling code, branding, or
+vLLM metrics/cache guidance, and sibling scans of RimLLM / external sibling research for proof-gated model-cache patterns. No sibling code, branding, or
 identity was lifted.
 
 Test count unchanged at `775`. Verification: focused `ModelTierTests`
@@ -8212,7 +8284,7 @@ Research basis: current ASP.NET Core 10 request-timeout guidance for
 endpoint-specific budgets, current vLLM optimization and metrics guidance,
 SGLang Model Gateway observability / request-id / cache-aware routing guidance,
 llama.cpp server idle and prompt-cache guidance, and NVIDIA Dynamo multimodal
-KV-routing docs. Sibling scans of DeepForge and the local prompt pack
+KV-routing docs. Sibling scans of an action-RPG sibling runtime and the local prompt pack
 reinforced route-level SLO and cache-proof separation; no sibling code,
 branding, or identity was lifted.
 
@@ -8375,7 +8447,7 @@ Research basis: OWASP API4 resource-consumption guidance still recommends
 maximum sizes for incoming parameters and payloads, OpenAI-compatible vision
 docs use base64 data URLs for image content, and current vLLM multimodal docs
 make media-count limits explicit through `limit_mm_per_prompt`. A sibling scan
-of OmniForge reinforced provider-free multimodal admission receipts; no sibling
+of an external asset-generation sibling reinforced provider-free multimodal admission receipts; no sibling
 code or identity was lifted.
 
 Test count `731 -> 733` (+2). Verification: focused validator/inference tests
@@ -12122,8 +12194,7 @@ that path as a proof-gated `/v1` lane beside Ollama, vLLM, SGLang, llama.cpp,
 
 Research basis: current TensorRT-LLM `trtllm-serve`, OpenAI API, metrics,
 speculative-decoding, disaggregated-serving, multimodal, and NVIDIA Dynamo
-TensorRT-LLM backend docs. The active `D:\Coding` sibling scan (Byte,
-DeepForge, OmniForge, RimLLM) contributed only proof-policy ideas around
+TensorRT-LLM backend docs. The active `D:\Coding` sibling scan (external sibling research) contributed only proof-policy ideas around
 metrics receipts, KV-cache caution, and advisory serving lanes; no sibling
 code, branding, or identity was copied.
 
@@ -12243,7 +12314,7 @@ nested readiness and loop fields.
 Research basis: current UE4SS Lua/API documentation for live hook/widget
 workflows, current Microsoft ASP.NET Core/.NET guidance on typed minimal API
 contracts and response caching, and an active sibling-project scan. RimLLM's
-external-validation packets and OmniForge's runtime-qualification lanes
+external-validation packets and an external project's runtime-qualification lanes
 reinforced the same idea: native proof should travel as normalized evidence
 lanes, not prose-only status.
 
@@ -13435,7 +13506,7 @@ request body and the serving checklist.
 Research/cross-project grounding: rechecked current vLLM automatic prefix
 caching docs for `sha256_cbor` and per-request `cache_salt`, current vLLM
 Production Stack / vLLM Router / NVIDIA Dynamo docs for cache-aware routing,
-and a fresh active `D:\Coding` sibling scan. DeepForge carried a similar
+and a fresh active `D:\Coding` sibling scan. an action-RPG sibling runtime carried a similar
 trust-domain salt idea; no sibling code, names, or product identity were copied.
 
 Verification: focused inference/model-tier/options tests `68 / 68`;
@@ -13468,7 +13539,7 @@ guardrails and explicit proof before an operator can treat it as a safe default.
 Research/cross-project grounding: rechecked current vLLM sleep-mode guidance,
 kept the ASP.NET Core minimal-API/test posture unchanged, and scanned active
 `D:\Coding` siblings for useful patterns. RimLLM reinforced proof-before-promote
-release language and Byte reinforced separating resource pressure from lane
+release language and the external prompt-pack project reinforced separating resource pressure from lane
 choice; no sibling code, product identity, or non-PalLLM scope was copied.
 
 Verification: focused `ModelTierTests` `19 / 19`; OpenAPI snapshot verification
@@ -13506,7 +13577,7 @@ Research/cross-project grounding: rechecked current vLLM disaggregated
 prefilling connector docs, LMCache encoder-cache docs, vLLM-Omni Qwen3-Omni
 realtime guidance, current llama.cpp libmtmd multimodal docs, and the ASP.NET
 Core minimal-API/test guidance used by this repo. A fresh active `D:\Coding`
-sibling scan (Byte, DeepForge, OmniForge, RimLLM) reinforced readable runtime
+sibling scan (external sibling research) reinforced readable runtime
 qualification and cache/serving telemetry as useful operator patterns; no
 sibling code, product identity, or non-PalLLM scope was copied.
 
@@ -13714,7 +13785,7 @@ Research/cross-project grounding: current vLLM multimodal-input,
 structured-output, EAGLE/speculative-decoding, multimodal processor-cache, and
 media-security docs; current llama.cpp multimodal docs; official Gemma 4 and
 Qwen Omni model docs; plus a focused scan of active `D:\Coding` sibling
-projects. DeepForge's recent "multimodal admission-control planner" pass
+projects. an external project's recent "multimodal admission-control planner" pass
 reinforced the shape, but no sibling code, names, or product identity were
 copied.
 
@@ -13770,7 +13841,7 @@ be guarded continuously.
 - **Source guard** -- the existing source-generation meta-test now pins the
   domain analyzer setting and the preflight check without changing the test
   count.
-- **Multimodal recipe refresh** -- folded the DeepForge/RimLLM sibling scan
+- **Multimodal recipe refresh** -- folded the external sibling research sibling scan
   plus current vLLM docs into `docs/MULTIMODAL_RECIPES.md`: stable media UUIDs
   for repeated screenshot/proof replay cache hits, redirect-disabled vLLM
   multimodal containers, and explicit `--allowed-media-domains` guidance for
@@ -13810,7 +13881,7 @@ without starting the active watcher.
   recommend `pal proof` when the normal repo/operator posture is otherwise
   healthy.
 - **Sibling-project audit** -- rechecked active `D:\Coding` neighbors. The
-  useful idea this pass lifted was the RimLLM/OmniForge habit of making proof
+  useful idea this pass lifted was the RimLLM/an external asset-generation sibling habit of making proof
   and release-readiness evidence reviewable as compact status records. No
   sibling source code was copied.
 
@@ -15521,8 +15592,8 @@ but wasn't fully delivered there.
   `System.Text.Json` source generation / `JsonTypeInfo` overloads for Native AOT
   and trimming, plus Microsoft trim-warning guidance that serialization paths
   should be converted rather than suppressed. Focused sibling scans under
-  `D:\Coding\RimLLM`, `D:\Coding\OmniForge`, `D:\Coding\DeepForge`, and
-  `D:\Coding\Byte` reinforced publication-safety/source-guard posture but did
+  `D:\Coding\RimLLM`, an external sibling-project tree, an external sibling-project tree, and
+  an external sibling-project tree reinforced publication-safety/source-guard posture but did
   not surface a stronger JSON implementation to lift.
 - **Verification:** `dotnet test D:\\Coding\\PalLLM\\PalLLM.sln --configuration Release --no-restore --nologo --verbosity minimal`
   green at `610 / 610`; the domain trim publish probe was rerun and produced no
@@ -15554,8 +15625,8 @@ but wasn't fully delivered there.
 - **Research basis:** this pass followed current Microsoft guidance for .NET
   library trim readiness and package-validation posture, NuGet's latest stable
   package metadata for the .NET/NUnit/OpenAPI packages above, and a sibling scan
-  of `D:\Coding\RimLLM`, `D:\Coding\OmniForge`, `D:\Coding\DeepForge`, and
-  `D:\Coding\Byte`. The sibling scan reinforced dependency/provenance hygiene
+  of `D:\Coding\RimLLM`, an external sibling-project tree, an external sibling-project tree, and
+  an external sibling-project tree. The sibling scan reinforced dependency/provenance hygiene
   and model/license-trust ideas, but no sibling code was lifted into PalLLM.
 - **Verification:** `dotnet list D:\\Coding\\PalLLM\\PalLLM.sln package --outdated`
   reports no available top-level updates for all three projects;
@@ -15587,8 +15658,8 @@ but wasn't fully delivered there.
   Scorecard's pinned-dependency check, and current GitHub artifact-attestation
   guidance that provenance verification complements but does not replace
   trusted workflow dependency pinning. Sibling scans found the same pattern
-  already in `D:\Coding\OmniForge`, `D:\Coding\DeepForge`, and
-  `D:\Coding\Byte`; the PowerShell guard was adapted for PalLLM rather than
+  already in an external sibling-project tree, an external sibling-project tree, and
+  an external sibling-project tree; the PowerShell guard was adapted for PalLLM rather than
   lifting another project's implementation.
 - **Verification:** `powershell -NoProfile -ExecutionPolicy Bypass -File D:\\Coding\\PalLLM\\scripts\\audit-workflow-action-pins.ps1` checked `17` refs; `dotnet test D:\\Coding\\PalLLM\\PalLLM.sln --configuration Release --no-restore --nologo --verbosity minimal` green at `610 / 610`; `powershell -NoProfile -ExecutionPolicy Bypass -File D:\\Coding\\PalLLM\\scripts\\run_full_audit.ps1 -SkipCoverage -SkipSbom -SkipPackaging` PASS at [`artifacts/full-audit/20260429-102046/RESULTS.md`](artifacts/full-audit/20260429-102046/RESULTS.md).
 - Count deltas: tests `609 -> 610` (+1). Routes, features,
@@ -15600,7 +15671,7 @@ but wasn't fully delivered there.
 - **Readiness no longer trusts dangling digest manifests.** `ReleaseArtifactIntegrityEvidenceBuilder` reads the latest JSON through the bounded local-artifact reader and downgrades the evidence to `invalid` when the packaging root or required checksum files are missing.
 - **GitHub release provenance now follows the current attestation path.** `.github/workflows/release.yml` computes digest manifests before upload/release publication and uses `actions/attest@v4` with `subject-checksums: artifacts/packaging/SHA256SUMS`, so digest-listed release artifacts receive SLSA provenance from the tag workflow while the checksum manifests ship beside the zip.
 - **Docs and source guards were resynced.** `README.md`, `docs/API.md`, `docs/ARCHITECTURE.md`, `docs/OPERATIONS.md`, `docs/RELEASE.md`, `docs/RELEASE_SIGNING.md`, `docs/ROADMAP.md`, `docs/CODE_MAP.md`, `docs/ADVISORS.md`, `docs/HANDOFF.md`, the committed OpenAPI snapshot, the feature catalog, and `MetaTests` now describe and pin artifact-integrity evidence.
-- **Research basis:** this pass followed current GitHub artifact-attestation guidance for checksum-driven provenance, current ASP.NET Core guidance to keep public diagnostic surfaces stable, and sibling scans under `D:\Coding\RimLLM`, `D:\Coding\OmniForge`, `D:\Coding\DeepForge`, and `D:\Coding\Byte` that reinforced SLSA/Sigstore-style release provenance without contributing PalLLM-specific code.
+- **Research basis:** this pass followed current GitHub artifact-attestation guidance for checksum-driven provenance, current ASP.NET Core guidance to keep public diagnostic surfaces stable, and sibling scans under `D:\Coding\RimLLM`, an external sibling-project tree, an external sibling-project tree, and an external sibling-project tree that reinforced SLSA/Sigstore-style release provenance without contributing PalLLM-specific code.
 - **Verification:** `dotnet test D:\\Coding\\PalLLM\\PalLLM.sln --configuration Release --no-restore --nologo --verbosity minimal` green at `609 / 609`; `powershell -NoProfile -ExecutionPolicy Bypass -File D:\\Coding\\PalLLM\\scripts\\run_full_audit.ps1 -SkipCoverage -SkipSbom -SkipPackaging` PASS at [`artifacts/full-audit/20260429-092113/RESULTS.md`](artifacts/full-audit/20260429-092113/RESULTS.md).
 - Count deltas: none expected. Routes, features, fallback strategies, drift-gate count, and executable test count unchanged.
 
@@ -15640,7 +15711,7 @@ but wasn't fully delivered there.
 - **Unreadable or mismatched handoff archives fail closed.** A latest `*.json` manifest can no longer make an old, corrupt, or mismatched `latest-proof-bundle.zip` / `latest-support-bundle.zip` look safe to share; the evidence block is downgraded to `invalid` with a stable summary and the existing next-pass logic asks for recapture.
 - **Tests and source guards now pin the archive check.** `SidecarEndpointTests` now writes real proof/support bundle zips in release-readiness fixtures and proves corrupt proof-bundle bytes are rejected. `MetaTests` pins both evidence builders to the archive inspector and guards the inspector against extracting archives to disk.
 - **Docs and catalog were resynced.** `README.md`, `docs/API.md`, `docs/ARCHITECTURE.md`, `docs/OPERATIONS.md`, `docs/RELEASE.md`, `docs/ROADMAP.md`, `docs/CODE_MAP.md`, `docs/HANDOFF.md`, and the feature catalog now describe archive-shape verification alongside publication scanning.
-- **Research basis:** this pass followed current ASP.NET Core production guidance to keep public failure summaries stable, current ASP.NET Core hot-path guidance to avoid unbounded work on common endpoints, and current .NET guidance around source-generated JSON/low-reflection metadata. Sibling scans under `D:\Coding\RimLLM`, `D:\Coding\OmniForge`, and `D:\Coding\DeepForge` reinforced bundle/manifest hygiene, but the implementation is PalLLM-specific and stays scoped to Palworld proof/support archives.
+- **Research basis:** this pass followed current ASP.NET Core production guidance to keep public failure summaries stable, current ASP.NET Core hot-path guidance to avoid unbounded work on common endpoints, and current .NET guidance around source-generated JSON/low-reflection metadata. Sibling scans under `D:\Coding\RimLLM`, an external sibling-project tree, and an external sibling-project tree reinforced bundle/manifest hygiene, but the implementation is PalLLM-specific and stays scoped to Palworld proof/support archives.
 - **Verification:** `dotnet test D:\\Coding\\PalLLM\\PalLLM.sln --configuration Release --no-restore --nologo --verbosity minimal` green at `599 / 599`; `powershell -NoProfile -ExecutionPolicy Bypass -File D:\\Coding\\PalLLM\\scripts\\run_full_audit.ps1 -SkipCoverage -SkipSbom -SkipPackaging` PASS at [`artifacts/full-audit/20260429-051409/RESULTS.md`](artifacts/full-audit/20260429-051409/RESULTS.md).
 - Count deltas: none expected. Routes, features, fallback strategies, drift-gate count, and executable test count unchanged.
 
@@ -15650,7 +15721,7 @@ but wasn't fully delivered there.
 - **Bundle scans share the release-package policy.** `scripts/PalLLM.Tooling.ps1` now owns the reusable text-surface scanner, and `scripts/verify-release-package.ps1` delegates to it instead of carrying a private copy of the denylist logic. Release packages keep their stricter root player-copy provider-neutrality check.
 - **Release-readiness can block bad handoff archives.** `ReleaseProofBundleEvidenceSnapshot` and `ReleaseSupportBundleEvidenceSnapshot` expose the scan fields through `/api/release/readiness`; failed proof/support scans mark the bundle `invalid` and make the next recommended pass recapture the affected archive before tester handoff.
 - **Docs, OpenAPI, and source guards were resynced.** `docs/API.md`, `docs/RELEASE.md`, `docs/OPERATIONS.md`, `docs/ARCHITECTURE.md`, `docs/CODE_MAP.md`, the committed OpenAPI snapshot, and `tests/PalLLM.Tests/MetaTests.cs` now describe and pin the portable-bundle scan posture.
-- **Research basis:** this pass followed current ASP.NET Core production error/public-surface guidance, current ASP.NET Core hot-path guidance to keep checks bounded and tooling-side, Steam branding guidance around not implying sponsorship or affiliation, and the sibling DeepForge staged release-bundle hygiene pattern while keeping PalLLM scoped to Palworld.
+- **Research basis:** this pass followed current ASP.NET Core production error/public-surface guidance, current ASP.NET Core hot-path guidance to keep checks bounded and tooling-side, Steam branding guidance around not implying sponsorship or affiliation, and the sibling an action-RPG sibling runtime staged release-bundle hygiene pattern while keeping PalLLM scoped to Palworld.
 - **Verification:** `dotnet test D:\\Coding\\PalLLM\\PalLLM.sln --configuration Release --no-restore --nologo --verbosity minimal` green at `599 / 599`; `powershell -NoProfile -ExecutionPolicy Bypass -File D:\\Coding\\PalLLM\\scripts\\run_full_audit.ps1 -SkipCoverage -SkipSbom -SkipPackaging` PASS at [`artifacts/full-audit/20260429-041347/RESULTS.md`](artifacts/full-audit/20260429-041347/RESULTS.md).
 - Count deltas: none expected. Routes, features, fallback strategies, drift-gate count, and executable test count unchanged.
 
@@ -15702,7 +15773,7 @@ but wasn't fully delivered there.
 - **Long unattended sessions now prune with bounded memory.** Outbox, archive, failed, diagnostics, TTS, and pending screenshot cleanup still enforces the same age/count contract, but count pruning no longer needs an array of every matching file plus a full sort.
 - **Regression/source-guard coverage was tightened.** `tests/PalLLM.Tests/RuntimeTests.cs` now proves overlapping retention patterns do not double-count or double-delete while preserving the newest survivors, and `tests/PalLLM.Tests/MetaTests.cs` guards `DirectoryRetention.cs` against drifting back to `GetFiles(...)` or full-list sorting.
 - **Docs were resynced to the live retention posture.** `docs/ARCHITECTURE.md`, `docs/CODE_MAP.md`, `docs/HOT_PATH.md`, `docs/INVARIANTS.md`, `docs/OPERATIONS.md`, `docs/QUICKREF.md`, and `docs/HANDOFF.md` now describe retention as lazy and bounded; current count-bearing docs were bumped to `595` passing tests.
-- **Research basis:** this pass followed current Microsoft guidance that `EnumerateFiles` can begin returning entries before the whole directory is collected, that `GetFiles` waits for the full array, that `PriorityQueue<TElement,TPriority>` removes the lowest-priority element, and that ASP.NET Core hot paths should minimize allocation pressure. A sibling scan under `D:\Coding\RimLLM`, `D:\Coding\OmniForge`, `D:\Coding\DeepForge`, and `D:\Coding\Byte` also surfaced publication-safety ideas for a later pack-validation pass, but did not produce a better retention helper to lift directly.
+- **Research basis:** this pass followed current Microsoft guidance that `EnumerateFiles` can begin returning entries before the whole directory is collected, that `GetFiles` waits for the full array, that `PriorityQueue<TElement,TPriority>` removes the lowest-priority element, and that ASP.NET Core hot paths should minimize allocation pressure. A sibling scan under `D:\Coding\RimLLM`, an external sibling-project tree, an external sibling-project tree, and an external sibling-project tree also surfaced publication-safety ideas for a later pack-validation pass, but did not produce a better retention helper to lift directly.
 - **Verification:** `dotnet test D:\\Coding\\PalLLM\\PalLLM.sln --configuration Release --no-restore --nologo --verbosity minimal` green at `595 / 595`; `powershell -NoProfile -ExecutionPolicy Bypass -File D:\\Coding\\PalLLM\\scripts\\run_full_audit.ps1 -SkipCoverage -SkipSbom -SkipPackaging` PASS at [`artifacts/full-audit/20260429-014603/RESULTS.md`](artifacts/full-audit/20260429-014603/RESULTS.md).
 - Count deltas: tests `594 -> 595` (+1). Routes, features, fallback strategies, and drift-gate count unchanged.
 
@@ -15712,7 +15783,7 @@ but wasn't fully delivered there.
 - **The body phase is now cancellation-aware on current .NET.** The shared text-reader path now uses `StreamReader.ReadToEndAsync(CancellationToken)`, so inference, vision, and TTS status-body drains keep honoring the explicit content-phase timeout/cancellation budget that PalLLM already applies after `HttpCompletionOption.ResponseHeadersRead` returns.
 - **Regression coverage was tightened without increasing the executable suite count.** `tests/PalLLM.Tests/InferenceClientTests.cs` now proves unknown-length inference error bodies still drain through the shared bounded text-reader while the public `HTTP 502` status remains sanitized, and `tests/PalLLM.Tests/MetaTests.cs` source-guards `HttpContentReadLimiter.cs` against drifting back to `new MemoryStream(...)` or a non-cancellable `ReadToEndAsync` call.
 - **Transport docs were resynced to the live helper.** `docs/ARCHITECTURE.md`, `docs/CODE_MAP.md`, and `docs/HANDOFF.md` now describe the transport seam honestly as shared bounded JSON/text/byte readers rather than implying the text-body path still buffers through a separate in-memory copy.
-- **Research basis:** this pass followed current Microsoft guidance that `HttpCompletionOption.ResponseHeadersRead` leaves content-phase timeout enforcement to the caller, that `HttpContent.ReadAsStreamAsync(...)` stays stream-oriented on that path, that `StreamReader.ReadToEndAsync(CancellationToken)` is available on current .NET, and that reusable/pool-backed buffers remain the right fit for transient body handling. A sibling scan under `D:\Coding\RimLLM`, `D:\Coding\OmniForge`, and `D:\Coding\DeepForge` reinforced the streaming/body-timeout posture but did not surface a more efficient text-body helper to lift directly.
+- **Research basis:** this pass followed current Microsoft guidance that `HttpCompletionOption.ResponseHeadersRead` leaves content-phase timeout enforcement to the caller, that `HttpContent.ReadAsStreamAsync(...)` stays stream-oriented on that path, that `StreamReader.ReadToEndAsync(CancellationToken)` is available on current .NET, and that reusable/pool-backed buffers remain the right fit for transient body handling. A sibling scan under `D:\Coding\RimLLM`, an external sibling-project tree, and an external sibling-project tree reinforced the streaming/body-timeout posture but did not surface a more efficient text-body helper to lift directly.
 - **Verification:** `dotnet test D:\\Coding\\PalLLM\\PalLLM.sln --configuration Release --no-restore --nologo --verbosity minimal` green at `594 / 594`; `powershell -NoProfile -ExecutionPolicy Bypass -File D:\\Coding\\PalLLM\\scripts\\run_full_audit.ps1 -SkipCoverage -SkipSbom -SkipPackaging` PASS at [`artifacts/full-audit/20260429-010943/RESULTS.md`](artifacts/full-audit/20260429-010943/RESULTS.md).
 - Count deltas: none expected. Routes, features, fallback strategies, drift-gate count, and executable test count unchanged.
 
@@ -15721,9 +15792,9 @@ but wasn't fully delivered there.
 - **Adapter warning logs no longer echo raw exception text on the remaining support-bundle-facing bridge/file-operation seams.** `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs` now routes screenshot processing, outbox clear, outbox write, and bridge event processing failures through explicit helpers such as `DescribeScreenshotProcessingFailure(...)`, `DescribeOutboxWriteFailure(...)`, and `DescribeBridgeProcessingFailure(...)` instead of interpolating `ex.Message`.
 - **The new warning summaries keep operational signal while dropping unstable path/serializer wording.** Representative outcomes now stay on stable local contracts such as `vision output could not be applied`, `the file could not be deleted`, `reply envelope directory was missing`, and `bridge event payload was invalid for its declared type`, which keeps `/api/logs`, the dashboard, and support bundles readable without copying machine-local failure prose into the shipped support surface.
 - **Regression coverage now pins both runtime behavior and source shape.** `tests/PalLLM.Tests/RuntimeTests.cs` now proves representative screenshot, outbox, and bridge failures still fail gracefully while logging only the new stable summaries, and `tests/PalLLM.Tests/MetaTests.cs` source-guards `PalLlmRuntime.cs` against drifting back to the five raw warning patterns that used `ex.Message`.
-- **Publication-facing docs now have a mechanical sibling-project guard.** New `tests/PalLLM.Tests/MetaTests.cs` coverage scans `README.md`, `docs/PITCH.md`, `docs/FAQ.md`, `docs/API.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/RELEASE.md`, and `docs/PRIVACY.md` for sibling-project bleed (`RimLLM`, `OmniForge`, `DeepForge`, and the audited Byte pack identifiers) so release-facing copy stays PalLLM-specific even when sibling-project audits continue in development docs.
+- **Publication-facing docs now have a mechanical sibling-project guard.** New `tests/PalLLM.Tests/MetaTests.cs` coverage scans `README.md`, `docs/PITCH.md`, `docs/FAQ.md`, `docs/API.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/RELEASE.md`, and `docs/PRIVACY.md` for sibling-project bleed (`RimLLM`, `an external asset-generation sibling`, `an action-RPG sibling runtime`, and the audited the external prompt-pack project pack identifiers) so release-facing copy stays PalLLM-specific even when sibling-project audits continue in development docs.
 - **Docs were resynced to the live support/log contract.** `docs/API.md`, `docs/OPERATIONS.md`, and `docs/HANDOFF.md` now describe the stable adapter-log warning posture, and the rolling count/docs baseline was bumped to `594` passing tests across `README.md`, `docs/ARCHITECTURE.md`, `docs/CODE_MAP.md`, `docs/PROJECT_NUMBERS.json`, `docs/ROADMAP.md`, and `docs/HANDOFF.md`.
-- **Research basis:** this pass followed current Microsoft ASP.NET Core guidance not to serve sensitive exception information in production, current Microsoft logging guidance that detailed log levels may contain sensitive app data, and current .NET redaction guidance that sensitive information should not be written to logs in plain text. A sibling audit under `D:\Coding\OmniForge` also surfaced a useful publish-surface guard pattern that was adapted into the PalLLM meta-test layer.
+- **Research basis:** this pass followed current Microsoft ASP.NET Core guidance not to serve sensitive exception information in production, current Microsoft logging guidance that detailed log levels may contain sensitive app data, and current .NET redaction guidance that sensitive information should not be written to logs in plain text. A sibling audit under an external sibling-project tree also surfaced a useful publish-surface guard pattern that was adapted into the PalLLM meta-test layer.
 - **Verification:** `dotnet test D:\\Coding\\PalLLM\\PalLLM.sln --configuration Release --no-restore --nologo --verbosity minimal` green at `594 / 594`; `powershell -NoProfile -ExecutionPolicy Bypass -File D:\\Coding\\PalLLM\\scripts\\run_full_audit.ps1 -SkipCoverage -SkipSbom -SkipPackaging` PASS at [`artifacts/full-audit/20260429-001511/RESULTS.md`](artifacts/full-audit/20260429-001511/RESULTS.md).
 - Count deltas: tests `592 -> 594` (+2). Routes, features, fallback strategies, and drift-gate count unchanged.
 
@@ -15757,10 +15828,10 @@ but wasn't fully delivered there.
 - **Verification:** `dotnet test D:\\Coding\\PalLLM\\PalLLM.sln --configuration Release --no-restore --nologo --verbosity minimal` green at `591 / 591`; `powershell -NoProfile -ExecutionPolicy Bypass -File D:\\Coding\\PalLLM\\scripts\\run_full_audit.ps1 -SkipCoverage -SkipSbom -SkipPackaging` PASS at [`artifacts/full-audit/20260428-220735/RESULTS.md`](artifacts/full-audit/20260428-220735/RESULTS.md).
 - Count deltas: none expected. Routes, features, fallback strategies, and drift-gate count unchanged.
 
-### Pass 74 - companion-intelligence design pass from Byte prompt-pack audit (2026-04-28)
+### Pass 74 - companion-intelligence design pass from external research prompt-pack audit (2026-04-28)
 
-- **Added a PalLLM-specific companion-intelligence design note instead of smuggling speculative AGI work into the ship-critical queue.** New [`docs/COMPANION_INTELLIGENCE.md`](docs/COMPANION_INTELLIGENCE.md) captures the best PalLLM fits from the sibling `D:\Coding\Byte\docs\prompts` audit: visible memory, replay/rationale traces, confidence-calibrated escalation, advisory world-model planning, idle reflection/compaction, anomaly detection, and batching/quant-aware routing.
-- **The Byte audit was broad, but the conclusions were intentionally narrow.** The scan covered the extracted prompt-pack directories, the older `_archive` material, and the `12` top-level zip archives. The zips were confirmed to be mirrors of the extracted prompt packs rather than hidden extra content. Highest-signal packs for PalLLM were `byte-forge`, `byte-forward`, `byte-synthesis`, `byte-qwen-frontier`, `byte-qwen-modernize`, and the older `byte-council` archive.
+- **Added a PalLLM-specific companion-intelligence design note instead of smuggling speculative AGI work into the ship-critical queue.** New [`docs/COMPANION_INTELLIGENCE.md`](docs/COMPANION_INTELLIGENCE.md) captures the best PalLLM fits from the sibling an external sibling-project tree audit: visible memory, replay/rationale traces, confidence-calibrated escalation, advisory world-model planning, idle reflection/compaction, anomaly detection, and batching/quant-aware routing.
+- **The external prompt-pack audit was broad, but the conclusions were intentionally narrow.** The scan covered the extracted prompt-pack directories, the older `_archive` material, and the `12` top-level zip archives. The zips were confirmed to be mirrors of the extracted prompt packs rather than hidden extra content. Highest-signal packs for PalLLM were `external-pack`, `external-pack`, `external-pack`, `external-pack`, `external-pack`, and the older `external-pack` archive.
 - **The design note keeps PalLLM scoped as a Palworld mod.** Browser/computer-use agents, sandboxed code execution, webcam/mic-first features, social/viral generators, and broad gameplay autopilot were explicitly rejected as poor fits. The approved direction is "AGI-lite" through better memory, world modeling, self-critique, confidence, replay, and low-latency scheduling on top of the current deterministic local-first runtime.
 - **Roadmap and queue docs now explain where this work belongs.** `docs/INDEX.md` now links the new note directly, `docs/IMPLEMENTATION_QUEUE.md` now says these ideas are post-foundation and must not preempt the native-proof/HUD/audio/action queue, and `docs/ROADMAP.md` now calls broad AGI-style expansion a non-goal until the native Palworld proof chain is finished.
 - **Research basis:** local sibling prompt-pack audit only for this pass. The most relevant prompt IDs were `G20`, `G21`, `G24`, `G50`, `F01`, `F04`, `F31`, `F32`, `F35`, `F36`, `F42`, `S30`, `T01`, `T02`, `T04`, `T05`, `T09`, `U05`, `U06`, `U07`, `P05`, `P29`, `O07`, and `O08`.
@@ -15805,7 +15876,7 @@ but wasn't fully delivered there.
 - **Startup validation and appsettings now expose the cap honestly.** `src/PalLLM.Sidecar/PalLlmOptionsValidator.cs` fails fast when `PalLLM:Session:MaxPersistedBytes <= 0`, and `tests/PalLLM.Tests/BackendValidationTests.cs` now requires the shipped config file to document that knob explicitly.
 - **Regression coverage and source guards tightened.** `tests/PalLLM.Tests/RuntimeTests.cs` now proves oversized primary session files recover through `.bak` when available and return a stable oversized failure when not, while `tests/PalLLM.Tests/MetaTests.cs` source-guards session reload against drifting back to a direct `FileStream` deserialize path.
 - **Docs were resynced to the live session contract.** `README.md`, `docs/API.md`, `docs/ARCHITECTURE.md`, `docs/OPERATIONS.md`, `docs/TUNING.md`, `docs/HANDOFF.md`, `docs/ROADMAP.md`, `docs/CODE_MAP.md`, and `docs/PROJECT_NUMBERS.json` now describe the bounded session-ingress posture and the new `591`-test baseline.
-- **Research basis:** this pass followed current Microsoft guidance that `JsonSerializer.Deserialize(Stream, ...)` reads the stream to completion, that `FileOptions.SequentialScan` is the appropriate hint for sequential local reads, and that ASP.NET Core hot paths should avoid large object allocations where practical. The sibling scan across `D:\Coding\RimLLM`, `D:\Coding\OmniForge`, `D:\Coding\DeepForge`, and `D:\Coding\Byte` did not surface a directly liftable session-persistence reader; the useful pattern remained PalLLM's own bounded JSON seam.
+- **Research basis:** this pass followed current Microsoft guidance that `JsonSerializer.Deserialize(Stream, ...)` reads the stream to completion, that `FileOptions.SequentialScan` is the appropriate hint for sequential local reads, and that ASP.NET Core hot paths should avoid large object allocations where practical. The sibling scan across `D:\Coding\RimLLM`, an external sibling-project tree, an external sibling-project tree, and an external sibling-project tree did not surface a directly liftable session-persistence reader; the useful pattern remained PalLLM's own bounded JSON seam.
 - **Verification:** `dotnet test PalLLM.sln --no-restore --nologo --verbosity minimal` green at `591 / 591`; `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_full_audit.ps1 -SkipCoverage -SkipSbom -SkipPackaging` PASS at [`artifacts/full-audit/20260428-191441/RESULTS.md`](artifacts/full-audit/20260428-191441/RESULTS.md).
 - Count deltas: tests `589 -> 591` (+2). Routes, features, fallback strategies, and drift-gate count unchanged.
 
@@ -15816,7 +15887,7 @@ but wasn't fully delivered there.
 - **Outbox clearing now walks the directory lazily instead of pre-materializing the full file list.** `ClearOutbox()` now uses `Directory.EnumerateFiles(...)` and tolerates enumeration races without first allocating a `string[]` for the whole outbox.
 - **Regression coverage and source guards tightened without changing the rolling suite size.** `tests/PalLLM.Tests/RuntimeTests.cs` now proves screenshot ingest still forwards the expected base64 payload and MIME type to the vision path, while `tests/PalLLM.Tests/MetaTests.cs` now blocks screenshot ingress from drifting back to `File.ReadAllBytesAsync(...)` and outbox clearing from drifting back to `Directory.GetFiles(...)`.
 - **The harvest/navigation docs now describe the new helper honestly.** `docs/ARCHITECTURE.md`, `docs/DATAFLOW.md`, `docs/CODE_MAP.md`, and `docs/HARVEST.md` now call out the pooled screenshot-ingress reader and the low-allocation local-file posture it enforces.
-- **Research basis:** this pass followed current Microsoft guidance around `Convert.ToBase64String(ReadOnlySpan<byte>)`, `ArrayPool<T>` for frequent transient buffers, `FileStreamOptions` / `FileOptions.SequentialScan` for sequential local reads, and `Directory.EnumerateFiles(...)` for lazy filesystem walks. The sibling scan across `D:\Coding\RimLLM`, `D:\Coding\OmniForge`, `D:\Coding\DeepForge`, and `D:\Coding\Byte` again reinforced bounded local ingress patterns but did not surface a directly liftable base64 reader.
+- **Research basis:** this pass followed current Microsoft guidance around `Convert.ToBase64String(ReadOnlySpan<byte>)`, `ArrayPool<T>` for frequent transient buffers, `FileStreamOptions` / `FileOptions.SequentialScan` for sequential local reads, and `Directory.EnumerateFiles(...)` for lazy filesystem walks. The sibling scan across `D:\Coding\RimLLM`, an external sibling-project tree, an external sibling-project tree, and an external sibling-project tree again reinforced bounded local ingress patterns but did not surface a directly liftable base64 reader.
 - **Verification:** `dotnet test PalLLM.sln --configuration Release --no-restore --nologo --verbosity minimal` green at `589 / 589`; `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_full_audit.ps1 -SkipCoverage -SkipSbom -SkipPackaging` PASS at [`artifacts/full-audit/20260428-190446/RESULTS.md`](artifacts/full-audit/20260428-190446/RESULTS.md).
 - Count deltas: tests unchanged at `589`. Routes, features, fallback strategies, and drift-gate count unchanged.
 
@@ -15826,7 +15897,7 @@ but wasn't fully delivered there.
 - **Oversized, malformed, and unreadable bridge envelopes now degrade deterministically.** Instead of letting a runaway local producer force unbounded bridge-event deserialization, `DrainInbox(...)` now quarantines those files to `Bridge/Failed/` with stable operator-readable reason text while preserving the existing happy path for valid events.
 - **Regression coverage and source guards tightened without changing the rolling suite count.** `tests/PalLLM.Tests/RuntimeTests.cs` now proves a normal `chat_message` still drains while an oversized sibling envelope is rejected before it mutates memory, `tests/PalLLM.Tests/BackendValidationTests.cs` now startup-validates `PalLLM:Bridge:MaxInboxEventBytes` and requires the shipped `appsettings.json` to document it explicitly, and `tests/PalLLM.Tests/MetaTests.cs` now blocks bridge drain from drifting back to raw `File.OpenRead(...)` ingress.
 - **Bridge-facing docs and schema were resynced to the live runtime.** `docs/API.md`, `docs/ARCHITECTURE.md`, `docs/DATAFLOW.md`, `docs/EVENTS.md`, `docs/EXTENSION_POINTS.md`, and `docs/schemas/bridge-event-envelope.schema.json` now describe the current bridge event vocabulary (`bridge_boot`, `chat_message`, `snapshot`, `base_discovered`, `combat_*`, `pal_status`, `production`, `travel`, `weather_change`, `raid`, `ui_probe`, `reply_delivery`) instead of the stale pre-pass names.
-- **Research basis:** this pass followed current Microsoft guidance around stream-based `JsonSerializer.Deserialize(Stream, ...)`, `Directory.EnumerateFiles(...)` versus array-returning enumeration APIs, and `FileOptions.SequentialScan` as the right low-allocation posture for sequential local reads. The sibling scan across `D:\Coding\RimLLM`, `D:\Coding\OmniForge`, `D:\Coding\DeepForge`, and `D:\Coding\Byte` did not surface a directly liftable bridge-ingress reader, but the capped-event posture visible in the Unity input-system code cached under `DeepForge` reinforced the value of explicit per-event byte ceilings.
+- **Research basis:** this pass followed current Microsoft guidance around stream-based `JsonSerializer.Deserialize(Stream, ...)`, `Directory.EnumerateFiles(...)` versus array-returning enumeration APIs, and `FileOptions.SequentialScan` as the right low-allocation posture for sequential local reads. The sibling scan across `D:\Coding\RimLLM`, an external sibling-project tree, an external sibling-project tree, and an external sibling-project tree did not surface a directly liftable bridge-ingress reader, but the capped-event posture visible in the Unity input-system code cached under `an action-RPG sibling runtime` reinforced the value of explicit per-event byte ceilings.
 - **Verification:** `dotnet test PalLLM.sln --configuration Release --no-restore --nologo --verbosity minimal` green at `589 / 589`; `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_full_audit.ps1 -SkipCoverage -SkipSbom -SkipPackaging` PASS at [`artifacts/full-audit/20260428-182651/RESULTS.md`](artifacts/full-audit/20260428-182651/RESULTS.md).
 - Count deltas: tests unchanged at `589`. Routes, features, fallback strategies, and drift-gate count unchanged.
 
@@ -15836,7 +15907,7 @@ but wasn't fully delivered there.
 - **The validator now matches its documented contract more honestly.** `ContentHash` is now required and shape-checked as 64 lowercase hex characters, and malformed manifests or unreadable tracked files now come back as structured validation issues instead of surfacing raw JSON exceptions or file-read failures.
 - **The schema/story docs now describe the live pack constraints.** `docs/FAQ.md`, `docs/GLOSSARY.md`, `docs/EXTENSION_POINTS.md`, and `docs/schemas/personality-pack.schema.json` now call out that tracked paths must remain inside the pack root and that content-hash recomputation is streaming rather than full-buffer.
 - **Regression coverage and source guards tightened with one new executable case.** `tests/PalLLM.Tests/PersonalityPackValidatorTests.cs` now proves escaped prompt paths, blank content hashes, and oversized manifests are rejected, and `tests/PalLLM.Tests/MetaTests.cs` now blocks `PersonalityPackValidator` from drifting back to `File.ReadAllText(manifestPath)`, `File.ReadAllBytes(abs)`, or `new MemoryStream()` for content hashing. Rolling suite baseline is now `589`.
-- **Research basis:** this pass followed current Microsoft guidance around stream-based `JsonSerializer.Deserialize(Stream, ...)`, `FileStreamOptions` with `FileOptions.SequentialScan` for sequential local reads, and the current .NET cryptography APIs for streaming SHA-256/incremental hashing without building a full concatenation buffer in memory. The sibling scan across `D:\Coding\RimLLM`, `D:\Coding\OmniForge`, `D:\Coding\DeepForge`, and `D:\Coding\Byte` reinforced the existing source-guard style but did not surface a directly liftable personality-pack validator.
+- **Research basis:** this pass followed current Microsoft guidance around stream-based `JsonSerializer.Deserialize(Stream, ...)`, `FileStreamOptions` with `FileOptions.SequentialScan` for sequential local reads, and the current .NET cryptography APIs for streaming SHA-256/incremental hashing without building a full concatenation buffer in memory. The sibling scan across `D:\Coding\RimLLM`, an external sibling-project tree, an external sibling-project tree, and an external sibling-project tree reinforced the existing source-guard style but did not surface a directly liftable personality-pack validator.
 - **Verification:** `dotnet test PalLLM.sln --configuration Release --no-restore --nologo --verbosity minimal` green at `589 / 589`; `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_full_audit.ps1 -SkipCoverage -SkipSbom -SkipPackaging` PASS at [`artifacts/full-audit/20260428-171351/RESULTS.md`](artifacts/full-audit/20260428-171351/RESULTS.md); `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/export-openapi.ps1 -Verify` confirmed the committed snapshot still matches.
 - Count deltas: tests `588 -> 589` (+1). Routes, features, fallback strategies, and drift-gate count unchanged.
 
@@ -15847,7 +15918,7 @@ but wasn't fully delivered there.
 - **Malformed or oversized content files no longer block a good reload.** A single broken or too-large narrative-pack JSON file is skipped while valid packs still load and index normally, keeping startup and `POST /api/packs/reload` resilient under bad authored content.
 - **Regression coverage and source guards were tightened without changing the suite size.** `tests/PalLLM.Tests/RuntimeTests.cs` now proves a valid alias pack still loads when a malformed sibling pack and an oversized sibling pack are present in the same directory, and `tests/PalLLM.Tests/MetaTests.cs` now pins `NarrativePackService` to the bounded JSON reader plus lazy file enumeration so this path cannot drift back to `Directory.GetFiles(...)` or `File.ReadAllText(...)`.
 - **Docs were resynced to the live pack contract.** `docs/ARCHITECTURE.md`, `docs/API.md`, `docs/PACK_AUTHORING.md`, and `docs/HANDOFF.md` now describe the bounded reload behavior and the shared `1,000,000` byte narrative-pack ceiling.
-- **Research basis:** this pass followed current Microsoft guidance that file enumeration APIs returning enumerable collections are better for large trees than array-returning APIs, that `FileOptions.SequentialScan` can improve large sequential reads, and that `JsonSerializer.Deserialize(Stream, ...)` keeps JSON ingress on the stream path instead of buffering text first. The sibling audit across `D:\Coding\RimLLM`, `D:\Coding\OmniForge`, `D:\Coding\DeepForge`, and `D:\Coding\Byte` did not surface a directly liftable narrative-pack loader, so the implementation remains PalLLM-native.
+- **Research basis:** this pass followed current Microsoft guidance that file enumeration APIs returning enumerable collections are better for large trees than array-returning APIs, that `FileOptions.SequentialScan` can improve large sequential reads, and that `JsonSerializer.Deserialize(Stream, ...)` keeps JSON ingress on the stream path instead of buffering text first. The sibling audit across `D:\Coding\RimLLM`, an external sibling-project tree, an external sibling-project tree, and an external sibling-project tree did not surface a directly liftable narrative-pack loader, so the implementation remains PalLLM-native.
 - **Verification:** `dotnet test PalLLM.sln --configuration Release --no-restore --nologo --verbosity minimal` green at `588 / 588`; `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_full_audit.ps1 -SkipCoverage -SkipSbom -SkipPackaging` PASS at [`artifacts/full-audit/20260428-161118/RESULTS.md`](artifacts/full-audit/20260428-161118/RESULTS.md); `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/export-openapi.ps1 -Verify` confirmed the committed snapshot still matches.
 - Count deltas: tests unchanged at `588`. Routes, features, fallback strategies, and drift-gate count unchanged.
 
@@ -17558,7 +17629,7 @@ here affect only failure paths and an AI-consumer-facing surface.
   updated to reflect the new `62`/`59 ready` catalog numbers and
   `287` passing tests. Feature-catalog addition: `thermal-gate`.
 - Origin note: the pattern was identified in a sibling
-  `D:/Coding/OmniForge/src/omniforge/core/thermal_gate.py` during the
+  an external sibling-project tree during the
   cross-project audit and re-implemented from scratch in C# against
   PalLLM's shape — the C# surface is independently authored, depends
   only on the BCL, and is MIT-licensed under this repo.
@@ -18367,7 +18438,7 @@ here affect only failure paths and an AI-consumer-facing surface.
   contributors pre-flight exactly what CI will fail on, and gives
   auditors a pinned "here's where we stood on date X" snapshot.
   `CONTRIBUTING.md` pre-flight checklist bumped to point at it.
-  Byte-level mojibake detector avoids the Windows-1252 false-positive
+  the external prompt-pack project-level mojibake detector avoids the Windows-1252 false-positive
   that a naive `Get-Content` would hit on PS 5.1.
 
 ### Business Prometheus metrics (labeled counters + latency histogram)

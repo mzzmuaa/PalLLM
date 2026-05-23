@@ -30,7 +30,7 @@ reach has been pushed to its ceiling:
 - **Build warnings:** `0`.
 - **Operator surface:** every script that gates a roadmap queue
   is wrapped as a single `pal` verb.
-- **Drift protection:** `27` meta-tests + `8` JSON Schemas + `16`
+- **Drift protection:** `28` meta-tests + `8` JSON Schemas + `16`
   audit gates pin every cross-document numerical claim.
 - **Aggregate readiness:** `~8.0 / 10` across 23 aspects (computed
   arithmetic mean of the per-aspect column in `READINESS.md`).

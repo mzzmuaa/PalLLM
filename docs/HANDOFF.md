@@ -30,7 +30,7 @@ repo re-audit before the next implementation pass.
   `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs`
 - feature split: `119 ready`, `2 scaffolded`, `1 deferred`
 - `19` deterministic fallback strategies
-- `1309` passing tests from `dotnet test PalLLM.sln`
+- `1310` passing tests from `dotnet test PalLLM.sln`
 - `16 / 16` drift gates PASS on the latest audit
 - honest roadmap position: `76.2%`
 - latest passing full audit:
@@ -43,6 +43,52 @@ repo re-audit before the next implementation pass.
 Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
+
+- **Pass 372 - Public-release brand purge + CI test-counter fix.**
+  Operator asked to make the repo public after stripping every mention
+  of four still-private sibling projects (names withheld here so this
+  changelog stays publication-safe). `RimLLM` stayed in scope (not on
+  the purge list). Built `scripts/purge-sibling-brands.py` - a one-shot, idempotent
+  Python rewriter with 17 ordered regex rules (multi-sibling rosters,
+  possessives, local paths, pack identifiers). Applied it to
+  `CHANGELOG.md`, `docs/HANDOFF.md`, `docs/INDEX.md`,
+  `docs/COMPANION_INTELLIGENCE.md`, `docs/RESEARCH_NOTES_2026-05.md`,
+  and `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs` for `194`
+  total substitutions. Post-sweep grep confirms `0` residual matches.
+  Widened the guard surface so future passes cannot reintroduce the
+  brands: `scripts/public_copy_policy.ps1` and
+  `scripts/PalLLM.Tooling.ps1` regexes now block the four bare project
+  names (one is case-sensitive because the lowercase form is legitimate
+  technical vocabulary), the prompt-pack identifiers, and the local
+  `D:\Coding\<sibling>` paths.
+  Added a new `MetaTests.EveryTrackedFile_DoesNotMentionPrivateSiblingProjects`
+  test that walks every text file under the repo (skipping `bin/`,
+  `obj/`, `artifacts/`, `.git/`, etc.) and fails on any contiguous
+  word-boundary match - the public-release gate. Updated the
+  `PublicationFilesDoNotMentionSiblingProjects` blocked-terms list to
+  include the fourth name and the four `D:\Coding\<sibling>` paths so
+  the release-facing guard layers cleanly with the new tracked-file
+  gate.
+  Separately fixed two more CI bash counters that lagged the PowerShell
+  audit: (a) the operational-routes regex was already patched in Pass
+  371, (b) the test-count regex was matching only `[Test]` not also
+  `[TestCase`, so CI was reporting `1033 / 1310` test drift. Updated to
+  `^\s*\[(TestCase|Test)(\(|\])` and added `-a` (treat-as-text) so the
+  adversarial-fuzz file with embedded control bytes (Pass 355) scans
+  as text. Test count: `1309 -> 1310` (the new sibling-block test);
+  meta-tests: `27 -> 28`; cascaded across `PROJECT_NUMBERS.json`,
+  `README.md`, `CLAUDE.md`, `agents.json`, `docs/HANDOFF.md`,
+  `docs/CHEAT_SHEET.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`,
+  `docs/CODE_MAP.md`, `docs/REFACTORING_ROADMAP.md`,
+  `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs`, `tests/README.md`,
+  `scripts/onboard.ps1`, `scripts/pal-complete.ps1`,
+  `docs/COMPLETION.md`, `.cursorrules`,
+  `.github/copilot-instructions.md`, `CHANGELOG.md`, and `CONTRIBUTING.md`.
+  Verification: full audit passed `16 / 16` at
+  `../artifacts/full-audit/20260523-164839/RESULTS.md`; `dotnet test`
+  reports `1310 / 1310`. The repo is now safe to make public; remaining
+  `RimLLM` mentions are intentional (operator's purge list did not
+  include it).
 
 - **Pass 371 - Close the last CI failure + queue the monolith-extraction
   plan.** Pass 370 made Linux `build + test` green and made
@@ -184,7 +230,7 @@ once they reached the changelog):
   pre-commit gitleaks, luacheck, and the 16 drift gates continue to
   cover the same risk surface locally and in CI. No code or test
   changes; test count stays `1309` and the audit stays `16 / 16` at
-  `../artifacts/full-audit/20260523-153307/RESULTS.md`.
+  `../artifacts/full-audit/20260523-164839/RESULTS.md`.
 
 - **Pass 366 - Post-Codex review + close pal-cleanup safety-test gap.**
   Reviewed every file Codex touched in Passes 361-365 against the
@@ -208,7 +254,7 @@ once they reached the changelog):
   `docs/ROADMAP.md`, `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs`,
   `tests/README.md`, `scripts/onboard.ps1`, `.github/copilot-instructions.md`,
   `.cursorrules`, `CONTRIBUTING.md`, `docs/CHEAT_SHEET.md`, and
-  `CHANGELOG.md`. Verification: full `dotnet test` passed `1309 / 1309`;
+  `CHANGELOG.md`. Verification: full `dotnet test` passed `1310 / 1310`;
   full audit passed `16 / 16` at
   `../artifacts/full-audit/20260523-153133/RESULTS.md`. Production-readiness
   verdict: official roadmap stays at `76.2%`, three Tier-S items closed
@@ -1895,7 +1941,7 @@ once they reached the changelog):
   speculation, NGRAM, STANDALONE, MTP, and SpecV2 overlap lanes that must stay
   route-proven before player-facing use. The focused `D:\Coding` sibling scan
   reinforced the generic FP4/FP8/speculation telemetry-gate pattern from RimLLM
-  and OmniForge. No sibling code, prompts, names, branding, product identity, or
+  and an external asset-generation sibling. No sibling code, prompts, names, branding, product identity, or
   unrelated IP was lifted.
   
   **Serving profile hardening:** `ModelCollaborationPlanner` now emits SGLang
@@ -1924,7 +1970,7 @@ once they reached the changelog):
   Current SGLang observability, vLLM metrics, and ASP.NET Core 10 monitoring
   guidance all point at replayable evidence instead of final-status-only proof.
   The focused `D:\Coding` sibling scan found the same generic transition-log
-  pattern in DeepForge proof scripts and RimLLM release-evidence/replay notes.
+  pattern in external sibling research proof scripts and RimLLM release-evidence/replay notes.
   No sibling code, prompts, names, branding, product identity, or unrelated IP
   was lifted.
   
@@ -2013,7 +2059,7 @@ once they reached the changelog):
   support stricter output shaping, but not through one portable request shape.
   The focused `D:\Coding` sibling scan reinforced generic schema-digest plus
   route/model identity proof patterns from RimLLM and schema-backed handoff
-  contracts from OmniForge. No sibling code, prompts, names, branding, product
+  contracts from external research. No sibling code, prompts, names, branding, product
   identity, or unrelated IP was lifted.
   
   **Serving profile hardening:** `ModelCollaborationPlanner` now treats
@@ -2041,7 +2087,7 @@ once they reached the changelog):
   enabled with `--enable-dbo` plus decode/prefill thresholds, not a generic
   single-player latency toggle. The focused `D:\Coding` sibling scan reinforced
   generic proof-ledger, histogram, and "model work must not block live
-  gameplay" patterns from Hermes Gateway, RimLLM, and DeepForge. No sibling
+  gameplay" patterns from Hermes Gateway, RimLLM, and an action-RPG sibling runtime. No sibling
   code, prompts, names, branding, product identity, or unrelated IP was lifted.
   
   **Serving profile hardening:** `ModelCollaborationPlanner` now emits sparse-MoE
@@ -2065,7 +2111,7 @@ once they reached the changelog):
 - **Pass 325 - Gemma 4 MTP assistant-checkpoint proof.**
   Current vLLM speculative-decoding docs say Gemma 4 assistant checkpoints are
   Gemma 4 MTP speculators, not generic draft-model speculation. The focused
-  `D:\Coding` sibling scan reinforced the same generic lesson from DeepForge
+  `D:\Coding` sibling scan reinforced the same generic lesson from external research
   and RimLLM: native MTP promotion needs drafter identity and route proof, not
   a broad "speculation enabled" flag. No sibling code, prompts, names,
   branding, product identity, or unrelated IP was lifted.
@@ -2746,13 +2792,12 @@ once they reached the changelog):
     "build a read-only MemoryGraphBuilder" framing is accurate.
   - The current roadmap percentage `76.2% -> 100%` matches the
     "Current audited state" block above.
-  - All 5 referenced Byte prompt-pack families exist at
-    `D:/Coding/Byte/docs/prompts/byte-{forge,forward,synthesis,
-    qwen-frontier,qwen-modernize}-*` plus archived
-    `_archive/byte-council-2026-04-24/`.
+  - All 5 referenced the external prompt-pack project prompt-pack families exist at
+    an external prompt-pack tree plus archived
+    `_archive/external-pack-2026-04-24/`.
   
   **What needed refresh (one drift fixed):** the audit-summary line
-  said the Byte library "contained `652` markdown files plus `12` zip
+  said the external research library "contained `652` markdown files plus `12` zip
   archives." Today's count is `837 / 14`. Updated with an explicit
   re-count date so the snapshot stays honest, and added a one-line
   note that a sixth family (`byte-qwen-pack-2026-04-25`) has since

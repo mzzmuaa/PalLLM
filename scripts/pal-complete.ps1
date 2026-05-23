@@ -257,7 +257,7 @@ Write-Host ''
 Write-Host 'Autonomous progress (already at ceiling; does NOT move the 76.2%):' -ForegroundColor White
 Write-Host ('  - sidecar runtime: feature catalog + tests + zero warnings')
 Write-Host ('  - operator surface: every queue-gating script wrapped as a `pal` verb')
-Write-Host ('  - drift protection: 16 gates + 27 meta-tests + 8 JSON Schemas')
+Write-Host ('  - drift protection: 16 gates + 28 meta-tests + 8 JSON Schemas')
 Write-Host ('  - readiness: autonomous-movable aspects already at their ceiling')
 Write-Host ''
 Write-Host 'Next command to advance the topmost PENDING queue:' -ForegroundColor Yellow

@@ -1,6 +1,6 @@
 # `tests/`
 
-NUnit test suite. **1309 tests** at last audit, organized one
+NUnit test suite. **1310 tests** at last audit, organized one
 fixture per subsystem.
 
 ## Run

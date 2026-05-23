@@ -175,7 +175,14 @@ jobs:
           fi
 
           # 4. Test count — source vs ROADMAP vs README pinned tail.
-          code_tests=$(grep -rhoE '^\s*\[Test\]' tests/PalLLM.Tests/*.cs | wc -l | tr -d ' ')
+          # Pass 372 (CI parity, take 2): the PowerShell audit in
+          # scripts/run_full_audit.ps1 uses the pattern
+          # `^\s*\[(?:TestCase|Test)(?:\(|\])` and counts both NUnit
+          # attributes. The previous CI bash counter matched only
+          # `[Test]` so it under-counted by ~271 cases. Also pass `-a`
+          # so adversarial-fuzz test files with embedded control bytes
+          # (Pass 355) are scanned as text, not flagged as binary.
+          code_tests=$(grep -rhoaE '^\s*\[(TestCase|Test)(\(|\])' tests/PalLLM.Tests/*.cs | wc -l | tr -d ' ')
           roadmap_tests=$(grep -oE '`[0-9]+` passing NUnit tests' docs/ROADMAP.md | grep -oE '[0-9]+' | head -1)
           readme_tests=$(grep -oE 'Passed: [0-9]+' README.md | grep -oE '[0-9]+' | head -1)
           if [ -z "$code_tests" ] || [ -z "$roadmap_tests" ] || [ -z "$readme_tests" ]; then

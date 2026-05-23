@@ -850,7 +850,7 @@ public static class PalLlmFeatureCatalog
             Source = "PalLLM runtime",
             Status = "ready",
             Summary = "Single-command `scripts/run_full_audit.ps1` reproduces every CI gate (build, tests, 6 drift checks) plus optional coverage + CycloneDX SBOM locally, and emits a self-contained timestamped `artifacts/full-audit/<ts>/RESULTS.md` with pass/fail table + per-step logs + environment metadata.",
-            Notes = "Byte-level mojibake detector avoids the Windows-1252 false-positive that a naive Get-Content would hit on PS 5.1. Exit code 0 on all-pass lets CI / git pre-push hooks gate on it. Flags: -SkipCoverage, -SkipSbom, -SkipTests, -FailFast. The timestamped RESULTS.md doubles as a shippable audit snapshot for anyone asking \"is this repo in a good state?\" on any given day. See CONTRIBUTING.md Sec. Pre-flight checklist.",
+            Notes = "the external prompt-pack project-level mojibake detector avoids the Windows-1252 false-positive that a naive Get-Content would hit on PS 5.1. Exit code 0 on all-pass lets CI / git pre-push hooks gate on it. Flags: -SkipCoverage, -SkipSbom, -SkipTests, -FailFast. The timestamped RESULTS.md doubles as a shippable audit snapshot for anyone asking \"is this repo in a good state?\" on any given day. See CONTRIBUTING.md Sec. Pre-flight checklist.",
         },
         new FeatureDescriptor
         {

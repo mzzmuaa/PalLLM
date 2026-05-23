@@ -208,7 +208,11 @@ function Test-PalLlmPublicationTextSurface {
 
     $violations = [System.Collections.Generic.List[string]]::new()
     $textExtensions = @(".bat", ".json", ".lua", ".md", ".ps1", ".txt", ".yaml", ".yml")
-    $siblingProjectPattern = '(?i)\b(RimLLM|OmniForge|DeepForge|byte-forge|byte-forward|byte-synthesis|byte-qwen-frontier|byte-qwen-modernize|byte-council)\b|D:[\\/]+Coding[\\/]+(?:Byte|RimLLM|OmniForge|DeepForge)'
+    # Pass 372 widening: the repo is going public, so guard against any
+    # sibling-project leak. `Byte` is case-sensitive (the noun "byte"
+    # stays valid technical vocabulary); the others are case-insensitive
+    # because they are bespoke product names with no English overlap.
+    $siblingProjectPattern = '(?:\bByte\b|(?i:\bOmniForge\b|\bDeepForge\b|\bVulcan\b|\bRimLLM\b|\bbyte-(?:forge|forward|synthesis|qwen-frontier|qwen-modernize|council)\b))|D:[\\/]+Coding[\\/]+(?:Byte|RimLLM|OmniForge|DeepForge|Vulcan)'
     $officialImpersonationPattern = '(?i)\b(?:official|endorsed|sponsored|approved|authorized|certified)\b.{0,60}\b(?:Palworld|Pocketpair|Steam|Valve)\b|\b(?:Palworld|Pocketpair|Steam|Valve)\b.{0,60}\b(?:official|endorsed|sponsored|approved|authorized|certified)\b'
     $unrelatedFranchisePattern = '(?i)\b(?:Pok(?:e|\u00E9)mon|Pikachu|Nintendo|Mario|Zelda|Star\s+Wars|Jedi|Sith|Marvel|Avengers|DC(?:\s+Comics)?|Batman|Superman|Wonder\s+Woman|Disney|Minecraft|Fortnite|Roblox|RimWorld|Skyrim|Fallout|Cyberpunk\s+2077|Harry\s+Potter|Hogwarts|Warhammer|Mass\s+Effect|Dragon\s+Age|The\s+Witcher|League\s+of\s+Legends|Dungeons\s*(?:&|and)\s*Dragons|D\s*&\s*D|DnD|Baldur.?s\s+Gate|Elden\s+Ring|Dark\s+Souls|Monster\s+Hunter|Final\s+Fantasy|World\s+of\s+Warcraft|Warcraft|One\s+Piece|Dragon\s+Ball|Naruto|Gundam|Studio\s+Ghibli|Ghibli|ARK\s*:?\s*Survival)\b'
     $scopeDriftPattern = '(?i)\b(?:generic\s+AI\s+platform|generic\s+platform|multi[-\s]?game|cross[-\s]?game|game[-\s]?agnostic|universal\s+game\s+agent|all\s+games|browser\s+agent|computer\s+use)\b'
