@@ -30,13 +30,13 @@
     <!-- .NET 10 first-party OpenAPI 3.1 document generation for Minimal
          APIs. Generates a JSON Schema 2020-12-compliant spec from the
          route registrations in Program.cs. See docs/API.md. -->
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
 
     <!-- Build-time OpenAPI document generation. Microsoft documents this as
          the path for checked-in specs and spec-based integration tests.
          Keep it private to this project: consumers only need the emitted
          JSON snapshot, not the MSBuild task package. -->
-    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.7">
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.8">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
