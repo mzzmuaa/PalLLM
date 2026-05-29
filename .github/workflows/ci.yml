@@ -117,7 +117,15 @@ jobs:
           set -eu
 
           # 1. /api route count.
-          code_routes=$(grep -cE 'api\.Map(Get|Post|Put|Delete|Patch)' src/PalLLM.Sidecar/Program.cs)
+          # Pass 421 (CI parity): Codex's Pass 387-402 extracted the
+          # 57 /api routes from Program.cs into 12 *Routes.cs files
+          # under src/PalLLM.Sidecar/RouteRegistrations/. The PowerShell
+          # audit's Get-SidecarRouteSourcePaths helper already scans
+          # both; mirror that here.
+          code_routes=$(grep -rhE 'api\.Map(Get|Post|Put|Delete|Patch)' \
+            src/PalLLM.Sidecar/Program.cs \
+            src/PalLLM.Sidecar/RouteRegistrations/ \
+            | wc -l | tr -d ' ')
           roadmap_routes=$(grep -oE '`[0-9]+` `/api` routes' docs/ROADMAP.md | grep -oE '[0-9]+' | head -1)
           readme_routes=$(grep -oE '\*\*[0-9]+ `/api` routes\*\*' README.md | grep -oE '[0-9]+' | head -1)
           if [ "$code_routes" != "$roadmap_routes" ] || [ "$code_routes" != "$readme_routes" ]; then
@@ -132,7 +140,15 @@ jobs:
           # MapGet("/") line directly so the CI bash counter matches the
           # PowerShell audit in `scripts/run_full_audit.ps1` (which already
           # uses the same pattern).
-          code_operational_routes=$(grep -cE 'app\.MapGet\("/metrics"|app\.MapGet\("/"|app\.MapHealthChecks\(|app\.MapOpenApi' src/PalLLM.Sidecar/Program.cs)
+          # Pass 421: also scan extracted RouteRegistrations/*.cs
+          # because Codex's Pass 387-402 moved /metrics + / +
+          # /health/live + /health/ready out of Program.cs into
+          # PalLlmHealthRoutes.cs and PalLlmStaticAssetRoutes.cs.
+          # OpenApi + Mcp stayed in Program.cs.
+          code_operational_routes=$(grep -rhE 'app\.MapGet\("/metrics"|app\.MapGet\("/"|app\.MapHealthChecks\(|app\.MapOpenApi' \
+            src/PalLLM.Sidecar/Program.cs \
+            src/PalLLM.Sidecar/RouteRegistrations/ \
+            | wc -l | tr -d ' ')
           code_protocol_routes=$(grep -cE 'app\.MapMcp\("/mcp"\)' src/PalLLM.Sidecar/Program.cs)
           api_routes=$(grep -oE 'Total `/api` routes: [0-9]+' docs/API.md | grep -oE '[0-9]+' | head -1)
           api_operational_routes=$(grep -oE 'Operational routes outside `/api`: [0-9]+' docs/API.md | grep -oE '[0-9]+' | head -1)
