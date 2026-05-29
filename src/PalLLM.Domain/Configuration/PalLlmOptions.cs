@@ -19,6 +19,8 @@
 //            scripts/pal-config-wizard.ps1 (interactive setup).
 // ---------------------------------------------------------------------------
 
+using System.Text.Json.Serialization;
+
 namespace PalLLM.Domain.Configuration;
 
 public sealed class PalLlmOptions
@@ -250,7 +252,7 @@ public sealed class PalLlmOptions
 /// <summary>
 /// Pack resolution policy. Currently exposes a single map: Palworld species name
 /// (case-insensitive) -> personality-pack id. Lets operators pin one pack per
-/// species (e.g. all Lamballs share the same timid-helper voice) without having
+/// species (e.g. all same-species companions share the same timid-helper voice) without having
 /// to author one pack per character id. Consumed by
 /// <c>SpeciesPersonalityResolver.Resolve</c>; missing / empty entries are silently
 /// skipped and the resolver falls through to the caller's fallback chain.
@@ -260,7 +262,7 @@ public sealed class PacksOptions
     /// <summary>
     /// Species -> packId default map. Both keys and values are trimmed and
     /// empty/whitespace entries are ignored at resolve-time. Keys are matched
-    /// case-insensitively (so <c>"Lamball"</c> and <c>"lamball"</c> work the
+    /// case-insensitively (so <c>"species-alpha"</c> and <c>"Species-Alpha"</c> work the
     /// same). Values reference pack ids under
     /// <c>runtime-root/Packs/personalities/&lt;id&gt;/</c>. Empty dictionary
     /// disables the species-default lane entirely (default).
@@ -341,6 +343,102 @@ public sealed class InferenceOptions
     public string? PrefixCacheSalt { get; set; }
 
     /// <summary>
+    /// Optional OpenAI-compatible prompt-cache routing key. Leave empty for
+    /// maximum endpoint portability. When configured for a compatible hosted
+    /// endpoint, PalLLM forwards it as <c>prompt_cache_key</c> so repeated
+    /// PalLLM prompts can route toward warmer prefix-cache shards without
+    /// exposing player or save identifiers directly.
+    /// </summary>
+    public string? PromptCacheKey { get; set; }
+
+    /// <summary>
+    /// Optional OpenAI-compatible prompt-cache retention policy. Leave empty so
+    /// the endpoint applies its own default; set to <c>in_memory</c> or
+    /// <c>24h</c> only after the exact endpoint/model proves support.
+    /// </summary>
+    public string? PromptCacheRetention { get; set; }
+
+    /// <summary>
+    /// Optional OpenAI-compatible verbosity hint. Leave empty for local-runtime
+    /// portability. Set to <c>low</c> only after the endpoint proves it accepts
+    /// the field and actually reduces generated tokens without harming parse or
+    /// companion quality.
+    /// </summary>
+    public string? Verbosity { get; set; }
+
+    /// <summary>
+    /// Optional hosted-endpoint safety correlation id. This should be a stable,
+    /// pseudonymous hash scoped to the PalLLM install/profile, never a player
+    /// name, save path, account id, email, or secret. Omitted by default.
+    /// </summary>
+    public string? SafetyIdentifier { get; set; }
+
+    /// <summary>
+    /// Optional OpenAI-compatible retention switch forwarded as <c>store</c>.
+    /// Leave empty for local-runtime portability. Set to <c>false</c> only
+    /// after the hosted endpoint proves it accepts the explicit no-store
+    /// receipt; avoid <c>true</c> for normal Palworld companion turns.
+    /// </summary>
+    public bool? StoreCompletions { get; set; }
+
+    /// <summary>
+    /// Optional OpenAI-compatible request metadata forwarded as
+    /// <c>metadata</c>. Use only low-cardinality proof labels such as route
+    /// family, build channel, or canary name; never include player identity,
+    /// save paths, prompt text, secrets, or raw game state. Omitted by default.
+    /// </summary>
+    public Dictionary<string, string> RequestMetadata { get; set; } = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Optional outbound HTTP request-correlation header for compatible
+    /// inference endpoints. Leave empty for maximum local-runtime portability.
+    /// Set to <c>x-client-request-id</c> for hosted OpenAI-compatible support
+    /// traces or <c>x-request-id</c> for vLLM servers launched with request-id
+    /// header support; PalLLM forwards only the current bounded chat/proof
+    /// request id, never prompt or save content.
+    /// </summary>
+    public string? ClientRequestIdHeader { get; set; }
+
+    /// <summary>
+    /// Optional llama.cpp prompt-cache toggle forwarded as <c>cache_prompt</c>.
+    /// Leave null for broad endpoint portability and llama.cpp's server default;
+    /// set only on a proven llama-server lane when measuring prefix reuse.
+    /// </summary>
+    public bool? LlamaCppCachePrompt { get; set; }
+
+    /// <summary>
+    /// Optional llama.cpp slot selector forwarded as <c>id_slot</c>. Leave null
+    /// unless the target llama-server exposes slots and a replay proves that
+    /// pinning the foreground companion lane to a warm slot lowers TTFT without
+    /// starving background work.
+    /// </summary>
+    public int? LlamaCppSlotId { get; set; }
+
+    /// <summary>
+    /// Optional llama.cpp prompt-cache reuse floor forwarded as
+    /// <c>n_cache_reuse</c>. Leave null unless a llama-server lane has measured
+    /// the exact stable prefix length it should try to reuse.
+    /// </summary>
+    public int? LlamaCppCacheReuseTokens { get; set; }
+
+    /// <summary>
+    /// Adds stable content-hash <c>uuid</c> fields to prompt-level
+    /// <c>InferencePrompt.UserContent</c> media parts that carry local base64
+    /// image/video/audio data. This helps vLLM-compatible multimodal servers
+    /// reuse media preprocessing across replay/proof turns while leaving normal
+    /// text chat as a plain string message.
+    /// </summary>
+    public bool UseMediaCacheIds { get; set; } = true;
+
+    /// <summary>
+    /// Optional vLLM-style multimodal processor kwargs for route-owned
+    /// <see cref="PalLLM.Domain.Inference.InferencePrompt.UserContent"/>
+    /// canaries. Omitted unless a prompt supplies multimodal content so normal
+    /// text chat and strict endpoints remain field-free.
+    /// </summary>
+    public MultimodalProcessorOptions MultimodalProcessor { get; set; } = new();
+
+    /// <summary>
     /// Baseline chat-completions sampling temperature. Sidecar startup
     /// validation accepts finite values from <c>0</c> through <c>2</c>.
     /// </summary>
@@ -405,6 +503,14 @@ public sealed class InferenceOptions
     public string? ReasoningEffort { get; set; }
 
     /// <summary>
+    /// Optional vLLM-compatible cap on reasoning/thinking tokens for models
+    /// launched with a reasoning parser. Leave empty for maximum endpoint
+    /// portability; use <c>EnableThinking=false</c> instead of <c>0</c> when a
+    /// route should avoid reasoning entirely.
+    /// </summary>
+    public int? ThinkingTokenBudget { get; set; }
+
+    /// <summary>
     /// Optional OpenAI-compatible seed hint for replay-oriented deterministic
     /// sampling. Leave empty unless the exact endpoint/model accepts <c>seed</c>;
     /// unsupported servers may reject unknown request fields.
@@ -417,6 +523,14 @@ public sealed class InferenceOptions
     /// FCFS-only servers may reject non-zero priority values.
     /// </summary>
     public int? RequestPriority { get; set; }
+
+    /// <summary>
+    /// Optional OpenAI-compatible service-tier hint for endpoint-proven routing
+    /// lanes. Leave empty for local-first portability. Use <c>priority</c> only
+    /// when a compatible endpoint has proven lower queue time for player-facing
+    /// turns, and <c>flex</c> only for background proof/docs lanes that can wait.
+    /// </summary>
+    public string? ServiceTier { get; set; }
 
     /// <summary>
     /// Optional OpenAI-compatible tool-call fan-out hint. Leave empty unless the
@@ -613,6 +727,210 @@ public static class InferenceTokenBudgetFields
 
     public static bool UsesMaxCompletionTokens(string? value) =>
         string.Equals(Normalize(value), MaxCompletionTokens, StringComparison.Ordinal);
+
+    public static bool IsAllowed(string value) =>
+        Allowed.Contains(value, StringComparer.OrdinalIgnoreCase);
+}
+
+/// <summary>
+/// Shared allowlist for optional OpenAI-compatible service-tier request hints.
+/// The field stays omitted by default because most local runtimes either ignore
+/// it or reject unknown parameters, and PalLLM is local-first unless an operator
+/// explicitly qualifies a hosted or compatible lane.
+/// </summary>
+public static class InferenceServiceTiers
+{
+    public const string Auto = "auto";
+
+    public const string Default = "default";
+
+    public const string Flex = "flex";
+
+    public const string Priority = "priority";
+
+    public const string Scale = "scale";
+
+    public static readonly string[] Allowed =
+    [
+        Auto,
+        Default,
+        Flex,
+        Priority,
+        Scale,
+    ];
+
+    public static string? Normalize(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        string trimmed = value.Trim();
+        return IsAllowed(trimmed) ? trimmed.ToLowerInvariant() : null;
+    }
+
+    public static bool IsAllowed(string value) =>
+        Allowed.Contains(value, StringComparer.OrdinalIgnoreCase);
+}
+
+/// <summary>
+/// Shared allowlist for optional hosted prompt-cache retention request hints.
+/// The field is omitted by default because strict local endpoints commonly
+/// reject unknown request fields.
+/// </summary>
+public static class InferencePromptCacheRetentions
+{
+    public const string InMemory = "in_memory";
+
+    public const string TwentyFourHours = "24h";
+
+    public static readonly string[] Allowed =
+    [
+        InMemory,
+        TwentyFourHours,
+    ];
+
+    public static string? Normalize(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        string trimmed = value.Trim();
+        return IsAllowed(trimmed) ? trimmed.ToLowerInvariant() : null;
+    }
+
+    public static bool IsAllowed(string value) =>
+        Allowed.Contains(value, StringComparer.OrdinalIgnoreCase);
+}
+
+/// <summary>
+/// Shared allowlist for optional outbound request-correlation headers. The
+/// field stays omitted by default because PalLLM is local-first and strict
+/// local endpoints do not need an extra support header.
+/// </summary>
+public static class InferenceClientRequestIdHeaders
+{
+    public const string XClientRequestId = "x-client-request-id";
+
+    public const string XRequestId = "x-request-id";
+
+    public static readonly string[] Allowed =
+    [
+        XClientRequestId,
+        XRequestId,
+    ];
+
+    public static string? Normalize(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        string trimmed = value.Trim();
+        return IsAllowed(trimmed) ? trimmed.ToLowerInvariant() : null;
+    }
+
+    public static bool IsAllowed(string value) =>
+        Allowed.Contains(value, StringComparer.OrdinalIgnoreCase);
+}
+
+/// <summary>
+/// Shared bounds for optional OpenAI-compatible chat-completions
+/// <c>metadata</c>. Mirrors the current hosted field shape and keeps any
+/// configured request labels small enough for strict proof receipts.
+/// </summary>
+public static class InferenceRequestMetadataLimits
+{
+    public const int MaxEntries = 16;
+
+    public const int MaxKeyLength = 64;
+
+    public const int MaxValueLength = 512;
+}
+
+/// <summary>
+/// Optional vLLM-compatible <c>mm_processor_kwargs</c> request controls for
+/// multimodal proof lanes. The object is omitted unless at least one value is
+/// configured, so strict OpenAI-compatible endpoints never see these
+/// non-standard fields by default.
+/// </summary>
+public sealed class MultimodalProcessorOptions
+{
+    /// <summary>
+    /// Qwen/VL-style minimum pixel budget. Useful when a route needs to avoid
+    /// over-compressing a small HUD crop before OCR or coordinate review.
+    /// </summary>
+    [JsonPropertyName("min_pixels")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? MinPixels { get; set; }
+
+    /// <summary>
+    /// Qwen/VL-style maximum pixel budget. Lower values reduce vision tokens,
+    /// TTFT, and KV pressure on screenshot/video canaries.
+    /// </summary>
+    [JsonPropertyName("max_pixels")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? MaxPixels { get; set; }
+
+    /// <summary>
+    /// Gemma-style maximum soft-token budget per image. Typical proven values
+    /// are 70, 140, 280, 560, or 1120.
+    /// </summary>
+    [JsonPropertyName("max_soft_tokens")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? MaxSoftTokens { get; set; }
+
+    /// <summary>
+    /// Video processor frame-rate hint. Keep low for periodic Palworld
+    /// screenshot/video proof loops unless a route proves it needs more
+    /// temporal detail.
+    /// </summary>
+    [JsonPropertyName("fps")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public float? Fps { get; set; }
+
+    [JsonIgnore]
+    public bool HasAny =>
+        MinPixels.HasValue ||
+        MaxPixels.HasValue ||
+        MaxSoftTokens.HasValue ||
+        Fps.HasValue;
+}
+
+/// <summary>
+/// Shared allowlist for optional OpenAI-compatible verbosity request hints.
+/// The field is omitted by default because many local runtimes reject hosted
+/// request parameters instead of ignoring them.
+/// </summary>
+public static class InferenceVerbosities
+{
+    public const string Low = "low";
+
+    public const string Medium = "medium";
+
+    public const string High = "high";
+
+    public static readonly string[] Allowed =
+    [
+        Low,
+        Medium,
+        High,
+    ];
+
+    public static string? Normalize(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        string trimmed = value.Trim();
+        return IsAllowed(trimmed) ? trimmed.ToLowerInvariant() : null;
+    }
 
     public static bool IsAllowed(string value) =>
         Allowed.Contains(value, StringComparer.OrdinalIgnoreCase);
@@ -1297,6 +1615,23 @@ public sealed class AsrOptions
 
     public string? ApiKey { get; set; }
 
+    /// <summary>
+    /// Optional default input-audio language hint forwarded as multipart
+    /// <c>language</c> when a request does not supply its own value. Use a
+    /// two-letter ISO-639-1 code such as <c>en</c> only after the endpoint proves
+    /// it accepts language hints; leaving this null keeps strict local servers
+    /// field-free.
+    /// </summary>
+    public string? Language { get; set; }
+
+    /// <summary>
+    /// Optional default transcription prompt forwarded as multipart
+    /// <c>prompt</c> when a request does not supply its own value. Keep it short
+    /// and operator-curated, such as pronunciation or command-vocabulary hints;
+    /// never put player identity, save paths, secrets, or raw chat history here.
+    /// </summary>
+    public string? Prompt { get; set; }
+
     public int TimeoutSeconds { get; set; } = 30;
 
     /// <summary>
@@ -1332,6 +1667,14 @@ public sealed class AsrOptions
     /// leaving this null keeps strict local endpoints field-free until proven.
     /// </summary>
     public float? Temperature { get; set; }
+
+    /// <summary>
+    /// Optional transcription sampling seed forwarded as multipart
+    /// <c>seed</c> only when explicitly configured. This is a vLLM-compatible
+    /// replay canary for local ASR endpoints; leave null for strict
+    /// OpenAI-compatible transcription servers.
+    /// </summary>
+    public int? Seed { get; set; }
 
     /// <summary>
     /// When true, PalLLM sends <c>include[]=logprobs</c> to compatible
@@ -1449,6 +1792,22 @@ public sealed class VisionOptions
     /// Hard cap on incoming image payload size to avoid OOM / DoS. Default 6 MB
     /// (fits a 4K-ish PNG screenshot). Applied to base64 payload length after decode.
     public int MaxImageBytes { get; set; } = 6 * 1024 * 1024;
+
+    /// <summary>
+    /// Adds a stable content-hash <c>uuid</c> to outgoing vision <c>image_url</c>
+    /// parts. vLLM-compatible multimodal servers can use this as a media-cache
+    /// key for repeated screenshots; strict endpoints that reject unknown content
+    /// fields can disable it without changing the rest of the vision request.
+    /// </summary>
+    public bool UseMediaCacheIds { get; set; } = true;
+
+    /// <summary>
+    /// Optional vLLM-style <c>mm_processor_kwargs</c> for screenshot/image
+    /// requests. Use to cap pixels, frame rate, or soft-token budget on a
+    /// proven local multimodal lane; omitted by default for strict endpoint
+    /// portability.
+    /// </summary>
+    public MultimodalProcessorOptions MultimodalProcessor { get; set; } = new();
 
     /// When true, chat requests that carry an ImageBase64 field will first call the
     /// vision client for a short description and splice the result into the system

@@ -2,7 +2,7 @@
 // AGENT-CARD:
 //   what:    pure function that maps a Palworld species name to a personality-pack id
 //            using the operator-configured PalLlmOptions.Packs.DefaultBySpecies map,
-//            with a per-call fallbackPackId chain. Lets all Lamballs share a default
+//            with a per-call fallbackPackId chain. Lets same-species companions share a default
 //            personality without having to author one pack per character id.
 //   surface: SpeciesPersonalityResolver.Resolve(species, defaultBySpecies, fallbackPackId?),
 //            SpeciesPersonalityResolution record (PackId / Source / Species).
@@ -26,8 +26,8 @@ namespace PalLLM.Domain.Packs;
 ///   <item><c>null</c> — no pack should be auto-applied.</item>
 /// </list>
 ///
-/// <para>The point of this layer is to let an operator say "all Lamballs are
-/// timid; all Chillets are aloof" once in config, instead of authoring one
+/// <para>The point of this layer is to let an operator say "all species-alpha
+/// companions are timid; all species-beta companions are aloof" once in config, instead of authoring one
 /// per-character pack for every tamed pal. The PersonalityPack format itself
 /// stays per-character; this advisor is the lookup table that decides which
 /// pack to *use* when the character does not have an explicit assignment.</para>
@@ -42,7 +42,7 @@ public static class SpeciesPersonalityResolver
     /// <summary>
     /// Decide which personality-pack id should apply to a character of the given species.
     /// </summary>
-    /// <param name="species">The character's species (e.g. <c>"Lamball"</c>, <c>"Chillet"</c>).
+    /// <param name="species">The character's species (e.g. <c>"species-alpha"</c>, <c>"species-beta"</c>).
     /// Null / empty / whitespace returns the fallback chain without consulting the species map.</param>
     /// <param name="defaultBySpecies">The operator-configured species->packId map. Typically
     /// <c>PalLlmOptions.Packs.DefaultBySpecies</c>. Null or empty disables the species lane.</param>

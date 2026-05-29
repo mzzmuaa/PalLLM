@@ -11,10 +11,14 @@ namespace PalLLM.Sidecar;
 public sealed class PalLlmOptionsValidator : IValidateOptions<PalLlmOptions>
 {
     private const int MaxPrefixCacheSaltLength = 128;
+    private const int MaxPromptCacheKeyLength = 128;
+    private const int MaxSafetyIdentifierLength = 128;
     private const int MaxStopSequenceCount = 4;
     private const int MaxStopSequenceLength = 128;
     private const int MaxTtsModelLength = 256;
     private const int MaxAsrModelLength = 256;
+    private const int MaxAsrPromptLength = 2_048;
+    private static readonly int[] AllowedMultimodalSoftTokenBudgets = [70, 140, 280, 560, 1120];
 
     public ValidateOptionsResult Validate(string? name, PalLlmOptions options)
     {
@@ -93,6 +97,18 @@ public sealed class PalLlmOptionsValidator : IValidateOptions<PalLlmOptions>
             MaxPrefixCacheSaltLength,
             "PalLLM:Inference:PrefixCacheSalt",
             failures);
+        RequireMaxLengthIfPresent(
+            inference.PromptCacheKey,
+            MaxPromptCacheKeyLength,
+            "PalLLM:Inference:PromptCacheKey",
+            failures);
+        RequireMaxLengthIfPresent(
+            inference.SafetyIdentifier,
+            MaxSafetyIdentifierLength,
+            "PalLLM:Inference:SafetyIdentifier",
+            failures);
+        ValidateRequestMetadata(inference.RequestMetadata, failures);
+        ValidateMultimodalProcessor(inference.MultimodalProcessor, "PalLLM:Inference:MultimodalProcessor", failures);
         RequireFloatRange(
             inference.Temperature,
             0.0f,
@@ -137,6 +153,28 @@ public sealed class PalLlmOptionsValidator : IValidateOptions<PalLlmOptions>
             failures);
         ValidateTokenBudgetField(inference.TokenBudgetField, failures);
         ValidateReasoningEffort(inference.ReasoningEffort, failures);
+        RequireNullableIntRange(
+            inference.ThinkingTokenBudget,
+            1,
+            int.MaxValue,
+            "PalLLM:Inference:ThinkingTokenBudget",
+            failures);
+        ValidateServiceTier(inference.ServiceTier, failures);
+        ValidatePromptCacheRetention(inference.PromptCacheRetention, failures);
+        ValidateVerbosity(inference.Verbosity, failures);
+        ValidateClientRequestIdHeader(inference.ClientRequestIdHeader, failures);
+        RequireNullableIntRange(
+            inference.LlamaCppSlotId,
+            -1,
+            int.MaxValue,
+            "PalLLM:Inference:LlamaCppSlotId",
+            failures);
+        RequireNullableIntRange(
+            inference.LlamaCppCacheReuseTokens,
+            0,
+            int.MaxValue,
+            "PalLLM:Inference:LlamaCppCacheReuseTokens",
+            failures);
         ValidateStopSequences(inference.StopSequences, failures);
 
         ValidateModelTiers(inference.ModelTiers, failures);
@@ -174,6 +212,149 @@ public sealed class PalLlmOptionsValidator : IValidateOptions<PalLlmOptions>
             failures.Add(
                 "PalLLM:Inference:TokenBudgetField must be one of: " +
                 string.Join(", ", InferenceTokenBudgetFields.Allowed) + ".");
+        }
+    }
+
+    private static void ValidateServiceTier(string? serviceTier, List<string> failures)
+    {
+        if (string.IsNullOrWhiteSpace(serviceTier))
+        {
+            return;
+        }
+
+        if (!InferenceServiceTiers.IsAllowed(serviceTier.Trim()))
+        {
+            failures.Add(
+                "PalLLM:Inference:ServiceTier must be empty or one of: " +
+                string.Join(", ", InferenceServiceTiers.Allowed) + ".");
+        }
+    }
+
+    private static void ValidatePromptCacheRetention(string? promptCacheRetention, List<string> failures)
+    {
+        if (string.IsNullOrWhiteSpace(promptCacheRetention))
+        {
+            return;
+        }
+
+        if (!InferencePromptCacheRetentions.IsAllowed(promptCacheRetention.Trim()))
+        {
+            failures.Add(
+                "PalLLM:Inference:PromptCacheRetention must be empty or one of: " +
+                string.Join(", ", InferencePromptCacheRetentions.Allowed) + ".");
+        }
+    }
+
+    private static void ValidateVerbosity(string? verbosity, List<string> failures)
+    {
+        if (string.IsNullOrWhiteSpace(verbosity))
+        {
+            return;
+        }
+
+        if (!InferenceVerbosities.IsAllowed(verbosity.Trim()))
+        {
+            failures.Add(
+                "PalLLM:Inference:Verbosity must be empty or one of: " +
+                string.Join(", ", InferenceVerbosities.Allowed) + ".");
+        }
+    }
+
+    private static void ValidateClientRequestIdHeader(string? headerName, List<string> failures)
+    {
+        if (string.IsNullOrWhiteSpace(headerName))
+        {
+            return;
+        }
+
+        if (!InferenceClientRequestIdHeaders.IsAllowed(headerName.Trim()))
+        {
+            failures.Add(
+                "PalLLM:Inference:ClientRequestIdHeader must be empty or one of: " +
+                string.Join(", ", InferenceClientRequestIdHeaders.Allowed) + ".");
+        }
+    }
+
+    private static void ValidateRequestMetadata(
+        IReadOnlyDictionary<string, string>? metadata,
+        List<string> failures)
+    {
+        if (metadata is null || metadata.Count == 0)
+        {
+            return;
+        }
+
+        if (metadata.Count > InferenceRequestMetadataLimits.MaxEntries)
+        {
+            failures.Add(
+                $"PalLLM:Inference:RequestMetadata must contain {InferenceRequestMetadataLimits.MaxEntries} entries or fewer.");
+        }
+
+        HashSet<string> seenKeys = new(StringComparer.Ordinal);
+        int index = 0;
+        foreach (KeyValuePair<string, string> pair in metadata)
+        {
+            string keyPath = $"PalLLM:Inference:RequestMetadata[{index}].Key";
+            string valuePath = $"PalLLM:Inference:RequestMetadata[{index}].Value";
+
+            if (string.IsNullOrWhiteSpace(pair.Key))
+            {
+                failures.Add($"{keyPath} must be non-empty.");
+            }
+            else
+            {
+                string trimmedKey = pair.Key.Trim();
+                if (trimmedKey.Length > InferenceRequestMetadataLimits.MaxKeyLength)
+                {
+                    failures.Add($"{keyPath} must be {InferenceRequestMetadataLimits.MaxKeyLength} characters or fewer.");
+                }
+
+                if (!seenKeys.Add(trimmedKey))
+                {
+                    failures.Add($"{keyPath} duplicates an earlier metadata key after trimming.");
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(pair.Value))
+            {
+                failures.Add($"{valuePath} must be non-empty.");
+            }
+            else if (pair.Value.Trim().Length > InferenceRequestMetadataLimits.MaxValueLength)
+            {
+                failures.Add($"{valuePath} must be {InferenceRequestMetadataLimits.MaxValueLength} characters or fewer.");
+            }
+
+            index++;
+        }
+    }
+
+    private static void ValidateMultimodalProcessor(
+        MultimodalProcessorOptions? options,
+        string key,
+        List<string> failures)
+    {
+        if (options is null || !options.HasAny)
+        {
+            return;
+        }
+
+        RequireNullableIntRange(options.MinPixels, 1, int.MaxValue, $"{key}:MinPixels", failures);
+        RequireNullableIntRange(options.MaxPixels, 1, int.MaxValue, $"{key}:MaxPixels", failures);
+        RequireNullableFloatRange(options.Fps, 0.001f, 120.0f, $"{key}:Fps", failures);
+
+        if (options.MinPixels.HasValue &&
+            options.MaxPixels.HasValue &&
+            options.MinPixels.Value > options.MaxPixels.Value)
+        {
+            failures.Add($"{key}:MinPixels must be less than or equal to {key}:MaxPixels.");
+        }
+
+        if (options.MaxSoftTokens is { } softTokens &&
+            !AllowedMultimodalSoftTokenBudgets.Contains(softTokens))
+        {
+            failures.Add(
+                $"{key}:MaxSoftTokens must be one of: " +
+                string.Join(", ", AllowedMultimodalSoftTokenBudgets) + ".");
         }
     }
 
@@ -287,6 +468,7 @@ public sealed class PalLlmOptionsValidator : IValidateOptions<PalLlmOptions>
         RequirePositive(vision.MaxScreenshotsPerPoll, "PalLLM:Vision:MaxScreenshotsPerPoll", failures);
         RequirePositive(vision.PendingScreenshotMaxFiles, "PalLLM:Vision:PendingScreenshotMaxFiles", failures);
         RequirePositive(vision.PendingScreenshotMaxAgeHours, "PalLLM:Vision:PendingScreenshotMaxAgeHours", failures);
+        ValidateMultimodalProcessor(vision.MultimodalProcessor, "PalLLM:Vision:MultimodalProcessor", failures);
 
         if (!vision.Enabled)
         {
@@ -344,6 +526,8 @@ public sealed class PalLlmOptionsValidator : IValidateOptions<PalLlmOptions>
         ValidateAsrResponseFormat(asr.ResponseFormat, failures);
         ValidateAsrTimestampGranularities(asr.TimestampGranularities, asr.ResponseFormat, failures);
         ValidateAsrChunkingStrategy(asr.ChunkingStrategy, failures);
+        ValidateAsrLanguage(asr.Language, failures);
+        RequireMaxLengthIfPresent(asr.Prompt, MaxAsrPromptLength, "PalLLM:Asr:Prompt", failures);
         RequireMaxLengthIfPresent(asr.Model, MaxAsrModelLength, "PalLLM:Asr:Model", failures);
         RequirePositive(asr.TimeoutSeconds, "PalLLM:Asr:TimeoutSeconds", failures);
         RequirePositive(asr.MaxAudioBytes, "PalLLM:Asr:MaxAudioBytes", failures);
@@ -427,6 +611,20 @@ public sealed class PalLlmOptionsValidator : IValidateOptions<PalLlmOptions>
             failures.Add(
                 "PalLLM:Asr:ChunkingStrategy must be empty or one of: " +
                 string.Join(", ", AsrChunkingStrategies.Allowed) + ".");
+        }
+    }
+
+    private static void ValidateAsrLanguage(string? language, List<string> failures)
+    {
+        if (string.IsNullOrWhiteSpace(language))
+        {
+            return;
+        }
+
+        string trimmed = language.Trim();
+        if (trimmed.Length != 2 || !trimmed.All(static c => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')))
+        {
+            failures.Add("PalLLM:Asr:Language must be empty or a two-letter ISO-639-1 language code such as 'en'.");
         }
     }
 

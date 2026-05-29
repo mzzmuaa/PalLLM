@@ -61,6 +61,20 @@ $MojibakeSentinel = [Text.Encoding]::UTF8.GetString([byte[]](0xC3, 0xA2, 0xE2, 0
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
+function Get-SidecarRouteSourcePaths {
+    $paths = New-Object System.Collections.Generic.List[string]
+    $paths.Add("src/PalLLM.Sidecar/Program.cs")
+
+    $routeRegistrationDir = "src/PalLLM.Sidecar/RouteRegistrations"
+    if (Test-Path $routeRegistrationDir) {
+        Get-ChildItem -Path $routeRegistrationDir -Filter "*.cs" -File |
+            Sort-Object FullName |
+            ForEach-Object { $paths.Add($_.FullName) }
+    }
+
+    return $paths.ToArray()
+}
+
 # ---- Timestamped artifact directory (UTC for determinism across TZs) ----
 $timestamp = (Get-Date).ToUniversalTime().ToString("yyyyMMdd-HHmmss")
 $auditRoot = Join-Path $repoRoot "artifacts/full-audit/$timestamp"
@@ -347,7 +361,8 @@ Record-Step -Name "Drift_Mojibake" -Body {
 }
 
 Record-Step -Name "Drift_Api_route_count" -Body {
-    $codeRoutes = (Select-String -Path "src/PalLLM.Sidecar/Program.cs" -Pattern 'api\.Map(Get|Post|Put|Delete|Patch)').Count
+    $routeSourcePaths = Get-SidecarRouteSourcePaths
+    $codeRoutes = (Select-String -Path $routeSourcePaths -Pattern 'api\.Map(Get|Post|Put|Delete|Patch)').Count
     $roadmapPattern = "$BT(\d+)$BT $BT/api$BT routes"
     $readmePattern  = "\*\*(\d+) $BT/api$BT routes\*\*"
     $architecturePattern = '/api routes \((\d+) total\)'
@@ -365,10 +380,11 @@ Record-Step -Name "Drift_Api_route_count" -Body {
 }
 
 Record-Step -Name "Drift_Api_reference_surface" -Body {
+    $routeSourcePaths = Get-SidecarRouteSourcePaths
     $programPath = "src/PalLLM.Sidecar/Program.cs"
-    $codeApiRoutes = @(Select-String -Path $programPath -Pattern 'api\.Map(Get|Post|Put|Delete|Patch)').Count
+    $codeApiRoutes = @(Select-String -Path $routeSourcePaths -Pattern 'api\.Map(Get|Post|Put|Delete|Patch)').Count
     $codeOperationalRoutes = @(
-        Select-String -Path $programPath -Pattern 'app\.MapGet\("/metrics"|app\.MapGet\("/"|app\.MapHealthChecks\(|app\.MapOpenApi'
+        Select-String -Path $routeSourcePaths -Pattern 'app\.MapGet\("/metrics"|app\.MapGet\("/"|app\.MapHealthChecks\(|app\.MapOpenApi'
     ).Count
 
     $codeProtocolRoutes = @(Select-String -Path $programPath -Pattern 'app\.MapMcp\("/mcp"\)').Count

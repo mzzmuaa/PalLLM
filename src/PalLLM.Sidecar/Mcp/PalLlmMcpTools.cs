@@ -172,7 +172,7 @@ public static class PalLlmMcpTools
         + "'Fallback', or 'None'. Pure deterministic lookup, no side effects.")]
     public static string PersonalityForSpecies(
         PalLlmOptions options,
-        [Description("Palworld species name (e.g. 'Lamball', 'Chillet'). Trimmed and matched case-insensitively.")]
+        [Description("Palworld species label. Trimmed and matched case-insensitively.")]
         string species,
         [Description("Optional per-character pack id to use when the species map has no entry. Trimmed.")]
         string? fallbackPackId)
@@ -601,7 +601,7 @@ public static class PalLlmMcpTools
     [McpServerTool(Name = "pal_directives_plan")]
     [Description(
         "Pass 31 / C3 — deterministic directive translator. Given a natural-language player utterance "
-        + "(e.g. 'hey Lamball, stop mining and help me fight'), returns an ordered list of allowlisted "
+        + "(e.g. 'hey helper, stop mining and help me fight'), returns an ordered list of allowlisted "
         + "PalDirective entries the UE4SS mod can forward to the native pal-AI controller. Never emits "
         + "above PalLLM:Automation:AllowedActions — candidates that match a cue but aren't allowlisted "
         + "land in RejectedCandidates[] with a reason. Empty utterance or nothing matched returns an "
@@ -609,7 +609,7 @@ public static class PalLlmMcpTools
     public static string PostDirectivePlan(
         PalLLM.Domain.Configuration.PalLlmOptions options,
         [Description("The player's natural-language utterance.")] string utterance,
-        [Description("Optional pal name the utterance addresses (e.g. 'Lamball').")] string? addressedPal = null)
+        [Description("Optional pal name the utterance addresses.")] string? addressedPal = null)
     {
         PalLLM.Domain.Runtime.DirectivePlan plan = PalLLM.Domain.Runtime.DirectiveIntentTranslator.Translate(
             utterance,

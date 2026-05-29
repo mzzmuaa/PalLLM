@@ -13,10 +13,10 @@ public sealed class ConversationMemoryStoreTests
 
         store.Import(
         [
-            CreateEntry(1, "Foxparks", "older personal note", start.AddMinutes(1), importance: 0.2f),
-            CreateEntry(2, "Lamball", "other character note", start.AddMinutes(2), importance: 0.4f),
+            CreateEntry(1, "CampScout", "older personal note", start.AddMinutes(1), importance: 0.2f),
+            CreateEntry(2, "SpeciesAlpha", "other character note", start.AddMinutes(2), importance: 0.4f),
             CreateEntry(null, "System", "shared camp notice", start.AddMinutes(3), importance: 0.3f),
-            CreateEntry(1, "Foxparks", "newest personal note", start.AddMinutes(4), importance: 0.8f),
+            CreateEntry(1, "CampScout", "newest personal note", start.AddMinutes(4), importance: 0.8f),
         ]);
 
         IReadOnlyList<ConversationMemoryEntry> recent = store.GetRecent(3, characterId: 1);
@@ -37,10 +37,10 @@ public sealed class ConversationMemoryStoreTests
 
         store.Import(
         [
-            CreateEntry(1, "Foxparks", "first personal note", start.AddMinutes(1), importance: 0.2f),
-            CreateEntry(2, "Lamball", "other character note", start.AddMinutes(2), importance: 0.9f),
+            CreateEntry(1, "CampScout", "first personal note", start.AddMinutes(1), importance: 0.2f),
+            CreateEntry(2, "SpeciesAlpha", "other character note", start.AddMinutes(2), importance: 0.9f),
             CreateEntry(null, "System", "shared camp notice", start.AddMinutes(3), importance: 0.4f),
-            CreateEntry(1, "Foxparks", "latest personal note", start.AddMinutes(4), importance: 0.7f),
+            CreateEntry(1, "CampScout", "latest personal note", start.AddMinutes(4), importance: 0.7f),
         ]);
 
         float importance = store.AccumulatedImportance(2, characterId: 1);
@@ -71,9 +71,9 @@ public sealed class ConversationMemoryStoreTests
 
         store.Import(
         [
-            CreateEntry(7, "Foxparks", "older campfire plan", now.AddHours(-48), importance: 0.9f, embedding: campfireEmbedding),
-            CreateEntry(9, "Lamball", "forge work order", now.AddMinutes(-5), importance: 1.0f, embedding: forgeEmbedding),
-            CreateEntry(7, "Foxparks", "fresh campfire route", now.AddMinutes(-1), importance: 0.4f, embedding: campfireEmbedding),
+            CreateEntry(7, "CampScout", "older campfire plan", now.AddHours(-48), importance: 0.9f, embedding: campfireEmbedding),
+            CreateEntry(9, "SpeciesAlpha", "forge work order", now.AddMinutes(-5), importance: 1.0f, embedding: forgeEmbedding),
+            CreateEntry(7, "CampScout", "fresh campfire route", now.AddMinutes(-1), importance: 0.4f, embedding: campfireEmbedding),
         ]);
 
         IReadOnlyList<ConversationMemoryMatch> matches = store.Recall("campfire", characterId: 7, limit: 2);
@@ -91,14 +91,14 @@ public sealed class ConversationMemoryStoreTests
         DateTimeOffset tieTime = now.AddMinutes(-10);
         lexicalStore.Import(
         [
-            CreateEntry(7, "Foxparks", "generic camp chore with the same vector", tieTime, importance: 0.5f, embedding: sharedEmbedding),
-            CreateEntry(7, "Foxparks", "rayne syndicate ambush at the north ridge", tieTime, importance: 0.5f, embedding: sharedEmbedding),
+            CreateEntry(7, "CampScout", "generic camp chore with the same vector", tieTime, importance: 0.5f, embedding: sharedEmbedding),
+            CreateEntry(7, "CampScout", "raider faction ambush at the north ridge", tieTime, importance: 0.5f, embedding: sharedEmbedding),
         ]);
 
         IReadOnlyList<ConversationMemoryMatch> lexicalMatches =
-            lexicalStore.Recall("rayne syndicate", characterId: 7, limit: 1);
+            lexicalStore.Recall("raider faction", characterId: 7, limit: 1);
 
-        Assert.That(lexicalMatches.Single().Entry.Content, Is.EqualTo("rayne syndicate ambush at the north ridge"),
+        Assert.That(lexicalMatches.Single().Entry.Content, Is.EqualTo("raider faction ambush at the north ridge"),
             "Exact query-token overlap should rerank tied embedding candidates without changing memory-store determinism.");
     }
 

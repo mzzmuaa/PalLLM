@@ -38,7 +38,7 @@ the repo root.
 16 gates in `scripts/run_full_audit.ps1`. If you change code, one of
 these will usually fire until you update the docs:
 
-- `Drift_Api_route_count` — `README.md` + `docs/ROADMAP.md` + `docs/ARCHITECTURE.md` + `docs/API.md` must agree with the `api.Map*` call count in `src/PalLLM.Sidecar/Program.cs`
+- `Drift_Api_route_count` — `README.md` + `docs/ROADMAP.md` + `docs/ARCHITECTURE.md` + `docs/API.md` must agree with the `api.Map*` call count across `src/PalLLM.Sidecar/Program.cs` and `src/PalLLM.Sidecar/RouteRegistrations/*.cs`
 - `Drift_Feature_catalog_count` — same, for `Id = "..."` entries in `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs`
 - `Drift_Test_count_docs` — for `[Test]` attributes in `tests/PalLLM.Tests/*.cs`
 - `Drift_OpenApi_snapshot` — for the committed `docs/openapi/palllm-sidecar-v1.json`
@@ -56,7 +56,7 @@ these will usually fire until you update the docs:
 - **Never delegate understanding via sub-agents when a Grep will do.** The
   drift gates + file header conventions make this repo easy to navigate
   directly.
-- **Never mass-reformat.** This repo's ~4,729-line `PalLlmRuntime.cs`
+- **Never mass-reformat.** This repo's ~1104-line `PalLlmRuntime.cs`
   looks intimidating but every method is documented inline. Touch only
   what you're changing.
 - **Never skip the drift audit.** It's 5 seconds and catches 90% of

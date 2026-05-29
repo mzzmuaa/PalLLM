@@ -1,6 +1,6 @@
 # Observability — OpenTelemetry traces, spans, and metrics
 
-Last audited: `2026-05-21`
+Last audited: `2026-05-24`
 
 PalLLM emits OpenTelemetry traces and spans the moment an OTLP
 collector is wired up via the `OTEL_EXPORTER_OTLP_ENDPOINT` env
@@ -225,7 +225,8 @@ variable you're measuring against.
 ## Related
 
 - Code: `src/PalLLM.Domain/Runtime/PalLlmTelemetry.cs`,
-  `src/PalLLM.Sidecar/Program.cs` (OpenTelemetry wireup)
+  `src/PalLLM.Sidecar/Configuration/PalLlmObservabilityServiceCollectionExtensions.cs`
+  (OpenTelemetry wireup)
 - Docs: [`OPERATIONS.md`](OPERATIONS.md) § "Enabling distributed
   tracing", [`PRIVACY.md`](PRIVACY.md) § "Telemetry",
   [`adr/0006-opt-in-everything-by-default.md`](adr/0006-opt-in-everything-by-default.md)

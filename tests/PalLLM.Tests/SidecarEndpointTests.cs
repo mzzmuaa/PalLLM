@@ -38,8 +38,8 @@ public sealed class SidecarEndpointTests
                 new GameCharacterSnapshot
                 {
                     Id = 7,
-                    DisplayName = "Chillet",
-                    Species = "Chillet",
+                    DisplayName = "CampGuardian",
+                    Species = "CampGuardian",
                 },
             ],
         });
@@ -112,8 +112,8 @@ public sealed class SidecarEndpointTests
                     new GameCharacterSnapshot
                     {
                         Id = 41,
-                        DisplayName = "Foxparks",
-                        Species = "Foxparks",
+                        DisplayName = "CampScout",
+                        Species = "CampScout",
                     },
                 ],
             });
@@ -181,6 +181,27 @@ public sealed class SidecarEndpointTests
         Assert.That(contentTypeOptionsValues!.Single(), Is.EqualTo("nosniff"));
         Assert.That(response.Headers.TryGetValues("X-Frame-Options", out IEnumerable<string>? frameOptionsValues), Is.True);
         Assert.That(frameOptionsValues!.Single(), Is.EqualTo("DENY"));
+        Assert.That(response.Headers.ETag, Is.Not.Null);
+        Assert.That(response.Headers.ETag!.IsWeak, Is.True);
+        Assert.That(response.Headers.CacheControl?.NoCache, Is.True);
+        Assert.That(response.Headers.CacheControl?.Public, Is.True);
+        Assert.That(response.Content.Headers.LastModified, Is.Not.Null);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/");
+        request.Headers.IfNoneMatch.Add(response.Headers.ETag);
+        using HttpResponseMessage second = await fixture.Client.SendAsync(request);
+
+        Assert.That(second.StatusCode, Is.EqualTo(HttpStatusCode.NotModified));
+        Assert.That(second.Headers.ETag?.ToString(), Is.EqualTo(response.Headers.ETag.ToString()));
+        Assert.That(second.Content.Headers.ContentLength ?? 0, Is.EqualTo(0));
+
+        using var lastModifiedRequest = new HttpRequestMessage(HttpMethod.Get, "/");
+        lastModifiedRequest.Headers.IfModifiedSince = response.Content.Headers.LastModified;
+        using HttpResponseMessage third = await fixture.Client.SendAsync(lastModifiedRequest);
+
+        Assert.That(third.StatusCode, Is.EqualTo(HttpStatusCode.NotModified));
+        Assert.That(third.Headers.ETag?.ToString(), Is.EqualTo(response.Headers.ETag.ToString()));
+        Assert.That(third.Content.Headers.ContentLength ?? 0, Is.EqualTo(0));
     }
 
     [Test]
@@ -266,8 +287,8 @@ public sealed class SidecarEndpointTests
                     new GameCharacterSnapshot
                     {
                         Id = 52,
-                        DisplayName = "Foxparks",
-                        Species = "Foxparks",
+                        DisplayName = "CampScout",
+                        Species = "CampScout",
                     },
                 ],
             });
@@ -329,8 +350,8 @@ public sealed class SidecarEndpointTests
                     new GameCharacterSnapshot
                     {
                         Id = 41,
-                        DisplayName = "Foxparks",
-                        Species = "Foxparks",
+                        DisplayName = "CampScout",
+                        Species = "CampScout",
                     },
                 ],
             });
@@ -424,8 +445,8 @@ public sealed class SidecarEndpointTests
                 new GameCharacterSnapshot
                 {
                     Id = 88,
-                    DisplayName = "Foxparks",
-                    Species = "Foxparks",
+                    DisplayName = "CampScout",
+                    Species = "CampScout",
                 },
             ],
         });
@@ -1633,7 +1654,8 @@ public sealed class SidecarEndpointTests
         string stepsDirectoryPath = Path.Combine(auditRoot, "steps");
         string resultsPath = Path.Combine(auditRoot, "RESULTS.md");
         Directory.CreateDirectory(stepsDirectoryPath);
-        await File.WriteAllTextAsync(resultsPath, "# PalLLM Full Audit");
+        await WriteFullAuditResultsAsync(resultsPath, "PASS");
+        await WriteFullAuditStepLogsAsync(stepsDirectoryPath, 14);
 
         ReleaseFullAuditEvidenceSnapshot expected = new()
         {
@@ -1682,6 +1704,39 @@ public sealed class SidecarEndpointTests
         Assert.That(payload.FullAuditEvidence.FailedStepCount, Is.EqualTo(0));
         Assert.That(payload.FullAuditEvidence.StepNames, Contains.Item("Build_Release"));
         Assert.That(payload.FullAuditEvidence.ReadyEvidence, Contains.Item("All recorded full-audit steps passed."));
+
+        ReleaseFullAuditEvidenceSnapshot contradictory = new()
+        {
+            Status = "passed",
+            Summary = "Contradictory audit evidence should not be trusted.",
+            CapturedAtUtc = DateTimeOffset.UtcNow,
+            ArtifactPath = options.LatestFullAuditEvidencePath,
+            HistoryArtifactPath = Path.Combine(options.ReleaseEvidenceHistoryDir, "full-audit-contradictory.json"),
+            AuditRoot = auditRoot,
+            ResultsPath = resultsPath,
+            StepsDirectoryPath = stepsDirectoryPath,
+            TestsEnabled = true,
+            CoverageEnabled = false,
+            SbomEnabled = false,
+            PackagingEnabled = true,
+            TotalStepCount = 14,
+            PassedStepCount = 13,
+            FailedStepCount = 1,
+            StepNames = ["Build_Release", "Tests"],
+            FailedSteps = [],
+            CurrentBlockers = [],
+            ReadyEvidence = ["All recorded full-audit steps passed."],
+        };
+        await File.WriteAllTextAsync(options.LatestFullAuditEvidencePath, JsonSerializer.Serialize(contradictory));
+
+        using HttpResponseMessage contradictoryResponse = await fixture.Client.GetAsync("/api/release/readiness");
+        ReleaseReadinessSnapshot? contradictoryPayload =
+            await contradictoryResponse.Content.ReadFromJsonAsync<ReleaseReadinessSnapshot>();
+
+        Assert.That(contradictoryResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(contradictoryPayload, Is.Not.Null);
+        Assert.That(contradictoryPayload!.FullAuditEvidence.Status, Is.EqualTo("invalid"));
+        Assert.That(contradictoryPayload.FullAuditEvidence.Summary, Does.Contain("claims PASS"));
     }
 
     [Test]
@@ -1771,7 +1826,8 @@ public sealed class SidecarEndpointTests
         string stepsDirectoryPath = Path.Combine(auditRoot, "steps");
         string resultsPath = Path.Combine(auditRoot, "RESULTS.md");
         Directory.CreateDirectory(stepsDirectoryPath);
-        await File.WriteAllTextAsync(resultsPath, "# stale audit");
+        await WriteFullAuditResultsAsync(resultsPath, "PASS");
+        await WriteFullAuditStepLogsAsync(stepsDirectoryPath, 14);
 
         ReleaseFullAuditEvidenceSnapshot staleAudit = new()
         {
@@ -2168,7 +2224,8 @@ public sealed class SidecarEndpointTests
         string stepsDirectoryPath = Path.Combine(auditRoot, "steps");
         string resultsPath = Path.Combine(auditRoot, "RESULTS.md");
         Directory.CreateDirectory(stepsDirectoryPath);
-        await File.WriteAllTextAsync(resultsPath, "# Audit");
+        await WriteFullAuditResultsAsync(resultsPath, "PASS");
+        await WriteFullAuditStepLogsAsync(stepsDirectoryPath, 3);
         await File.WriteAllTextAsync(options.LatestFullAuditEvidencePath, JsonSerializer.Serialize(new ReleaseFullAuditEvidenceSnapshot
         {
             Status = "passed",
@@ -3038,11 +3095,43 @@ public sealed class SidecarEndpointTests
         await using var fixture = new SidecarTestFixture();
 
         string html = await fixture.Client.GetStringAsync("/");
+        string appScript = await fixture.Client.GetStringAsync("/app.js");
+        string styles = await fixture.Client.GetStringAsync("/styles.css");
 
         Assert.That(html, Does.Contain("PalLLM Field Console"));
         Assert.That(html, Does.Contain("skeleton-card"));
         Assert.That(html, Does.Contain("status-strip"));
         Assert.That(html, Does.Contain("section-nav"));
+        Assert.That(html, Does.Contain("/favicon.svg"),
+            "The Field Console must declare the existing SVG favicon so Chromium does not fall back to a noisy /favicon.ico request.");
+        Assert.That(appScript.Length, Is.GreaterThan(10_000),
+            "The Field Console script endpoint must return the real asset, not an empty static-asset response.");
+        Assert.That(styles.Length, Is.GreaterThan(10_000),
+            "The Field Console stylesheet endpoint must return the real asset, not an empty static-asset response.");
+        Assert.That(appScript, Does.Contain("readLocalStorage"));
+        Assert.That(appScript, Does.Contain("writeLocalStorage"));
+        Assert.That(appScript, Does.Not.Contain("window.localStorage.getItem"),
+            "The Field Console must not hard-fail startup when browser storage is blocked.");
+        Assert.That(appScript, Does.Not.Contain("window.localStorage.setItem"),
+            "The Field Console must keep auto-refresh usable when browser storage is blocked.");
+        Assert.That(appScript.Split("function escapeHtml(", StringSplitOptions.None).Length - 1, Is.EqualTo(1),
+            "The Field Console app.js is an ES module; duplicate top-level helper declarations fail parsing.");
+        Assert.That(appScript, Does.Contain("class=\"feature-notes\""),
+            "Feature notes must render with the CSS class that wraps long paths and command fragments.");
+        Assert.That(styles, Does.Contain("minmax(min(280px, 100%), 1fr)"),
+            "Feature-card columns must shrink inside narrow or dense viewports instead of forcing horizontal page overflow.");
+        Assert.That(styles, Does.Contain("grid-template-columns: minmax(min(8rem, 100%), max-content) minmax(0, 1fr)"),
+            "Suggestion cards must not force page overflow in a narrow sidecar pane.");
+        Assert.That(styles, Does.Contain("overflow-wrap: anywhere;"),
+            "Long feature notes, file paths, and command fragments must wrap inside their cards.");
+        Assert.That(styles, Does.Contain(".quickstart-instructions dd"),
+            "Quickstart instructions must keep long setup commands wrapped on mobile.");
+        Assert.That(styles, Does.Contain("--shell: min(1280px, calc(100dvw - 2rem));"),
+            "The Field Console shell must size against the dynamic viewport so snapped sidecar panes do not clip.");
+        Assert.That(styles, Does.Contain("@media (max-width: 420px), (max-height: 760px) and (max-width: 720px)"),
+            "The Field Console needs a compact side-panel breakpoint for game-adjacent browser panes.");
+        Assert.That(styles, Does.Contain("overscroll-behavior-inline: contain;"),
+            "The section nav must scroll horizontally inside very narrow panes instead of widening the page.");
     }
 
     [Test]
@@ -3212,8 +3301,8 @@ public sealed class SidecarEndpointTests
                 new GameCharacterSnapshot
                 {
                     Id = 12,
-                    DisplayName = "Foxparks",
-                    Species = "Foxparks",
+                    DisplayName = "CampScout",
+                    Species = "CampScout",
                 },
             ],
         });
@@ -3305,8 +3394,8 @@ public sealed class SidecarEndpointTests
                 new GameCharacterSnapshot
                 {
                     Id = 19,
-                    DisplayName = "Chillet",
-                    Species = "Chillet",
+                    DisplayName = "CampGuardian",
+                    Species = "CampGuardian",
                 },
             ],
         });
@@ -3520,6 +3609,31 @@ public sealed class SidecarEndpointTests
             manifest.IncludedFiles,
             extraEntries);
 
+    private static Task WriteFullAuditResultsAsync(string resultsPath, string overall)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(resultsPath)!);
+        return File.WriteAllTextAsync(
+            resultsPath,
+            $"""
+            # PalLLM Full-Audit Results
+
+            - Generated: `20260422-220000` UTC
+            - Overall: **{overall}**
+
+            """);
+    }
+
+    private static async Task WriteFullAuditStepLogsAsync(string stepsDirectoryPath, int count)
+    {
+        Directory.CreateDirectory(stepsDirectoryPath);
+        for (int index = 1; index <= count; index++)
+        {
+            await File.WriteAllTextAsync(
+                Path.Combine(stepsDirectoryPath, $"{index:D2}_Step_{index}.log"),
+                "PASS");
+        }
+    }
+
     private static async Task WriteBundleArchiveWithManifestOnlyAsync(
         string archivePath,
         string manifestEntryName,
@@ -3622,8 +3736,8 @@ public sealed class SidecarEndpointTests
                     new GameCharacterSnapshot
                     {
                         Id = 9101,
-                        DisplayName = "Foxparks",
-                        Species = "Foxparks",
+                        DisplayName = "CampScout",
+                        Species = "CampScout",
                     },
                 ],
             },
@@ -3843,8 +3957,8 @@ public sealed class SidecarEndpointTests
                 new GameCharacterSnapshot
                 {
                     Id = 22,
-                    DisplayName = "Foxparks",
-                    Species = "Foxparks",
+                    DisplayName = "CampScout",
+                    Species = "CampScout",
                 },
             ],
         });

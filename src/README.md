@@ -8,7 +8,7 @@ Two .NET projects:
   interfaces in `Portable/PortableAdapterContracts.cs`. See
   [`../docs/adr/0002-portable-adapter-seam.md`](../docs/adr/0002-portable-adapter-seam.md).
 - **`PalLLM.Sidecar/`** — ASP.NET Core minimal-API host. Wraps
-  the domain runtime, exposes `/api/*` (56 routes) + `/mcp` +
+  the domain runtime, exposes `/api/*` (57 routes) + `/mcp` +
   `/metrics` + the Field Console dashboard, runs background
   workers (bridge inbox drain, self-healing watchdog,
   screenshot watcher).

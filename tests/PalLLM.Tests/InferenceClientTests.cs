@@ -48,8 +48,21 @@ public sealed class InferenceClientTests
         Assert.That(requestJson.RootElement.TryGetProperty("repetition_penalty", out _), Is.False);
         Assert.That(requestJson.RootElement.TryGetProperty("enable_thinking", out _), Is.False);
         Assert.That(requestJson.RootElement.TryGetProperty("reasoning_effort", out _), Is.False);
+        Assert.That(requestJson.RootElement.TryGetProperty("thinking_token_budget", out _), Is.False);
         Assert.That(requestJson.RootElement.TryGetProperty("seed", out _), Is.False);
         Assert.That(requestJson.RootElement.TryGetProperty("priority", out _), Is.False);
+        Assert.That(requestJson.RootElement.TryGetProperty("service_tier", out _), Is.False);
+        Assert.That(requestJson.RootElement.TryGetProperty("prompt_cache_key", out _), Is.False);
+        Assert.That(requestJson.RootElement.TryGetProperty("prompt_cache_retention", out _), Is.False);
+        Assert.That(requestJson.RootElement.TryGetProperty("verbosity", out _), Is.False);
+        Assert.That(requestJson.RootElement.TryGetProperty("safety_identifier", out _), Is.False);
+        Assert.That(requestJson.RootElement.TryGetProperty("store", out _), Is.False);
+        Assert.That(requestJson.RootElement.TryGetProperty("metadata", out _), Is.False);
+        Assert.That(requestJson.RootElement.TryGetProperty("cache_prompt", out _), Is.False);
+        Assert.That(requestJson.RootElement.TryGetProperty("id_slot", out _), Is.False);
+        Assert.That(requestJson.RootElement.TryGetProperty("n_cache_reuse", out _), Is.False);
+        Assert.That(handler.LastRequestHeaders.ContainsKey("X-Client-Request-Id"), Is.False);
+        Assert.That(handler.LastRequestHeaders.ContainsKey("X-Request-Id"), Is.False);
         Assert.That(requestJson.RootElement.TryGetProperty("parallel_tool_calls", out _), Is.False);
         Assert.That(requestJson.RootElement.TryGetProperty("stop", out _), Is.False);
         Assert.That(requestJson.RootElement.TryGetProperty("tools", out _), Is.False);
@@ -57,9 +70,11 @@ public sealed class InferenceClientTests
         Assert.That(requestJson.RootElement.TryGetProperty("prediction", out _), Is.False);
         Assert.That(requestJson.RootElement.TryGetProperty("modalities", out _), Is.False);
         Assert.That(requestJson.RootElement.TryGetProperty("audio", out _), Is.False);
+        Assert.That(requestJson.RootElement.TryGetProperty("mm_processor_kwargs", out _), Is.False);
         Assert.That(requestJson.RootElement.TryGetProperty("logprobs", out _), Is.False);
         Assert.That(requestJson.RootElement.TryGetProperty("top_logprobs", out _), Is.False);
         Assert.That(requestJson.RootElement.TryGetProperty("response_format", out _), Is.False);
+        Assert.That(requestJson.RootElement.TryGetProperty("structured_outputs", out _), Is.False);
         Assert.That(requestJson.RootElement.TryGetProperty("cache_salt", out _), Is.False);
         JsonElement userMessage = requestJson.RootElement.GetProperty("messages")[1];
         Assert.That(userMessage.GetProperty("content").ValueKind, Is.EqualTo(JsonValueKind.String));
@@ -79,6 +94,19 @@ public sealed class InferenceClientTests
         options.Inference.TopK = 40;
         options.Inference.MinP = 0.05f;
         options.Inference.RepetitionPenalty = 1.08f;
+        options.Inference.ServiceTier = " SCALE ";
+        options.Inference.PromptCacheKey = " pal-save-alpha ";
+        options.Inference.PromptCacheRetention = " 24H ";
+        options.Inference.Verbosity = " LOW ";
+        options.Inference.SafetyIdentifier = " pal-profile-hash-001 ";
+        options.Inference.StoreCompletions = false;
+        options.Inference.RequestMetadata[" pal_surface "] = " release-proof ";
+        options.Inference.RequestMetadata["pal_canary"] = " metadata ";
+        options.Inference.ClientRequestIdHeader = " X-Client-Request-Id ";
+        options.Inference.LlamaCppCachePrompt = true;
+        options.Inference.LlamaCppSlotId = 2;
+        options.Inference.LlamaCppCacheReuseTokens = 768;
+        options.Inference.ThinkingTokenBudget = 256;
 
         var client = new HttpJsonInferenceClient(httpClient, options);
 
@@ -88,16 +116,31 @@ public sealed class InferenceClientTests
             UserPrompt = "user",
             Temperature = 0.7f,
             MaxTokens = 128,
+            ClientRequestId = " pal-chat-001 ",
         }, CancellationToken.None);
 
         using JsonDocument requestJson = JsonDocument.Parse(handler.LastRequestBody);
 
         Assert.That(result.Success, Is.True);
         Assert.That(requestJson.RootElement.GetProperty("reasoning_effort").GetString(), Is.EqualTo("high"));
+        Assert.That(requestJson.RootElement.GetProperty("thinking_token_budget").GetInt32(), Is.EqualTo(256));
         Assert.That(requestJson.RootElement.GetProperty("frequency_penalty").GetSingle(), Is.EqualTo(0.65f));
         Assert.That(requestJson.RootElement.GetProperty("top_k").GetInt32(), Is.EqualTo(40));
         Assert.That(requestJson.RootElement.GetProperty("min_p").GetSingle(), Is.EqualTo(0.05f));
         Assert.That(requestJson.RootElement.GetProperty("repetition_penalty").GetSingle(), Is.EqualTo(1.08f));
+        Assert.That(requestJson.RootElement.GetProperty("service_tier").GetString(), Is.EqualTo("scale"));
+        Assert.That(requestJson.RootElement.GetProperty("prompt_cache_key").GetString(), Is.EqualTo("pal-save-alpha"));
+        Assert.That(requestJson.RootElement.GetProperty("prompt_cache_retention").GetString(), Is.EqualTo("24h"));
+        Assert.That(requestJson.RootElement.GetProperty("verbosity").GetString(), Is.EqualTo("low"));
+        Assert.That(requestJson.RootElement.GetProperty("safety_identifier").GetString(), Is.EqualTo("pal-profile-hash-001"));
+        Assert.That(requestJson.RootElement.GetProperty("store").GetBoolean(), Is.False);
+        JsonElement metadata = requestJson.RootElement.GetProperty("metadata");
+        Assert.That(metadata.GetProperty("pal_surface").GetString(), Is.EqualTo("release-proof"));
+        Assert.That(metadata.GetProperty("pal_canary").GetString(), Is.EqualTo("metadata"));
+        Assert.That(requestJson.RootElement.GetProperty("cache_prompt").GetBoolean(), Is.True);
+        Assert.That(requestJson.RootElement.GetProperty("id_slot").GetInt32(), Is.EqualTo(2));
+        Assert.That(requestJson.RootElement.GetProperty("n_cache_reuse").GetInt32(), Is.EqualTo(768));
+        Assert.That(handler.LastRequestHeaders["x-client-request-id"], Is.EqualTo("pal-chat-001"));
     }
 
     [Test]
@@ -112,6 +155,19 @@ public sealed class InferenceClientTests
         options.Inference.TopK = 64;
         options.Inference.MinP = 0.15f;
         options.Inference.RepetitionPenalty = 1.2f;
+        options.Inference.ServiceTier = "flex";
+        options.Inference.PromptCacheKey = "configured-cache-key";
+        options.Inference.PromptCacheRetention = "in_memory";
+        options.Inference.Verbosity = "medium";
+        options.Inference.SafetyIdentifier = "configured-safety-id";
+        options.Inference.StoreCompletions = true;
+        options.Inference.RequestMetadata["pal_surface"] = "configured";
+        options.Inference.RequestMetadata["shared"] = "configured";
+        options.Inference.ClientRequestIdHeader = "X-Request-Id";
+        options.Inference.LlamaCppCachePrompt = true;
+        options.Inference.LlamaCppSlotId = 1;
+        options.Inference.LlamaCppCacheReuseTokens = 384;
+        options.Inference.ThinkingTokenBudget = 512;
 
         var client = new HttpJsonInferenceClient(httpClient, options);
 
@@ -126,16 +182,47 @@ public sealed class InferenceClientTests
             TopK = 20,
             MinP = 0.01f,
             RepetitionPenalty = 0.95f,
+            ServiceTier = " DEFAULT ",
+            PromptCacheKey = " prompt-cache-key ",
+            PromptCacheRetention = " 24H ",
+            Verbosity = " HIGH ",
+            SafetyIdentifier = " prompt-safety-id ",
+            StoreCompletions = false,
+            RequestMetadata = new Dictionary<string, string>
+            {
+                [" pal_surface "] = " prompt ",
+                ["pal_route"] = " chat ",
+            },
+            ClientRequestId = "prompt-client-request-id",
+            LlamaCppCachePrompt = false,
+            LlamaCppSlotId = 3,
+            LlamaCppCacheReuseTokens = 0,
+            ThinkingTokenBudget = 64,
         }, CancellationToken.None);
 
         using JsonDocument requestJson = JsonDocument.Parse(handler.LastRequestBody);
 
         Assert.That(result.Success, Is.True);
         Assert.That(requestJson.RootElement.GetProperty("reasoning_effort").GetString(), Is.EqualTo("xhigh"));
+        Assert.That(requestJson.RootElement.GetProperty("thinking_token_budget").GetInt32(), Is.EqualTo(64));
         Assert.That(requestJson.RootElement.GetProperty("frequency_penalty").GetSingle(), Is.EqualTo(-0.25f));
         Assert.That(requestJson.RootElement.GetProperty("top_k").GetInt32(), Is.EqualTo(20));
         Assert.That(requestJson.RootElement.GetProperty("min_p").GetSingle(), Is.EqualTo(0.01f));
         Assert.That(requestJson.RootElement.GetProperty("repetition_penalty").GetSingle(), Is.EqualTo(0.95f));
+        Assert.That(requestJson.RootElement.GetProperty("service_tier").GetString(), Is.EqualTo("default"));
+        Assert.That(requestJson.RootElement.GetProperty("prompt_cache_key").GetString(), Is.EqualTo("prompt-cache-key"));
+        Assert.That(requestJson.RootElement.GetProperty("prompt_cache_retention").GetString(), Is.EqualTo("24h"));
+        Assert.That(requestJson.RootElement.GetProperty("verbosity").GetString(), Is.EqualTo("high"));
+        Assert.That(requestJson.RootElement.GetProperty("safety_identifier").GetString(), Is.EqualTo("prompt-safety-id"));
+        Assert.That(requestJson.RootElement.GetProperty("store").GetBoolean(), Is.False);
+        JsonElement metadata = requestJson.RootElement.GetProperty("metadata");
+        Assert.That(metadata.GetProperty("pal_surface").GetString(), Is.EqualTo("prompt"));
+        Assert.That(metadata.GetProperty("shared").GetString(), Is.EqualTo("configured"));
+        Assert.That(metadata.GetProperty("pal_route").GetString(), Is.EqualTo("chat"));
+        Assert.That(requestJson.RootElement.GetProperty("cache_prompt").GetBoolean(), Is.False);
+        Assert.That(requestJson.RootElement.GetProperty("id_slot").GetInt32(), Is.EqualTo(3));
+        Assert.That(requestJson.RootElement.GetProperty("n_cache_reuse").GetInt32(), Is.EqualTo(0));
+        Assert.That(handler.LastRequestHeaders["x-request-id"], Is.EqualTo("prompt-client-request-id"));
     }
 
     [Test]
@@ -452,6 +539,12 @@ public sealed class InferenceClientTests
               }
             }
             """);
+        using JsonDocument structuredOutputs = JsonDocument.Parse(
+            """
+            {
+              "choice": [ "gather", "guard" ]
+            }
+            """);
 
         InferenceResult result = await client.CompleteAsync(new InferencePrompt
         {
@@ -460,6 +553,7 @@ public sealed class InferenceClientTests
             Temperature = 0.1f,
             MaxTokens = 64,
             ResponseFormat = responseFormat.RootElement.Clone(),
+            StructuredOutputs = structuredOutputs.RootElement.Clone(),
         }, CancellationToken.None);
 
         using JsonDocument requestJson = JsonDocument.Parse(handler.LastRequestBody);
@@ -469,6 +563,10 @@ public sealed class InferenceClientTests
         Assert.That(forwarded.GetProperty("type").GetString(), Is.EqualTo("json_schema"));
         Assert.That(forwarded.GetProperty("json_schema").GetProperty("name").GetString(), Is.EqualTo("pal_action"));
         Assert.That(forwarded.GetProperty("json_schema").GetProperty("strict").GetBoolean(), Is.True);
+        JsonElement structured = requestJson.RootElement.GetProperty("structured_outputs");
+        Assert.That(
+            structured.GetProperty("choice").EnumerateArray().Select(value => value.GetString()).ToArray(),
+            Is.EqualTo(new[] { "gather", "guard" }));
         Assert.That(telemetry.Activities.Single().GetTagItem("gen_ai.output.type"), Is.EqualTo("json"));
     }
 
@@ -514,6 +612,10 @@ public sealed class InferenceClientTests
         using var httpClient = new HttpClient(handler);
         var options = new PalLlmOptions();
         options.Inference.Enabled = true;
+        options.Inference.MultimodalProcessor.MinPixels = 28 * 28;
+        options.Inference.MultimodalProcessor.MaxPixels = 1280 * 28 * 28;
+        options.Inference.MultimodalProcessor.MaxSoftTokens = 280;
+        options.Inference.MultimodalProcessor.Fps = 1;
 
         using JsonDocument userContent = JsonDocument.Parse(
             """
@@ -560,8 +662,45 @@ public sealed class InferenceClientTests
         Assert.That(forwarded[0].GetProperty("text").GetString(), Does.Contain("field recording"));
         Assert.That(forwarded[1].GetProperty("type").GetString(), Is.EqualTo("input_audio"));
         Assert.That(forwarded[1].GetProperty("input_audio").GetProperty("format").GetString(), Is.EqualTo("wav"));
+        Assert.That(forwarded[1].GetProperty("uuid").GetString(),
+            Is.EqualTo("palllm-audio-sha256-48db9ef8d4d6e57a94b2e64f88b144e6"),
+            "Route-owned input_audio parts should carry stable ids for repeated multimodal proof replays.");
         Assert.That(forwarded[2].GetProperty("type").GetString(), Is.EqualTo("video_url"));
         Assert.That(forwarded[2].GetProperty("video_url").GetProperty("url").GetString(), Does.StartWith("data:video/mp4;base64,"));
+        Assert.That(forwarded[2].GetProperty("uuid").GetString(),
+            Is.EqualTo("palllm-video-sha256-f786f55fdd1733a0a89a114a03636429"),
+            "Route-owned local video data URLs should carry stable ids without relying on remote fetches.");
+        JsonElement processorKwargs = requestJson.RootElement.GetProperty("mm_processor_kwargs");
+        Assert.That(processorKwargs.GetProperty("min_pixels").GetInt32(), Is.EqualTo(28 * 28));
+        Assert.That(processorKwargs.GetProperty("max_pixels").GetInt32(), Is.EqualTo(1280 * 28 * 28));
+        Assert.That(processorKwargs.GetProperty("max_soft_tokens").GetInt32(), Is.EqualTo(280));
+        Assert.That(processorKwargs.GetProperty("fps").GetSingle(), Is.EqualTo(1.0f));
+
+        using var strictHandler = new RecordingHandler();
+        using var strictHttpClient = new HttpClient(strictHandler);
+        var strictOptions = new PalLlmOptions();
+        strictOptions.Inference.Enabled = true;
+        strictOptions.Inference.UseMediaCacheIds = false;
+
+        var strictClient = new HttpJsonInferenceClient(strictHttpClient, strictOptions);
+
+        await strictClient.CompleteAsync(new InferencePrompt
+        {
+            SystemPrompt = "Use the supplied multimodal evidence only.",
+            UserPrompt = "fallback text",
+            Temperature = 0.1f,
+            MaxTokens = 64,
+            UserContent = userContent.RootElement.Clone(),
+        }, CancellationToken.None);
+
+        using JsonDocument strictRequestJson = JsonDocument.Parse(strictHandler.LastRequestBody);
+        JsonElement strictForwarded = strictRequestJson.RootElement.GetProperty("messages")[1].GetProperty("content");
+        Assert.That(strictForwarded[1].TryGetProperty("uuid", out _), Is.False,
+            "Strict endpoints can opt out of vLLM-style media-cache ids for prompt-level UserContent.");
+        Assert.That(strictForwarded[2].TryGetProperty("uuid", out _), Is.False,
+            "Strict endpoints should receive the caller's content-part array without injected uuid fields.");
+        Assert.That(strictRequestJson.RootElement.TryGetProperty("mm_processor_kwargs", out _), Is.False,
+            "Strict endpoints should not see multimodal processor hints unless the operator explicitly configures them.");
     }
 
     [Test]
@@ -2005,7 +2144,10 @@ public sealed class InferenceClientTests
         options.Asr.BaseUrl = "https://asr.example/v1/audio/transcriptions";
         options.Asr.Model = "local-whisper-small";
         options.Asr.ApiKey = "secret-asr-key";
+        options.Asr.Language = " en ";
+        options.Asr.Prompt = " Palworld field command. ";
         options.Asr.ChunkingStrategy = " AUTO ";
+        options.Asr.Seed = 4242;
 
         var client = new HttpAudioTranscriptionClient(httpClient, options);
 
@@ -2014,8 +2156,6 @@ public sealed class InferenceClientTests
             {
                 AudioBase64 = Convert.ToBase64String(new byte[] { 0x52, 0x49, 0x46, 0x46 }),
                 AudioMimeType = "audio/wav",
-                Language = "en",
-                Prompt = "Palworld field command.",
             },
             CancellationToken.None);
 
@@ -2036,6 +2176,8 @@ public sealed class InferenceClientTests
         Assert.That(handler.LastRequestBody, Does.Contain("Palworld field command."));
         Assert.That(handler.LastRequestBody, Does.Contain("name=chunking_strategy"));
         Assert.That(handler.LastRequestBody, Does.Contain("auto"));
+        Assert.That(handler.LastRequestBody, Does.Contain("name=seed"));
+        Assert.That(handler.LastRequestBody, Does.Contain("4242"));
         Assert.That(handler.LastRequestBody, Does.Contain("name=response_format"));
         Assert.That(handler.LastRequestBody, Does.Contain("json"));
         Assert.That(handler.LastAuthorizationScheme, Is.EqualTo("Bearer"));
@@ -2362,14 +2504,8 @@ public sealed class InferenceClientTests
     [Test]
     public async Task VisionDescribeAsync_WhenEndpointReturnsContentPartArray_ConcatenatesTextParts()
     {
-        var handler = new ScriptedHandler(
-            new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(
-                    "{\"choices\":[{\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"Storm front \"},{\"type\":\"output_text\",\"text\":\"rolling over the ridge.\"}]}}]}",
-                    Encoding.UTF8,
-                    "application/json"),
-            });
+        using var handler = new RecordingHandler(
+            "{\"choices\":[{\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"Storm front \"},{\"type\":\"output_text\",\"text\":\"rolling over the ridge.\"}]}}]}");
         using var httpClient = new HttpClient(handler);
         var options = new PalLlmOptions();
         options.Vision.Enabled = true;
@@ -2383,6 +2519,14 @@ public sealed class InferenceClientTests
 
         Assert.That(result.Success, Is.True);
         Assert.That(result.Content, Is.EqualTo("Storm front rolling over the ridge."));
+
+        using JsonDocument requestJson = JsonDocument.Parse(handler.LastRequestBody);
+        JsonElement imagePart = requestJson.RootElement
+            .GetProperty("messages")[0]
+            .GetProperty("content")[0];
+        Assert.That(imagePart.GetProperty("uuid").GetString(),
+            Is.EqualTo("palllm-image-sha256-a84085bba2ff5bcd7f7590f9c8ce1d6e"),
+            "Repeated identical screenshots should carry a stable media-cache id for vLLM-compatible endpoints.");
     }
 
     [Test]
@@ -2482,19 +2626,15 @@ public sealed class InferenceClientTests
     public async Task VisionDescribeAsync_EmitsGenerateContentSpanAndMetrics()
     {
         using var telemetry = new GenAiTelemetryCapture();
-        var handler = new ScriptedHandler(
-            new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(
-                    "{\"id\":\"vision-123\",\"model\":\"gpt-4.1-mini-vision-2026\",\"choices\":[{\"finish_reason\":\"stop\",\"message\":{\"content\":\"Scout report ready.\"}}],\"usage\":{\"prompt_tokens\":19,\"completion_tokens\":7,\"total_tokens\":26}}",
-                    Encoding.UTF8,
-                    "application/json"),
-            });
+        using var handler = new RecordingHandler(
+            "{\"id\":\"vision-123\",\"model\":\"gpt-4.1-mini-vision-2026\",\"choices\":[{\"finish_reason\":\"stop\",\"message\":{\"content\":\"Scout report ready.\"}}],\"usage\":{\"prompt_tokens\":19,\"completion_tokens\":7,\"total_tokens\":26}}");
         using var httpClient = new HttpClient(handler);
         var options = new PalLlmOptions();
         options.Vision.Enabled = true;
         options.Vision.BaseUrl = "https://api.openai.com/v1/";
         options.Vision.Model = "gpt-4.1-mini-vision";
+        options.Vision.MultimodalProcessor.MaxSoftTokens = 560;
+        options.Vision.MultimodalProcessor.Fps = 1;
 
         var client = new HttpVisionClient(httpClient, options);
 
@@ -2509,6 +2649,11 @@ public sealed class InferenceClientTests
 
         Assert.That(result.Success, Is.True);
         Assert.That(result.FinishReasons, Is.EqualTo(new[] { "stop" }));
+
+        using JsonDocument requestJson = JsonDocument.Parse(handler.LastRequestBody);
+        JsonElement processorKwargs = requestJson.RootElement.GetProperty("mm_processor_kwargs");
+        Assert.That(processorKwargs.GetProperty("max_soft_tokens").GetInt32(), Is.EqualTo(560));
+        Assert.That(processorKwargs.GetProperty("fps").GetSingle(), Is.EqualTo(1.0f));
 
         Activity activity = telemetry.Activities.Single();
         Assert.That(activity.OperationName, Is.EqualTo("generate_content gpt-4.1-mini-vision"));
@@ -2545,9 +2690,15 @@ public sealed class InferenceClientTests
 
         public string LastRequestPath { get; private set; } = string.Empty;
 
+        public Dictionary<string, string> LastRequestHeaders { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             LastRequestPath = request.RequestUri?.AbsolutePath ?? string.Empty;
+            LastRequestHeaders = request.Headers.ToDictionary(
+                header => header.Key,
+                header => string.Join(",", header.Value),
+                StringComparer.OrdinalIgnoreCase);
             LastRequestBody = await request.Content!.ReadAsStringAsync(cancellationToken);
 
             return new HttpResponseMessage(HttpStatusCode.OK)

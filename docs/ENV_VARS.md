@@ -1,6 +1,6 @@
 # Environment variables
 
-Last audited: `2026-05-21`
+Last audited: `2026-05-28`
 
 Every environment variable that affects PalLLM, with default,
 effect, and example. PalLLM follows the standard ASP.NET Core +
@@ -84,17 +84,34 @@ Common overrides:
 | `PalLLM__Inference__Model` | Model name passed to the inference API (e.g. `qwen3.6:0.6b`) |
 | `PalLLM__Inference__ApiKey` | Bearer token for the inference endpoint, if it requires one |
 | `PalLLM__Inference__PrefixCacheSalt` | Optional vLLM `cache_salt` trust-domain value for isolating prefix-cache reuse on shared endpoints |
+| `PalLLM__Inference__PromptCacheKey` | Optional OpenAI-compatible `prompt_cache_key` for hosted prompt-cache routing; omitted unless explicitly configured |
+| `PalLLM__Inference__PromptCacheRetention` | Optional OpenAI-compatible `prompt_cache_retention` hint (`in_memory` or `24h`) for hosted long-prefix cache canaries |
+| `PalLLM__Inference__Verbosity` | Optional OpenAI-compatible `verbosity` hint (`low`, `medium`, or `high`) for endpoint-proven concise or expanded output lanes |
+| `PalLLM__Inference__SafetyIdentifier` | Optional OpenAI-compatible `safety_identifier`; use only a stable pseudonymous hash, never player names, save paths, account ids, emails, or secrets |
+| `PalLLM__Inference__StoreCompletions` | Optional OpenAI-compatible `store` switch for hosted retention-posture canaries; omitted by default, usually set only to explicit `false` after endpoint proof |
+| `PalLLM__Inference__RequestMetadata__<key>` | Optional OpenAI-compatible `metadata` labels for hosted proof canaries; max 16 entries, 64-char keys, 512-char values; never include prompt text, player identity, save paths, secrets, or raw game state |
+| `PalLLM__Inference__ClientRequestIdHeader` | Optional outbound request-correlation header (`x-client-request-id` or `x-request-id`) for endpoint-proven support traces; omitted by default |
+| `PalLLM__Inference__LlamaCppCachePrompt` | Optional llama.cpp `cache_prompt` pass-through for endpoint-proven prompt-cache canaries; omitted by default |
+| `PalLLM__Inference__LlamaCppSlotId` | Optional llama.cpp `id_slot` selector (`-1` or higher) for endpoint-proven warm-slot canaries; omitted by default |
+| `PalLLM__Inference__LlamaCppCacheReuseTokens` | Optional llama.cpp `n_cache_reuse` floor (`0` or higher) for measured stable-prefix canaries; omitted by default |
+| `PalLLM__Inference__UseMediaCacheIds` | `true` / `false` - add stable content-hash `uuid` fields to prompt-level local image/video/audio `UserContent` media parts (default `true`) |
+| `PalLLM__Inference__MultimodalProcessor__MinPixels` | Optional vLLM-style `mm_processor_kwargs.min_pixels` hint for prompt-level multimodal `UserContent` canaries; omitted by default |
+| `PalLLM__Inference__MultimodalProcessor__MaxPixels` | Optional vLLM-style `mm_processor_kwargs.max_pixels` hint for prompt-level multimodal `UserContent` canaries; omitted by default |
+| `PalLLM__Inference__MultimodalProcessor__MaxSoftTokens` | Optional vLLM-style `mm_processor_kwargs.max_soft_tokens` hint; accepted budgets are `70`, `140`, `280`, `560`, or `1120`; omitted by default |
+| `PalLLM__Inference__MultimodalProcessor__Fps` | Optional vLLM-style `mm_processor_kwargs.fps` hint for video/audio-visual proof canaries; omitted by default |
 | `PalLLM__Inference__Temperature` | Baseline chat temperature (`0` to `2`); per-turn execution profiles can override it for task fit |
 | `PalLLM__Inference__TopP` | Baseline nucleus-sampling cap (`0` to `1`) forwarded when configured |
 | `PalLLM__Inference__PresencePenalty` | Baseline OpenAI-compatible presence penalty (`-2` to `2`) forwarded when configured |
 | `PalLLM__Inference__TokenBudgetField` | Selects the emitted output-token budget field: `max_tokens` by default, or endpoint-proven `max_completion_tokens` for reasoning lanes that reject `max_tokens` |
 | `PalLLM__Inference__ReasoningEffort` | Optional `reasoning_effort` hint (`none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`) forwarded only when explicitly configured and endpoint-proven |
+| `PalLLM__Inference__ThinkingTokenBudget` | Optional vLLM `thinking_token_budget` cap for reasoning-parser lanes; positive values only, omitted by default |
 | `PalLLM__Inference__Seed` | Optional OpenAI-compatible `seed` hint forwarded only when explicitly configured and endpoint-proven for replay comparisons |
 | `PalLLM__Inference__FrequencyPenalty` | Optional OpenAI-compatible `frequency_penalty` hint (`-2` to `2`) forwarded only when explicitly configured and endpoint-proven for repetition control |
 | `PalLLM__Inference__TopK` | Optional local-runtime `top_k` sampler hint (`1` to `65536`) forwarded only when explicitly configured and endpoint-proven |
 | `PalLLM__Inference__MinP` | Optional local-runtime `min_p` sampler hint (`0` to `1`) forwarded only when explicitly configured and endpoint-proven |
 | `PalLLM__Inference__RepetitionPenalty` | Optional local-runtime `repetition_penalty` hint (`0` to `2`) forwarded only when explicitly configured and endpoint-proven |
 | `PalLLM__Inference__RequestPriority` | Optional vLLM `priority` hint forwarded only when explicitly configured and the endpoint is launched with priority scheduling |
+| `PalLLM__Inference__ServiceTier` | Optional OpenAI-compatible `service_tier` hint (`auto`, `default`, `flex`, `priority`, or `scale`) forwarded only for endpoint-proven routing lanes |
 | `PalLLM__Inference__ParallelToolCalls` | Optional OpenAI-compatible `parallel_tool_calls` hint forwarded only when explicitly configured and strict tool-call fan-out has been endpoint-proven |
 | `PalLLM__Inference__StopSequences__0` | First optional OpenAI-compatible `stop` delimiter forwarded only after the exact endpoint/model has proven delimiter handling |
 | `PalLLM__Inference__TimeoutSeconds` | Inference HTTP timeout (default `60`) |
@@ -106,6 +123,11 @@ Common overrides:
 | `PalLLM__Vision__ApiKey` | Bearer token for the vision endpoint, if it requires one |
 | `PalLLM__Vision__Temperature` | Vision-lane temperature (`0` to `2`), defaulting low for extraction-style calls |
 | `PalLLM__Vision__MaxResponseBytes` | Cap on vision response size in bytes (default `65536`, 64 KB) |
+| `PalLLM__Vision__UseMediaCacheIds` | `true` / `false` — add stable content-hash `uuid` fields to outgoing vision image parts for vLLM-style media caches (default `true`) |
+| `PalLLM__Vision__MultimodalProcessor__MinPixels` | Optional vLLM-style `mm_processor_kwargs.min_pixels` hint for screenshot/image requests; omitted by default |
+| `PalLLM__Vision__MultimodalProcessor__MaxPixels` | Optional vLLM-style `mm_processor_kwargs.max_pixels` hint for screenshot/image requests; omitted by default |
+| `PalLLM__Vision__MultimodalProcessor__MaxSoftTokens` | Optional vLLM-style `mm_processor_kwargs.max_soft_tokens` hint; accepted budgets are `70`, `140`, `280`, `560`, or `1120`; omitted by default |
+| `PalLLM__Vision__MultimodalProcessor__Fps` | Optional vLLM-style `mm_processor_kwargs.fps` hint for video-style proof lanes; omitted by default |
 | `PalLLM__Vision__EnableScreenshotWatcher` | Background screenshot watcher on / off (default `false`) |
 | `PalLLM__Tts__Enabled` | `true` / `false` — TTS synthesis on / off |
 | `PalLLM__Tts__BaseUrl` | TTS HTTP endpoint |
@@ -117,10 +139,13 @@ Common overrides:
 | `PalLLM__Asr__BaseUrl` | OpenAI-compatible transcription endpoint (default `http://127.0.0.1:8000/v1/audio/transcriptions`) |
 | `PalLLM__Asr__Model` | Model id sent as multipart `model`; required when ASR is enabled |
 | `PalLLM__Asr__ApiKey` | Bearer token for the ASR endpoint, if it requires one |
+| `PalLLM__Asr__Language` | Optional default multipart `language` hint such as `en`; request-level `Language` still overrides it |
+| `PalLLM__Asr__Prompt` | Optional default multipart `prompt` hint for pronunciation or command vocabulary; keep it short and non-secret |
 | `PalLLM__Asr__ResponseFormat` | Multipart `response_format` for ASR calls: `json` by default, or endpoint-proven `verbose_json` for richer transcription metadata canaries |
 | `PalLLM__Asr__TimestampGranularities__0` | Optional verbose ASR timestamp granularity (`segment` or `word`); valid only with `PalLLM__Asr__ResponseFormat=verbose_json` |
 | `PalLLM__Asr__ChunkingStrategy` | Optional multipart `chunking_strategy`; leave empty by default, or set endpoint-proven `auto` for server/VAD-selected file transcription chunks |
 | `PalLLM__Asr__Temperature` | Optional multipart `temperature` field for endpoint-proven ASR sampler canaries (`0` to `1`; omitted when unset) |
+| `PalLLM__Asr__Seed` | Optional multipart `seed` field for endpoint-proven vLLM ASR replay canaries; omitted when unset |
 | `PalLLM__Asr__RequestLogprobs` | Optional `include[]=logprobs` request switch for compatible ASR confidence receipts |
 | `PalLLM__Asr__LowConfidenceLogprobThreshold` | Logprob threshold used to count low-confidence ASR tokens in the content-free confidence receipt (default `-1.0`) |
 | `PalLLM__Asr__MaxAudioBytes` | Cap on decoded incoming audio bytes before any upstream call (default `4194304`, 4 MB) |

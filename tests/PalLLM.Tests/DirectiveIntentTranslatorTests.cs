@@ -58,12 +58,12 @@ public class DirectiveIntentTranslatorTests
         DirectivePlan plan = DirectiveIntentTranslator.Translate(
             "follow me and guard this spot",
             AllActions,
-            addressedPal: "Lamball");
+            addressedPal: "SpeciesAlpha");
 
         Assert.That(plan.Directives.Count, Is.GreaterThanOrEqualTo(1));
         foreach (PalDirective d in plan.Directives)
         {
-            Assert.That(d.TargetPal, Is.EqualTo("Lamball"));
+            Assert.That(d.TargetPal, Is.EqualTo("SpeciesAlpha"));
         }
     }
 

@@ -450,7 +450,7 @@ public sealed class ModelCollaborationPlanner
         if (preferVllm && supportsStructuredOutputs)
         {
             startupHints.Add("--structured-outputs-config.backend xgrammar");
-            startupHints.Add("vLLM structured-output portability lane: prefer OpenAI response_format json_schema for PalLLM routes, and treat guided_json, guided_choice, guided_regex, guided_grammar, and structural_tag as endpoint-specific proof shapes with their own backend receipts.");
+            startupHints.Add("vLLM structured-output portability lane: prefer OpenAI response_format json_schema for portable PalLLM routes, and use prompt-level InferencePrompt.StructuredOutputs / structured_outputs for endpoint-specific choice, regex, JSON, grammar, or structural_tag proof shapes with their own backend receipts.");
         }
 
         if (preferSglang)
@@ -644,6 +644,7 @@ public sealed class ModelCollaborationPlanner
             "Before any downloaded model, quant, adapter, mmproj, or drafter becomes a PalLLM default, record the source URL or local path, immutable revision or file hash, model-card license metadata, base-model/adapter relation, runtime version, and trust-remote-code status.",
             "Use PalLLM:Inference:Seed only for endpoint-proven replay lanes; record the seed, served model id, runtime version, and any system_fingerprint-equivalent evidence beside the replay result.",
             "Use PalLLM:Inference:TokenBudgetField=max_completion_tokens only for endpoint-proven reasoning lanes that require the newer OpenAI-compatible token-budget field; record accepted request shape, visible/reasoning token usage when exposed, p95 latency, and fallback counters before promotion.",
+            "Use PalLLM:Inference:ThinkingTokenBudget only for endpoint-proven vLLM reasoning-parser lanes; record accepted thinking_token_budget request shape, visible/reasoning token usage, p95 latency, and fallback counters before promotion.",
             "Use PalLLM:Inference:FrequencyPenalty only for endpoint-proven repetition-control lanes; record repeated-phrase rate, generated tokens, latency, and fallback counters before making it a player-facing default.",
             "Keep PalLLM:Inference:Temperature, TopP, and PresencePenalty inside their startup-validated OpenAI-style ranges before testing any endpoint-specific sampler changes.",
             "Use PalLLM:Inference:TopK, MinP, and RepetitionPenalty only for endpoint-proven local-sampler lanes; record accepted request shape, style/loop deltas, token count, latency, and fallback counters before promotion.",
@@ -653,7 +654,7 @@ public sealed class ModelCollaborationPlanner
         ];
         if (supportsStructuredOutputs)
         {
-            requestHints.Add("Use InferencePrompt.ResponseFormat to forward response_format json_schema on route-specific text proof lanes; use the vision schema hook for world-state, and keep ordinary companion chat field-free until the endpoint proves structured-output support.");
+            requestHints.Add("Use InferencePrompt.ResponseFormat to forward response_format json_schema on portable route-specific text proof lanes; use InferencePrompt.StructuredOutputs only for vLLM-specific structured_outputs canaries; use the vision schema hook for world-state, and keep ordinary companion chat field-free until the endpoint proves structured-output support.");
             requestHints.Add("Every schema-bearing replay should carry a schema digest, schema name, PalLLM route class, served model id, request shape, grammar/backend id, temperature, parse result, schema-validation result, token usage, p95 latency, and fallback counter delta.");
         }
 
@@ -666,6 +667,7 @@ public sealed class ModelCollaborationPlanner
         if (isGguf && !isEmbedding)
         {
             requestHints.Add("On llama.cpp, keep cache_prompt enabled for stable PalLLM prefixes; do not assume reuse across chat-template, context-size, adapter, model, or slot changes.");
+            requestHints.Add("Use PalLLM:Inference:LlamaCppCachePrompt, LlamaCppSlotId, and LlamaCppCacheReuseTokens only on endpoint-proven llama-server canaries; ordinary cross-runtime chat omits cache_prompt, id_slot, and n_cache_reuse.");
             requestHints.Add("For llama.cpp host prompt-cache persistence, include the model family, tokenizer metadata, chat template, context size, adapter id, --swa-full state, and server commit in the PalLLM replay receipt.");
             if (supportsModelNativeMtp)
             {
@@ -718,9 +720,17 @@ public sealed class ModelCollaborationPlanner
         if (preferVllm && !isEmbedding)
         {
             requestHints.Add("If PalLLM:Inference:PrefixCacheSalt is set, forward it as vLLM cache_salt so cache reuse stays inside one player/save/profile trust domain.");
+            requestHints.Add("If PalLLM:Inference:PromptCacheKey or PromptCacheRetention is set, forward prompt_cache_key / prompt_cache_retention only to hosted endpoints that prove support; keep keys non-secret and stable per Palworld save/profile/task family.");
             requestHints.Add("If PalLLM:Inference:RequestPriority is set, forward it as vLLM priority only on endpoints launched with priority scheduling; lower values are more urgent and non-zero values can fail on FCFS-only servers.");
+            requestHints.Add("If PalLLM:Inference:ServiceTier is set, forward it as OpenAI-compatible service_tier only on endpoints that accept service tiers; prove priority/scale against player-facing queue/TTFT and flex only against background proof/docs lanes before promotion.");
+            requestHints.Add("If PalLLM:Inference:Verbosity is set, forward it only on endpoints that accept verbosity; prove low trims generated tokens without clipping useful player guidance, and keep high for non-live proof/review lanes.");
+            requestHints.Add("If PalLLM:Inference:SafetyIdentifier is set, forward safety_identifier only as a stable pseudonymous hosted-lane hash; never use player names, save paths, account ids, emails, or secrets.");
+            requestHints.Add("If PalLLM:Inference:StoreCompletions is set, forward store only on hosted endpoints that prove support; keep ordinary Palworld companion chat field-free, and prefer explicit false for retention-posture canaries.");
+            requestHints.Add("If PalLLM:Inference:RequestMetadata has entries, forward metadata only as bounded low-cardinality proof labels on hosted canaries; never include prompt text, player identity, save paths, secrets, raw game state, or metric-label values.");
+            requestHints.Add("If PalLLM:Inference:ClientRequestIdHeader is set, forward only PalLLM's bounded chat/proof request id as x-client-request-id or x-request-id for support correlation; keep prompt text, save paths, and player identity out of headers and metrics.");
             requestHints.Add("Do not swap PalLLM's live companion lane to /v1/responses because it is newer or stateful; qualify response.created, response.output_text.delta, response.completed, response-id cleanup, tool events, usage receipts, p95 latency, and fallback counters first.");
             requestHints.Add("If PalLLM:Inference:TokenBudgetField is max_completion_tokens, omit max_tokens and forward the same PalLLM route budget as max_completion_tokens; keep max_tokens for SGLang/GGUF lanes until the exact endpoint proves the newer field.");
+            requestHints.Add("If PalLLM:Inference:ThinkingTokenBudget is set, forward thinking_token_budget only to vLLM reasoning-parser lanes that prove the parameter is enforced; keep ordinary companion chat omitted or thinking-disabled for fastest turns.");
             requestHints.Add("If PalLLM:Inference:TopK, MinP, or RepetitionPenalty are set, treat them as vLLM extra sampler parameters and keep --generation-config vllm in the proof receipt so model-repo defaults do not silently override the replay.");
             requestHints.Add("If a pack supplies a local LoRA adapter, choose the adapter from validated pack metadata and operator config only; never let player text select an adapter path or id.");
             requestHints.Add("Keep long proof, docs-sync, or deliberate-review prompts on a separate profile unless vLLM scheduler caps prove short companion turns still win the queue.");
@@ -1034,6 +1044,7 @@ public sealed class ModelCollaborationPlanner
         {
             securityControls.Add("Set VLLM_MAX_N_SEQUENCES to a workload-sized cap and keep reverse-proxy body/rate limits in front of any non-loopback vLLM endpoint.");
             securityControls.Add("Use one stable non-secret cache_salt per PalLLM trust domain when sharing a vLLM endpoint; do not put secrets in the salt or rotate it per request unless isolation matters more than cache hits.");
+            securityControls.Add("Keep hosted request hints pseudonymous: prompt_cache_key, cache_salt, and safety_identifier may contain only non-secret PalLLM trust-domain hashes, never raw player identity or save contents.");
             securityControls.Add("Treat /v1/responses response ids and event logs as private runtime state; do not place raw response ids, built-in tool payloads, or streamed event bodies in support/public bundles.");
             securityControls.Add("Keep external KV cache services such as PegaFlow on loopback or an operator-owned private fabric; redact PEGAFLOW_HOST, PEGAFLOW_PORT, SSD cache paths, namespace ids, and raw KV metadata from support/public bundles.");
             securityControls.Add("Keep vLLM sleep/wake dev endpoints on a loopback-only admin surface; never expose VLLM_SERVER_DEV_MODE routes to players, LAN browsers, or a public reverse proxy.");
@@ -1131,7 +1142,7 @@ public sealed class ModelCollaborationPlanner
 
         if (supportsStructuredOutputs)
         {
-            promotionReceipts.Add("Structured-output portability receipt: schema name and digest, route class, served model id, request shape (response_format, guided_json, or grammar), grammar/backend id, exact parse success, schema-validation success, refusal or empty-output handling, p95 latency, token usage, and fallback counters.");
+            promotionReceipts.Add("Structured-output portability receipt: schema name and digest, route class, served model id, request shape (response_format, structured_outputs, or grammar), grammar/backend id, exact parse success, schema-validation success, refusal or empty-output handling, p95 latency, token usage, and fallback counters.");
             metricReceipts.Add("Structured-output proof receipts: schema digest, request-shape id, exact-parse success rate, schema-validation success rate, invalid-output retry count, token usage, p95 latency, and route-labeled fallback counters.");
             verificationChecks.Add("Run a schema-echo portability canary per runtime: one required object, one enum, one bounded array, one deliberate violation prompt, and one changed-schema digest; reject promotion if json_object-only mode passes while json_schema validation fails.");
         }
@@ -1182,6 +1193,13 @@ public sealed class ModelCollaborationPlanner
             verificationChecks.Add("Run two same-prefix turns and confirm prefix-cache or prefill metrics improve on the second turn before claiming cache benefit.");
             verificationChecks.Add("For vLLM --performance-mode interactivity, compare p50/p95 end-to-end latency, TTFT, ITL, queue behavior, and fallback activation against balanced and throughput modes on the same PalLLM replay before changing a shared server default.");
             verificationChecks.Add("If PrefixCacheSalt is configured, run same-prefix requests with matching and different cache_salt values and confirm reuse is isolated to the matching trust domain.");
+            verificationChecks.Add("If PalLLM:Inference:PromptCacheKey or PromptCacheRetention is configured, replay the same long-prefix route with and without prompt_cache_key / prompt_cache_retention and record accepted request shape, cached-token receipts, p95 latency, and fallback counters before promotion.");
+            verificationChecks.Add("If PalLLM:Inference:Verbosity is configured, replay the same route with and without verbosity and record accepted request shape, generated-token delta, explanation quality, p95 latency, and fallback counters before promotion.");
+            verificationChecks.Add("If PalLLM:Inference:SafetyIdentifier is configured, confirm the outgoing request carries only a stable pseudonymous hash and that support/public bundles contain neither the hash nor raw player identity.");
+            verificationChecks.Add("If PalLLM:Inference:StoreCompletions is configured, confirm the outgoing request carries store only on the hosted canary lane and that support/public bundles do not retain prompt or completion text from the canary.");
+            verificationChecks.Add("If PalLLM:Inference:RequestMetadata is configured, confirm metadata carries at most 16 bounded proof labels, no raw prompt/player/save/secret text, and no high-cardinality metric labels.");
+            verificationChecks.Add("If PalLLM:Inference:ClientRequestIdHeader is configured, confirm the outgoing header is x-client-request-id or x-request-id, the value is bounded visible ASCII, provider request-id receipts line up, and metrics never use the id as a label.");
+            verificationChecks.Add("If PalLLM:Inference:LlamaCppCachePrompt, LlamaCppSlotId, or LlamaCppCacheReuseTokens is configured, replay same-prefix and changed-prefix llama-server turns and record accepted request shape, slot id, second-turn TTFT, cache metrics, cache RAM pressure, and fallback counters before promotion.");
             verificationChecks.Add("If enabling --kv-cache-dtype fp8 or nvfp4, replay PalLLM JSON, tool-call, companion, and long-context proof turns and record exact parse success, quality deltas, TTFT, ITL, KV-cache utilization, and fallback behavior before promotion.");
             verificationChecks.Add("If vLLM preempts or recomputes requests under KV pressure, reject promotion for the player-facing lane unless short-turn p95 latency and fallback activation stay healthy under the same mixed replay.");
             verificationChecks.Add("When vLLM KV-block residency sampling is enabled, reject promotion if proof/docs blocks stay idle long enough to evict hot companion prefixes or if reuse gaps prove the cache seed is not being reused.");
@@ -1190,7 +1208,9 @@ public sealed class ModelCollaborationPlanner
             verificationChecks.Add("For vLLM disaggregated prefill/decode, replay the same PalLLM route through monolithic and split P/D topology; reject promotion unless TTFT or tail ITL improves without worse E2E latency, parse stability, queue pressure, or fallback counters, and unless a stopped prefill or decode worker rolls back cleanly.");
             verificationChecks.Add("For MoRIIOConnector P/D, compare read mode, write mode, and monolithic vLLM on the same PalLLM replay; reject promotion if TTFT regression outweighs ITL stability for the route, prefix-cache-disabled behavior is unproven, or remote KV wait/transfer errors trigger fallback.");
             verificationChecks.Add("If PalLLM:Inference:RequestPriority is configured, run the same mixed replay with --scheduling-policy priority and confirm the lower-priority-value companion turn wins queue time without starving background proof/docs lanes.");
+            verificationChecks.Add("If PalLLM:Inference:ServiceTier is configured, replay with and without service_tier and record accepted request shape, queue/TTFT evidence, p95 latency, cost posture where applicable, and fallback counters before promotion; treat scale like priority for player-facing proof only.");
             verificationChecks.Add("If PalLLM:Inference:TokenBudgetField is max_completion_tokens, replay the same PalLLM route with max_tokens and max_completion_tokens on the exact endpoint and record accepted request shape, visible/reasoning token usage when exposed, p95 latency, and fallback counters.");
+            verificationChecks.Add("If PalLLM:Inference:ThinkingTokenBudget is configured, replay the same reasoning route with no budget and with the configured thinking_token_budget on the exact vLLM server, then record reasoning-parser config, accepted request shape, visible/reasoning token usage, p95 latency, and fallback counters before promotion.");
             verificationChecks.Add("Record whether --generation-config vllm is active; reject promotion if model-repo sampling defaults override PalLLM's configured deterministic replay settings.");
             verificationChecks.Add("If PalLLM:Inference:Seed is configured, replay the same request twice on the same vLLM replica and record seed, served model id, system_fingerprint when exposed, TP/PP layout, and output drift before trusting reproducibility.");
             verificationChecks.Add("If PalLLM:Inference:FrequencyPenalty is configured, replay long companion turns with and without frequency_penalty and record repeated-phrase rate, token count, latency, and fallback counters before promotion.");
@@ -1309,7 +1329,7 @@ public sealed class ModelCollaborationPlanner
         if (preferSglang && supportsStructuredOutputs)
         {
             verificationChecks.Add("For SGLang structured outputs, qualify OpenAI response_format json_schema plus structural_tag shapes against PalLLM schemas; reject promotion if the grammar backend changes exact parse success.");
-            verificationChecks.Add("For text structured-output lanes, replay with and without InferencePrompt.ResponseFormat / response_format json_schema and record parse success, token usage, p95 latency, fallback counters, and no-spec strict-route behavior.");
+            verificationChecks.Add("For text structured-output lanes, replay with and without InferencePrompt.ResponseFormat / response_format json_schema or InferencePrompt.StructuredOutputs / structured_outputs and record parse success, token usage, p95 latency, fallback counters, and no-spec strict-route behavior.");
         }
 
         if (supportsSpeculativeDecoding)
@@ -1374,6 +1394,7 @@ public sealed class ModelCollaborationPlanner
             }
 
             verificationChecks.Add("For player speech, compare cascaded ASR-to-text latency, transcript quality, and privacy retention against native audio-in before changing the default input lane.");
+            verificationChecks.Add("If PalLLM:Asr:Seed is configured, replay the same short clip twice on the exact transcription endpoint and record accepted multipart shape, served ASR model id, runtime version, transcript drift, latency, and fallback counters.");
         }
 
         if (supportsAudioOutput)

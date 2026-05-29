@@ -53,7 +53,7 @@ Invoke-PalApi -Method POST -Path "/api/snapshot" -Body @{
         @{
             Id = $characterId
             DisplayName = $characterName
-            Species = "Foxparks"
+            Species = "CampScout"
         }
     )
 } | Out-Null
@@ -181,7 +181,7 @@ if (-not [string]::IsNullOrWhiteSpace($actionType)) {
                 TimestampUtc = [DateTimeOffset]::UtcNow
                 Payload = @{
                     PalName = $characterName
-                    Species = "Foxparks"
+                    Species = "CampScout"
                     Change = "regrouped"
                     Note = "scripted smoke feedback"
                     RequestId = $requestId

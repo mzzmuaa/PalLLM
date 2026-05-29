@@ -1,6 +1,6 @@
 # PalLLM Architecture
 
-Last audited: `2026-05-23`
+Last audited: `2026-05-28`
 
 ## Core posture
 
@@ -25,7 +25,7 @@ Current solution shape:
 
 Audit-backed test status:
 
-- `1315` tests passed on `2026-05-23`
+- `1315` tests passed on `2026-05-25`
 
 HTTP ingress is bounded before and after JSON binding. The sidecar applies
 `PalLLM:Http:ApiRequestBodyMaxBytes` (`10 MiB` default) to `/api` and `/mcp`
@@ -280,7 +280,22 @@ surface changes:
 - `HttpVisionClient` and `VisionOrchestrator` for streamed image describe,
   world-state extraction, and chat visual augmentation. Caller-supplied image
   base64 is inspected for shape and decoded-size before any data URL is built
-  or model-server request is sent
+  or model-server request is sent. Outgoing `image_url` parts carry a stable
+  content-hash `uuid` by default so vLLM-compatible endpoints can identify
+  repeated screenshots, with `PalLLM:Vision:UseMediaCacheIds=false` as the
+  strict-endpoint opt-out. Proven local multimodal lanes can also configure
+  `PalLLM:Vision:MultimodalProcessor` to emit vLLM-style
+  `mm_processor_kwargs` (`min_pixels`, `max_pixels`, `max_soft_tokens`,
+  `fps`) for bounded screenshot processor work
+- prompt-level multimodal `InferencePrompt.UserContent` proof canaries add the
+  same kind of stable `uuid` to local base64 `image_url`, `video_url`,
+  `audio_url`, and `input_audio` parts when
+  `PalLLM:Inference:UseMediaCacheIds=true`. Ordinary companion chat stays a
+  plain string message, and strict endpoints can disable the decoration without
+  disabling inference. `InferencePrompt.MultimodalProcessor` or the configured
+  `PalLLM:Inference:MultimodalProcessor` can attach `mm_processor_kwargs` only
+  to those route-owned multimodal content-part canaries, never to ordinary text
+  chat.
 - inference and vision oversized success-body failures map through one explicit
   local status contract (`"... response exceeds the configured cap of N
   bytes."`) instead of depending on exception-message text from the bounded
@@ -341,7 +356,11 @@ surface changes:
   `Asr.MaxTurnDurationMs`; `Asr.ResponseFormat=verbose_json` can optionally
   send allowlisted `Asr.TimestampGranularities[]` values (`segment`, `word`)
   and reduce returned verbose timing metadata to content-free counts,
-  duration/coverage fields, and review flags. `Asr.ChunkingStrategy=auto` can
+  duration/coverage fields, and review flags. Request-level ASR `Language`
+  and `Prompt` override optional `PalLLM:Asr:Language` /
+  `PalLLM:Asr:Prompt` defaults, and blank values are omitted so strict local
+  endpoints stay clean. `PalLLM:Asr:Seed` can forward vLLM's multipart
+  `seed` only for endpoint-proven replay canaries. `Asr.ChunkingStrategy=auto` can
   also forward OpenAI-compatible server/VAD file-chunking after endpoint proof,
   while the default stays field-free for strict local ASR servers. The same verbose segment array
   now yields content-free quality receipts for `avg_logprob`,
@@ -371,6 +390,14 @@ surface changes:
 static `PalLLM Field Console` UI from `wwwroot/`, while machine-facing JSON
 lives under `/api`.
 
+Middleware, OpenAPI/MCP mapping, and the route spine stay in `Program.cs`.
+Field Console static-asset routes and application `/api` route domains live
+under `src/PalLLM.Sidecar/RouteRegistrations/*.cs`. The drift gates count both
+locations directly so future route moves remain visible. Service wiring is split into
+`src/PalLLM.Sidecar/Configuration/*ServiceCollectionExtensions.cs` companions:
+core HTTP policy, inference/runtime workers, MCP, health/OpenAPI, and opt-in
+OpenTelemetry.
+
 The sidecar enables:
 
 - `ProblemDetails` with request trace IDs
@@ -388,7 +415,9 @@ The sidecar enables:
 - baseline browser security headers on the dashboard and JSON surfaces
   (`Content-Security-Policy`, `Permissions-Policy`, `Referrer-Policy`,
   `X-Content-Type-Options`, `X-Frame-Options`)
-- static-file hosting for the dashboard UI
+- static-file hosting for the dashboard UI, including weak content-hash ETags
+  and `Last-Modified` revalidation on the physical-file fallback used by
+  packaged single-file launches
 - liveness and readiness health checks
 
 #### HTTP surface
@@ -401,7 +430,7 @@ Static and operational routes:
 - `GET /health/ready`
 - `GET /openapi/v1.json` - OpenAPI 3.1 document generated from the live route registrations
 - `GET /openapi/v1.yaml` - YAML variant of the same generated OpenAPI document
-- committed build-time snapshot at `docs/openapi/palllm-sidecar-v1.json`, with
+- committed live-endpoint snapshot at `docs/openapi/palllm-sidecar-v1.json`, with
   drift verified by `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/export-openapi.ps1 -Verify` in CI and the local
   full-audit pipeline
 
@@ -764,8 +793,26 @@ Current shipped defaults in `appsettings.json`:
   for compatible local runtimes
 - inference prefix-cache salt forwarding disabled by default; when configured,
   it is emitted as vLLM-compatible `cache_salt` on chat-completions requests
+- hosted prompt-cache key and retention forwarding disabled by default; when
+  configured for a compatible endpoint, PalLLM emits `prompt_cache_key` and
+  `prompt_cache_retention` only after the operator accepts the cache-routing
+  canary posture
+- hosted request metadata disabled by default; when
+  `PalLLM:Inference:RequestMetadata` has entries, PalLLM emits bounded
+  `metadata` labels only for proof canaries and forbids prompt text, player
+  identity, save paths, secrets, raw game state, and metric-label values
+- outbound inference request-correlation headers disabled by default; when
+  `PalLLM:Inference:ClientRequestIdHeader` is configured, PalLLM emits only
+  the bounded PalLLM chat/proof request id as `x-client-request-id` or
+  `x-request-id` so provider/local logs can be joined without prompt content
+- llama.cpp prompt-cache request hints disabled by default; when configured,
+  PalLLM emits `cache_prompt`, `id_slot`, and `n_cache_reuse` only for
+  endpoint-proven llama-server cache/slot canaries
 - inference request-priority forwarding disabled by default; when configured,
   it is emitted as vLLM-compatible `priority` on chat-completions requests
+- inference thinking-token-budget forwarding disabled by default; when
+  configured, it is emitted as vLLM-compatible `thinking_token_budget` only for
+  endpoint-proven reasoning-parser lanes
 - inference parallel-tool-call forwarding disabled by default; when configured,
   it is emitted as OpenAI-compatible `parallel_tool_calls` on
   chat-completions requests for strict action/directive canaries
@@ -810,6 +857,11 @@ Current shipped defaults in `appsettings.json`:
   omits `response_format` by default and promotion requires accepted request
   shape, schema name/digest, served model id, grammar/backend id, app-side
   schema validation, parse stability, latency, token, and fallback evidence
+- prompt-level `InferencePrompt.StructuredOutputs` forwarding is available for
+  vLLM-specific structured-output canaries, but ordinary companion chat omits
+  `structured_outputs` by default and promotion requires accepted request
+  shape, backend id, schema/constraint digest, parse/schema validation,
+  latency, token, and fallback evidence
 - prompt-level `InferencePrompt.Prediction` forwarding is available for
   route-specific predicted-output proof/docs canaries, but ordinary companion
   chat omits `prediction` by default and promotion requires accepted request
@@ -826,15 +878,24 @@ Current shipped defaults in `appsettings.json`:
   shape, returned `message.audio` receipts on `InferenceResult.AudioJson`, a
   usable text mirror, response-size, latency, and fallback evidence
 - prompt-level `InferencePrompt.UserContent` forwarding is available for
-  route-specific multimodal input canaries, but ordinary companion chat keeps
-  the user message as a plain string. Promotion requires accepted
-  text/image/video/audio content-part shapes, media byte caps, parse stability,
-  latency, and fallback evidence before a multimodal lane is trusted.
+  route-specific multimodal input canaries. Local base64 image/video/audio
+  parts receive stable media-cache `uuid`s by default for vLLM-compatible
+  endpoints, but ordinary companion chat keeps the user message as a plain
+  string. Optional prompt/configured `MultimodalProcessor` caps can emit
+  `mm_processor_kwargs` only on those multimodal requests. Promotion requires
+  accepted text/image/video/audio content-part shapes, media byte caps,
+  processor kwargs, parse stability, latency, and fallback evidence before a
+  multimodal lane is trusted.
 - inference token-budget field selection defaults to `max_tokens` for broad
   local-runtime compatibility; `PalLLM:Inference:TokenBudgetField` can opt into
   `max_completion_tokens` only after the exact endpoint proves it accepts the
   newer reasoning-model budget field without latency, usage, or fallback
   regression
+- inference thinking-token-budget selection stays omitted by default;
+  `PalLLM:Inference:ThinkingTokenBudget` can opt into vLLM
+  `thinking_token_budget` only after the exact reasoning-parser lane proves
+  accepted request shape, visible/reasoning token usage, p95 latency, and
+  fallback counters
 - inference frequency-penalty forwarding is disabled by default; when
   configured, it is emitted as OpenAI-compatible `frequency_penalty` only after
   endpoint proof shows lower repetition without worse latency, token count, or
@@ -1101,7 +1162,9 @@ travel detail is still intentionally coarse. The runtime projects the latest
 (`LastTravel`, `LastProduction`) so prompt construction and UI surfaces can
 read them directly, while ambient live-movement travel samples avoid long-term
 memory churn and `ui_probe` stays diagnostic-only so it does not pollute world
-memory.
+memory. Repeated `ui_probe` diagnostic rebuilds reuse a bounded
+metadata-keyed parsed-dump cache, so proof/readiness polling does not keep
+deserializing the same retained widget dumps.
 
 `bridge_boot` now also reports the exact `native_hud_widget_targets` list plus
 the active native-hud config source/path, not just a count, so the sidecar can
@@ -1206,12 +1269,7 @@ over blindly.
 These are tracked but not blocking; listed here so a future refactor has a
 written starting point.
 
-- **`ui_probe` diagnostics rebuild cost**
-  (`src/PalLLM.Domain/Runtime/PalLlmRuntime.cs`). Rebuild reads dump files
-  through the bounded local-artifact JSON reader and reparses each retained
-  dump on demand. The unbounded `File.ReadAllText` path is gone, but the
-  per-call directory scan + parse cost is still real once HUD work expands
-  this path. Candidate for a cached parsed summary sidecar next to each dump.
+No high-confidence code debt is currently tracked here.
 
 Closed in an earlier pass: `ChatRateLimiter` idle-bucket accumulation
 (regression covered by
@@ -1224,4 +1282,6 @@ Closed in recent passes: `ConversationMemoryStore` read-path churn
 `AccumulatedImportance` walk the bounded list in reverse without copying or
 re-sorting the full store) plus tied-recall precision (`Recall` now adds a
 stack-bounded exact-token rerank term so named events do not lose to embedding
-bucket ties).
+bucket ties). Pass 399 closed the `ui_probe` diagnostics rebuild cost by
+caching parsed dump documents with path, length, and UTC write-time metadata
+keys, retaining bounded fallback-to-disk behavior when metadata changes.

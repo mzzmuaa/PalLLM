@@ -1,25 +1,16 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace PalLLM.Sidecar;
 
 internal static class ConditionalHttp
 {
-    private static readonly JsonSerializerOptions FingerprintJsonOptions = CreateFingerprintJsonOptions();
-
-    private static JsonSerializerOptions CreateFingerprintJsonOptions()
+    public static string CreateStrongEtag<T>(T payload, JsonTypeInfo<T> jsonTypeInfo)
     {
-        JsonSerializerOptions options = PalLlmJsonOptions.Create(static serializerOptions =>
-        {
-            serializerOptions.PropertyNamingPolicy = null;
-        });
+        ArgumentNullException.ThrowIfNull(jsonTypeInfo);
 
-        return options;
-    }
-
-    public static string CreateStrongEtag<T>(T payload)
-    {
-        byte[] json = JsonSerializer.SerializeToUtf8Bytes(payload, FingerprintJsonOptions);
+        byte[] json = JsonSerializer.SerializeToUtf8Bytes(payload, jsonTypeInfo);
         byte[] hash = SHA256.HashData(json);
         return $"\"{Convert.ToHexString(hash)}\"";
     }
@@ -74,5 +65,32 @@ internal static class ConditionalHttp
         }
 
         return false;
+    }
+
+    public static bool RequestMatchesLastModified(HttpRequest request, DateTimeOffset currentLastModifiedUtc)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!string.IsNullOrWhiteSpace(request.Headers.IfNoneMatch.ToString()))
+        {
+            return false;
+        }
+
+        DateTimeOffset? ifModifiedSince = request.GetTypedHeaders().IfModifiedSince;
+        if (!ifModifiedSince.HasValue)
+        {
+            return false;
+        }
+
+        DateTimeOffset normalizedCurrent = TruncateToWholeSeconds(currentLastModifiedUtc);
+        DateTimeOffset normalizedCandidate = TruncateToWholeSeconds(ifModifiedSince.Value);
+        return normalizedCandidate >= normalizedCurrent;
+    }
+
+    public static DateTimeOffset TruncateToWholeSeconds(DateTimeOffset value)
+    {
+        DateTimeOffset utc = value.ToUniversalTime();
+        long ticks = utc.Ticks - (utc.Ticks % TimeSpan.TicksPerSecond);
+        return new DateTimeOffset(ticks, TimeSpan.Zero);
     }
 }

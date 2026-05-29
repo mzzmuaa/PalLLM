@@ -18,14 +18,14 @@ skipped instead of blocking the whole startup/reload pass.
 ## Starter pack (ships with the installer)
 
 The repo ships a small, validated starter pack at
-[`docs/examples/chillet-pack.json`](examples/chillet-pack.json). By default
+[`docs/examples/camp-guardian-pack.json`](examples/camp-guardian-pack.json). By default
 `scripts/install-mod.ps1` and `install.bat` copy it into
 `%LOCALAPPDATA%\Pal\Saved\PalLLM\Packs\` on first install so a new player
 sees authored companion lore immediately instead of only the generic
 deterministic fallback replies. Pass `-SkipSamplePack` to the installer to
 opt out.
 
-The installer never overwrites an existing `chillet-pack.json` in the
+The installer never overwrites an existing `camp-guardian-pack.json` in the
 runtime Packs folder, so editing your copy is safe — future installs
 will leave your edits alone.
 
@@ -41,9 +41,9 @@ Save this as `%LOCALAPPDATA%\Pal\Saved\PalLLM\Packs\starter.json`:
   "Description": "A one-character starter so PalLLM has authored lore to work with.",
   "Characters": [
     {
-      "Id": "chill-guardian",
-      "Name": "Chillet",
-      "Aliases": ["Camp Chillet"],
+      "Id": "camp-guardian",
+      "Name": "Camp Guardian",
+      "Aliases": ["Night Watch"],
       "Role": "Camp guardian",
       "Personality": "Calm, observant, quietly protective.",
       "Backstory": "Spent many cold nights watching campfires burn low.",
@@ -166,7 +166,7 @@ The reflection consolidation pass will treat high-importance seeds as stable anc
 
 ### Use relationships for group dynamics
 
-If your pack has three or more characters, add `Relationships` so the prompt builder can mention "Chillet and Foxparks are long-time friends" rather than treating them as strangers every time.
+If your pack has three or more characters, add `Relationships` so the prompt builder can mention "the guardian and the scout are long-time friends" rather than treating them as strangers every time.
 
 ## Testing your pack
 

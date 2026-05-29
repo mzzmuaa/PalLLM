@@ -157,15 +157,14 @@ public sealed class MetaTests
                 $"{label} ({rel}) declares Lua {version.Value}; .luacheckrc pins {expected}. They must agree.");
         }
 
-        string runtimeSource = File.ReadAllText(Path.Combine(
-            RepoRoot, "src", "PalLLM.Domain", "Runtime", "PalLlmRuntime.cs"));
+        string runtimeSource = ReadRuntimePartialSources();
         string luaSource = File.ReadAllText(Path.Combine(
             RepoRoot, "mod", "ue4ss", "Mods", "PalLLM", "Scripts", "main.lua"));
 
         foreach (string extension in new[] { ".mp3", ".m4a", ".aac", ".wma", ".ogg", ".opus", ".flac" })
         {
             Assert.That(runtimeSource, Does.Contain($"\"{extension}\""),
-                $"PalLlmRuntime.cs must keep {extension} in the media_player playback-hint surface.");
+                $"PalLlmRuntime partials must keep {extension} in the media_player playback-hint surface.");
             Assert.That(luaSource, Does.Contain($"\"{extension}\""),
                 $"main.lua must recognize {extension} when the runtime emits PlaybackHint=media_player.");
         }
@@ -177,19 +176,19 @@ public sealed class MetaTests
                  })
         {
             Assert.That(runtimeSource, Does.Contain($"\"{mime}\""),
-                $"PalLlmRuntime.cs must keep {mime} in the media_player playback-hint surface.");
+                $"PalLlmRuntime partials must keep {mime} in the media_player playback-hint surface.");
             Assert.That(luaSource, Does.Contain($"\"{mime}\""),
                 $"main.lua must recognize {mime} when the runtime emits PlaybackHint=media_player.");
         }
 
         Assert.That(runtimeSource, Does.Contain("\".pcm\""),
-            "PalLlmRuntime.cs must keep .pcm in the raw_pcm playback-hint surface.");
+            "PalLlmRuntime partials must keep .pcm in the raw_pcm playback-hint surface.");
         Assert.That(luaSource, Does.Contain("\".pcm\""),
             "main.lua must recognize .pcm as raw_pcm proof-only audio.");
         foreach (string mime in new[] { "audio/pcm", "audio/l16" })
         {
             Assert.That(runtimeSource, Does.Contain($"\"{mime}\""),
-                $"PalLlmRuntime.cs must keep {mime} in the raw_pcm playback-hint surface.");
+                $"PalLlmRuntime partials must keep {mime} in the raw_pcm playback-hint surface.");
             Assert.That(luaSource, Does.Contain($"\"{mime}\""),
                 $"main.lua must recognize {mime} as raw_pcm proof-only audio.");
         }
@@ -1062,21 +1061,23 @@ public sealed class MetaTests
 
         string programPath = Path.Combine(RepoRoot, "src", "PalLLM.Sidecar", "Program.cs");
         string programText = File.ReadAllText(programPath);
-        Assert.That(programText, Does.Contain("AddRequestTimeouts"),
-            "Program.cs should register ASP.NET Core request timeouts for bounded heavy-work HTTP lanes.");
+        string sidecarStartupText = ReadSidecarStartupSources();
+        string sidecarRouteText = ReadSidecarRouteSources();
+        Assert.That(sidecarStartupText, Does.Contain("AddRequestTimeouts"),
+            "Sidecar startup should register ASP.NET Core request timeouts for bounded heavy-work HTTP lanes.");
         Assert.That(programText, Does.Contain("UseRequestTimeouts"),
             "Program.cs should enable the request-timeout middleware before endpoint execution.");
-        Assert.That(programText, Does.Contain(".WithRequestTimeout(\"chat-timeout\")"),
+        Assert.That(sidecarRouteText, Does.Contain(".WithRequestTimeout(\"chat-timeout\")"),
             "Chat-class heavy HTTP lanes should use the named chat request-timeout policy.");
-        Assert.That(programText, Does.Contain(".WithRequestTimeout(\"vision-timeout\")"),
+        Assert.That(sidecarRouteText, Does.Contain(".WithRequestTimeout(\"vision-timeout\")"),
             "Vision heavy HTTP lanes should use the named vision request-timeout policy.");
-        Assert.That(programText, Does.Contain(".WithRequestTimeout(\"tts-timeout\")"),
+        Assert.That(sidecarRouteText, Does.Contain(".WithRequestTimeout(\"tts-timeout\")"),
             "TTS heavy HTTP lanes should use the named TTS request-timeout policy.");
-        AssertHttpClientRegistrationUsesPooling(programText, "AddHttpClient<IModelAvailabilityProbe, HttpModelAvailabilityProbe>");
-        AssertHttpClientRegistrationUsesPooling(programText, "AddHttpClient<IInferenceClient, HttpJsonInferenceClient>");
-        AssertHttpClientRegistrationUsesPooling(programText, "AddHttpClient<IVisionClient, HttpVisionClient>");
-        AssertHttpClientRegistrationUsesPooling(programText, "AddHttpClient<ITtsClient, HttpTtsClient>");
-        AssertHttpClientRegistrationUsesPooling(programText, "AddHttpClient(PalLLM.Sidecar.Mcp.McpUpstreamClientPool.HttpClientName");
+        AssertHttpClientRegistrationUsesPooling(sidecarStartupText, "AddHttpClient<IModelAvailabilityProbe, HttpModelAvailabilityProbe>");
+        AssertHttpClientRegistrationUsesPooling(sidecarStartupText, "AddHttpClient<IInferenceClient, HttpJsonInferenceClient>");
+        AssertHttpClientRegistrationUsesPooling(sidecarStartupText, "AddHttpClient<IVisionClient, HttpVisionClient>");
+        AssertHttpClientRegistrationUsesPooling(sidecarStartupText, "AddHttpClient<ITtsClient, HttpTtsClient>");
+        AssertHttpClientRegistrationUsesPooling(sidecarStartupText, "AddHttpClient(PalLLM.Sidecar.Mcp.McpUpstreamClientPool.HttpClientName");
     }
 
     [Test]
@@ -1115,15 +1116,13 @@ public sealed class MetaTests
                 $"{fileName} should not echo raw local file-read exceptions into public API payloads.");
         }
 
-        string programPath = Path.Combine(sidecarDir, "Program.cs");
-        string programContent = File.ReadAllText(programPath);
-        Assert.That(programContent, Does.Contain("BoundedJsonFileReader.TryRead("),
+        string sidecarRouteContent = ReadSidecarRouteSources();
+        Assert.That(sidecarRouteContent, Does.Contain("BoundedJsonFileReader.TryRead("),
             "The lifetime-relationships endpoint should read its persisted aggregate through the bounded local JSON reader.");
-        Assert.That(programContent, Does.Not.Contain("LifetimeRelationshipAggregator.Deserialize(File.ReadAllText("),
+        Assert.That(sidecarRouteContent, Does.Not.Contain("LifetimeRelationshipAggregator.Deserialize(File.ReadAllText("),
             "The lifetime-relationships endpoint should not buffer latest.json with File.ReadAllText.");
 
-        string runtimePath = Path.Combine(RepoRoot, "src", "PalLLM.Domain", "Runtime", "PalLlmRuntime.cs");
-        string runtimeContent = File.ReadAllText(runtimePath);
+        string runtimeContent = ReadRuntimePartialSources();
         Assert.That(runtimeContent, Does.Contain("TryReadBridgeEventEnvelope(file, _options.Bridge.MaxInboxEventBytes)"),
             "Bridge inbox drain should route filesystem ingress through the shared bounded JSON reader.");
         Assert.That(runtimeContent, Does.Not.Contain("using (FileStream stream = File.OpenRead(file))"),
@@ -1136,8 +1135,12 @@ public sealed class MetaTests
             "ClearOutbox should enumerate outbox files lazily instead of pre-materializing the full list.");
         Assert.That(runtimeContent, Does.Not.Contain("string[] files = Directory.GetFiles(_options.BridgeOutboxDir"),
             "ClearOutbox should not pre-materialize outbox files with Directory.GetFiles.");
-        Assert.That(runtimeContent, Does.Contain("TryReadUiProbeDump(file, _options.Http.LocalArtifactMaxBytes)"),
-            "Ui-probe diagnostics should flow the configured local-artifact byte cap into the dump reader.");
+        Assert.That(runtimeContent, Does.Contain("TryReadCachedUiProbeDump(file, _options.Http.LocalArtifactMaxBytes"),
+            "Ui-probe diagnostics should flow the configured local-artifact byte cap into the dump-cache wrapper.");
+        Assert.That(runtimeContent, Does.Contain("TryReadUiProbeDump(file, maxBytes)"),
+            "Ui-probe diagnostics should still use the bounded dump reader on cache miss.");
+        Assert.That(runtimeContent, Does.Contain("UiProbeDumpCacheMaxEntries"),
+            "Ui-probe dump caching should stay bounded independently from disk retention.");
         Assert.That(runtimeContent, Does.Contain("BoundedJsonFileReader.TryRead("),
             "Ui-probe diagnostics should read dump files through the bounded local JSON reader.");
         Assert.That(runtimeContent, Does.Not.Contain("string json = File.ReadAllText(file);"),
@@ -1162,6 +1165,34 @@ public sealed class MetaTests
             "Outbox write warnings should not echo raw exception text.");
         Assert.That(runtimeContent, Does.Not.Contain("Bridge event processing failed for {Path.GetFileName(file)}: {ex.Message}"),
             "Bridge event processing warnings should not echo raw exception text.");
+
+        string primaryRuntimePath = Path.Combine(RepoRoot, "src", "PalLLM.Domain", "Runtime", "PalLlmRuntime.cs");
+        string primaryRuntimeContent = File.ReadAllText(primaryRuntimePath);
+        string snapshotPartialPath = Path.Combine(RepoRoot, "src", "PalLLM.Domain", "Runtime", "PalLlmRuntime.Snapshot.cs");
+        string snapshotPartialContent = File.ReadAllText(snapshotPartialPath);
+        Assert.That(snapshotPartialContent,
+            Does.Contain("public RuntimeHealth GetHealth()")
+                .And.Contain("public void UpdateSnapshot(GameWorldSnapshot snapshot)")
+                .And.Contain("private void ApplyWeatherToSnapshot(")
+                .And.Contain("private GameCharacterSnapshot? ResolveCharacter("),
+            "Snapshot/health assembly and world-state mutation should live in the snapshot partial.");
+        Assert.That(primaryRuntimeContent,
+            Does.Not.Contain("private RuntimeHealth BuildRuntimeHealth(")
+                .And.Not.Contain("private void ApplyTravelToSnapshot("),
+            "The primary runtime spine should not absorb the extracted snapshot partial again.");
+
+        string inferencePartialPath = Path.Combine(RepoRoot, "src", "PalLLM.Domain", "Runtime", "PalLlmRuntime.Inference.cs");
+        string inferencePartialContent = File.ReadAllText(inferencePartialPath);
+        Assert.That(inferencePartialContent,
+            Does.Contain("public InferenceWarmupSnapshot GetInferenceWarmupSnapshot()")
+                .And.Contain("public async Task<InferenceWarmupSnapshot> WarmInferenceAsync(")
+                .And.Contain("private void RecordInferenceOperation(")
+                .And.Contain("private string GetInferenceCircuitState()"),
+            "Inference warmup, circuit metadata, and operation recording should live in the inference partial.");
+        Assert.That(primaryRuntimeContent,
+            Does.Not.Contain("private void RecordInferenceOperation(")
+                .And.Not.Contain("private string GetInferenceCircuitState()"),
+            "The primary runtime spine should not absorb the extracted inference partial again.");
 
         string hardwareProfilerPath = Path.Combine(RepoRoot, "src", "PalLLM.Domain", "Inference", "HardwareProfiler.cs");
         string hardwareProfilerContent = File.ReadAllText(hardwareProfilerPath);
@@ -1955,6 +1986,19 @@ public sealed class MetaTests
         string content = File.ReadAllText(path);
         Assert.That(content, Does.Contain("<EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>"),
             "The sidecar should bind the large PalLlmOptions tree through the .NET configuration binding source generator.");
+        Assert.That(content, Does.Not.Contain("Microsoft.Extensions.ApiDescription.Server"),
+            "OpenAPI snapshot export should use the live sidecar endpoint instead of carrying the build-time ApiDescription.Server package.");
+
+        string openApiExportScriptPath = Path.Combine(RepoRoot, "scripts", "export-openapi.ps1");
+        Assert.That(File.Exists(openApiExportScriptPath), "OpenAPI export script missing.");
+        string openApiExportScript = File.ReadAllText(openApiExportScriptPath);
+        Assert.That(openApiExportScript, Does.Contain("Invoke-WebRequest")
+                .And.Contain("ASPNETCORE_URLS")
+                .And.Contain("/openapi/v1.json")
+                .And.Contain("Normalize-OpenApiDocument")
+                .And.Not.Contain("OpenApiGenerateDocuments=true")
+                .And.Not.Contain("OpenApiGenerateDocumentsOnBuild=true"),
+            "OpenAPI export should boot the sidecar on loopback and fetch the live endpoint without the build-time OpenAPI package.");
 
         string domainProjectPath = Path.Combine(RepoRoot, "src", "PalLLM.Domain", "PalLLM.Domain.csproj");
         Assert.That(File.Exists(domainProjectPath), "PalLLM.Domain.csproj missing.");
@@ -2152,15 +2196,27 @@ public sealed class MetaTests
                 .And.Not.Contain("object payload"),
             "The SSE writer should require source-generated metadata for each progress frame payload.");
 
-        string programText = File.ReadAllText(Path.Combine(sidecarDir, "Program.cs"));
-        Assert.That(programText,
+        string conditionalHttp = File.ReadAllText(Path.Combine(sidecarDir, "ConditionalHttp.cs"));
+        Assert.That(conditionalHttp,
+            Does.Contain("JsonTypeInfo<T>")
+                .And.Contain("SerializeToUtf8Bytes(payload, jsonTypeInfo)")
+                .And.Not.Contain("JsonSerializerOptions FingerprintJsonOptions")
+                .And.Not.Contain("CreateFingerprintJsonOptions"),
+            "Conditional ETag fingerprints should use source-generated metadata instead of the reflection-capable options path.");
+
+        string sidecarRouteText = ReadSidecarRouteSources();
+        Assert.That(sidecarRouteText,
             Does.Contain("ClearOutboxResponse")
                 .And.Contain("ChatStreamStartedPayload")
                 .And.Contain("ChatStreamFinalPrepPayload")
+                .And.Contain("PalLlmJsonSerializerContext.Default.DashboardEtagPayload")
+                .And.Contain("PalLlmJsonSerializerContext.Default.InferencePerformanceEtagPayload")
+                .And.Contain("PalLlmJsonSerializerContext.Default.ReleaseReadinessEtagPayload")
+                .And.Contain("PalLlmJsonSerializerContext.Default.BridgeProofEtagPayload")
                 .And.Not.Contain("new { removed =")
                 .And.Not.Contain("new { request_id =")
                 .And.Not.Contain("new { name ="),
-            "Bridge clear and chat-stream endpoints should avoid anonymous response payloads.");
+            "Bridge clear, chat-stream, and conditional-cache endpoints should avoid anonymous/reflection-based response payloads.");
 
         string selfHealingStatusReader = File.ReadAllText(Path.Combine(sidecarDir, "SelfHealingStatusReader.cs"));
         Assert.That(selfHealingStatusReader,
@@ -2203,7 +2259,7 @@ public sealed class MetaTests
                 .And.Not.Contain("JsonSerializer.Serialize(stream, snapshot, JsonOptions)")
                 .And.Not.Contain("JsonSerializer.Deserialize<SessionFile>(stream, JsonOptions)"),
             "Session persistence should use source-generated JSON metadata.");
-        Assert.That(File.ReadAllText(Path.Combine(runtimeDir, "PalLlmRuntime.cs")),
+        Assert.That(ReadRuntimePartialSources(),
             Does.Contain("BridgeJsonContext.BridgeEventEnvelope")
                 .And.Contain("OutboxJsonContext.OutboxEnvelope")
                 .And.Contain("UiProbeDumpJsonContext")
@@ -2236,6 +2292,44 @@ public sealed class MetaTests
             $"Could not locate PalLLM.sln walking up from {AppContext.BaseDirectory}");
     }
 
+    private static string ReadRuntimePartialSources()
+    {
+        string runtimeDir = Path.Combine(RepoRoot, "src", "PalLLM.Domain", "Runtime");
+        return string.Join(
+            Environment.NewLine,
+            Directory.GetFiles(runtimeDir, "PalLlmRuntime*.cs")
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .Select(File.ReadAllText));
+    }
+
+    private static string ReadSidecarStartupSources()
+    {
+        string sidecarDir = Path.Combine(RepoRoot, "src", "PalLLM.Sidecar");
+        string configurationDir = Path.Combine(sidecarDir, "Configuration");
+        return string.Join(
+            Environment.NewLine,
+            Directory.GetFiles(configurationDir, "*.cs")
+                .Append(Path.Combine(sidecarDir, "Program.cs"))
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .Select(File.ReadAllText));
+    }
+
+    private static string ReadSidecarRouteSources()
+    {
+        string sidecarDir = Path.Combine(RepoRoot, "src", "PalLLM.Sidecar");
+        string routeRegistrationDir = Path.Combine(sidecarDir, "RouteRegistrations");
+        IEnumerable<string> routeFiles = Directory.Exists(routeRegistrationDir)
+            ? Directory.GetFiles(routeRegistrationDir, "*.cs")
+            : [];
+
+        return string.Join(
+            Environment.NewLine,
+            routeFiles
+                .Append(Path.Combine(sidecarDir, "Program.cs"))
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .Select(File.ReadAllText));
+    }
+
     private static int CountExecutableNUnitCasesAcrossSuite()
     {
         // Count executable NUnit cases the same way Drift_Test_count_docs
@@ -2261,7 +2355,12 @@ public sealed class MetaTests
         Assert.That(start, Is.GreaterThanOrEqualTo(0),
             $"Program.cs missing HTTP client registration marker: {registrationMarker}");
 
-        int nextRegistration = programText.IndexOf("builder.Services.", start + registrationMarker.Length, StringComparison.Ordinal);
+        int nextBuilderRegistration = programText.IndexOf("builder.Services.", start + registrationMarker.Length, StringComparison.Ordinal);
+        int nextServiceRegistration = programText.IndexOf("services.Add", start + registrationMarker.Length, StringComparison.Ordinal);
+        int nextRegistration = new[] { nextBuilderRegistration, nextServiceRegistration }
+            .Where(index => index >= 0)
+            .DefaultIfEmpty(-1)
+            .Min();
         string section = nextRegistration >= 0
             ? programText[start..nextRegistration]
             : programText[start..];

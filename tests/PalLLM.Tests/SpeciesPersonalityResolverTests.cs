@@ -40,30 +40,30 @@ public class SpeciesPersonalityResolverTests
     {
         Dictionary<string, string> map = new()
         {
-            ["Lamball"] = "lamball-timid",
-            ["Chillet"] = "chillet-aloof",
+            ["SpeciesAlpha"] = "species-alpha-timid",
+            ["CampGuardian"] = "camp-guardian-aloof",
         };
-        SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve("Lamball", map);
+        SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve("SpeciesAlpha", map);
         Assert.Multiple(() =>
         {
-            Assert.That(result.PackId, Is.EqualTo("lamball-timid"));
+            Assert.That(result.PackId, Is.EqualTo("species-alpha-timid"));
             Assert.That(result.Source, Is.EqualTo(ResolutionSource.SpeciesDefault));
-            Assert.That(result.Species, Is.EqualTo("Lamball"));
+            Assert.That(result.Species, Is.EqualTo("SpeciesAlpha"));
         });
     }
 
     [Test]
     public void Resolve_SpeciesMatchesMap_CaseInsensitive()
     {
-        Dictionary<string, string> map = new() { ["Lamball"] = "lamball-timid" };
-        SpeciesPersonalityResolution lower = SpeciesPersonalityResolver.Resolve("lamball", map);
-        SpeciesPersonalityResolution upper = SpeciesPersonalityResolver.Resolve("LAMBALL", map);
-        SpeciesPersonalityResolution mixed = SpeciesPersonalityResolver.Resolve("LamBall", map);
+        Dictionary<string, string> map = new() { ["SpeciesAlpha"] = "species-alpha-timid" };
+        SpeciesPersonalityResolution lower = SpeciesPersonalityResolver.Resolve("speciesalpha", map);
+        SpeciesPersonalityResolution upper = SpeciesPersonalityResolver.Resolve("SPECIESALPHA", map);
+        SpeciesPersonalityResolution mixed = SpeciesPersonalityResolver.Resolve("SpeciesAlpha", map);
         Assert.Multiple(() =>
         {
-            Assert.That(lower.PackId, Is.EqualTo("lamball-timid"));
-            Assert.That(upper.PackId, Is.EqualTo("lamball-timid"));
-            Assert.That(mixed.PackId, Is.EqualTo("lamball-timid"));
+            Assert.That(lower.PackId, Is.EqualTo("species-alpha-timid"));
+            Assert.That(upper.PackId, Is.EqualTo("species-alpha-timid"));
+            Assert.That(mixed.PackId, Is.EqualTo("species-alpha-timid"));
             Assert.That(lower.Source, Is.EqualTo(ResolutionSource.SpeciesDefault));
         });
     }
@@ -71,57 +71,57 @@ public class SpeciesPersonalityResolverTests
     [Test]
     public void Resolve_SpeciesMatchesMap_TrimmedSpeciesInput()
     {
-        Dictionary<string, string> map = new() { ["Lamball"] = "lamball-timid" };
-        SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve("  Lamball  ", map);
-        Assert.That(result.PackId, Is.EqualTo("lamball-timid"));
+        Dictionary<string, string> map = new() { ["SpeciesAlpha"] = "species-alpha-timid" };
+        SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve("  SpeciesAlpha  ", map);
+        Assert.That(result.PackId, Is.EqualTo("species-alpha-timid"));
         Assert.That(result.Source, Is.EqualTo(ResolutionSource.SpeciesDefault));
         // Species echoed back trimmed, not raw.
-        Assert.That(result.Species, Is.EqualTo("Lamball"));
+        Assert.That(result.Species, Is.EqualTo("SpeciesAlpha"));
     }
 
     [Test]
     public void Resolve_SpeciesMatchesMap_TrimmedMapKey()
     {
-        Dictionary<string, string> map = new() { ["  Lamball  "] = "lamball-timid" };
-        SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve("Lamball", map);
-        Assert.That(result.PackId, Is.EqualTo("lamball-timid"));
+        Dictionary<string, string> map = new() { ["  SpeciesAlpha  "] = "species-alpha-timid" };
+        SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve("SpeciesAlpha", map);
+        Assert.That(result.PackId, Is.EqualTo("species-alpha-timid"));
         Assert.That(result.Source, Is.EqualTo(ResolutionSource.SpeciesDefault));
     }
 
     [Test]
     public void Resolve_SpeciesMatchesMap_TrimmedMapValue()
     {
-        Dictionary<string, string> map = new() { ["Lamball"] = "  lamball-timid  " };
-        SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve("Lamball", map);
-        Assert.That(result.PackId, Is.EqualTo("lamball-timid"));
+        Dictionary<string, string> map = new() { ["SpeciesAlpha"] = "  species-alpha-timid  " };
+        SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve("SpeciesAlpha", map);
+        Assert.That(result.PackId, Is.EqualTo("species-alpha-timid"));
     }
 
     [Test]
     public void Resolve_SpeciesMissFromMap_NoFallback_ReturnsNone()
     {
-        Dictionary<string, string> map = new() { ["Lamball"] = "lamball-timid" };
-        SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve("Chillet", map);
+        Dictionary<string, string> map = new() { ["SpeciesAlpha"] = "species-alpha-timid" };
+        SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve("CampGuardian", map);
         Assert.Multiple(() =>
         {
             Assert.That(result.PackId, Is.Null);
             Assert.That(result.Source, Is.EqualTo(ResolutionSource.None));
-            Assert.That(result.Species, Is.EqualTo("Chillet"));
+            Assert.That(result.Species, Is.EqualTo("CampGuardian"));
         });
     }
 
     [Test]
     public void Resolve_SpeciesMissFromMap_WithFallback_ReturnsFallback()
     {
-        Dictionary<string, string> map = new() { ["Lamball"] = "lamball-timid" };
+        Dictionary<string, string> map = new() { ["SpeciesAlpha"] = "species-alpha-timid" };
         SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve(
-            "Chillet",
+            "CampGuardian",
             map,
-            fallbackPackId: "chillet-camp-guardian");
+            fallbackPackId: "camp-guardian-fallback");
         Assert.Multiple(() =>
         {
-            Assert.That(result.PackId, Is.EqualTo("chillet-camp-guardian"));
+            Assert.That(result.PackId, Is.EqualTo("camp-guardian-fallback"));
             Assert.That(result.Source, Is.EqualTo(ResolutionSource.Fallback));
-            Assert.That(result.Species, Is.EqualTo("Chillet"));
+            Assert.That(result.Species, Is.EqualTo("CampGuardian"));
         });
     }
 
@@ -130,12 +130,12 @@ public class SpeciesPersonalityResolverTests
     {
         // Species lookup takes priority over caller fallback - that's the
         // whole point of the operator-configured map.
-        Dictionary<string, string> map = new() { ["Lamball"] = "lamball-timid" };
+        Dictionary<string, string> map = new() { ["SpeciesAlpha"] = "species-alpha-timid" };
         SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve(
-            "Lamball",
+            "SpeciesAlpha",
             map,
             fallbackPackId: "per-character-override");
-        Assert.That(result.PackId, Is.EqualTo("lamball-timid"));
+        Assert.That(result.PackId, Is.EqualTo("species-alpha-timid"));
         Assert.That(result.Source, Is.EqualTo(ResolutionSource.SpeciesDefault));
     }
 
@@ -143,7 +143,7 @@ public class SpeciesPersonalityResolverTests
     public void Resolve_NullMap_WithFallback_ReturnsFallback()
     {
         SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve(
-            "Lamball",
+            "SpeciesAlpha",
             null,
             fallbackPackId: "manual-pack");
         Assert.That(result.PackId, Is.EqualTo("manual-pack"));
@@ -154,7 +154,7 @@ public class SpeciesPersonalityResolverTests
     public void Resolve_EmptyMap_WithFallback_ReturnsFallback()
     {
         SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve(
-            "Lamball",
+            "SpeciesAlpha",
             new Dictionary<string, string>(),
             fallbackPackId: "manual-pack");
         Assert.That(result.PackId, Is.EqualTo("manual-pack"));
@@ -165,7 +165,7 @@ public class SpeciesPersonalityResolverTests
     public void Resolve_BlankSpecies_WithFallback_ReturnsFallbackWithoutConsultingMap()
     {
         // Whitespace-only species treated as missing - resolver doesn't try the map.
-        Dictionary<string, string> map = new() { ["Lamball"] = "lamball-timid" };
+        Dictionary<string, string> map = new() { ["SpeciesAlpha"] = "species-alpha-timid" };
         SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve(
             "   ",
             map,
@@ -181,10 +181,10 @@ public class SpeciesPersonalityResolverTests
         Dictionary<string, string> map = new()
         {
             ["   "] = "bogus-pack",
-            ["Lamball"] = "lamball-timid",
+            ["SpeciesAlpha"] = "species-alpha-timid",
         };
-        SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve("Lamball", map);
-        Assert.That(result.PackId, Is.EqualTo("lamball-timid"));
+        SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve("SpeciesAlpha", map);
+        Assert.That(result.PackId, Is.EqualTo("species-alpha-timid"));
     }
 
     [Test]
@@ -192,10 +192,10 @@ public class SpeciesPersonalityResolverTests
     {
         Dictionary<string, string> map = new()
         {
-            ["Lamball"] = "   ",
+            ["SpeciesAlpha"] = "   ",
         };
         SpeciesPersonalityResolution result = SpeciesPersonalityResolver.Resolve(
-            "Lamball",
+            "SpeciesAlpha",
             map,
             fallbackPackId: "fallback");
         Assert.That(result.PackId, Is.EqualTo("fallback"));
@@ -229,17 +229,17 @@ public class SpeciesPersonalityResolverTests
         // Sanity check that iteration finds the correct match in a populated map.
         Dictionary<string, string> map = new()
         {
-            ["Lamball"] = "lamball-timid",
-            ["Chillet"] = "chillet-aloof",
-            ["Foxparks"] = "foxparks-fiery",
-            ["Cattiva"] = "cattiva-greedy",
+            ["SpeciesAlpha"] = "species-alpha-timid",
+            ["CampGuardian"] = "camp-guardian-aloof",
+            ["CampScout"] = "camp-scout-fiery",
+            ["SpeciesBeta"] = "species-beta-greedy",
         };
         Assert.Multiple(() =>
         {
-            Assert.That(SpeciesPersonalityResolver.Resolve("Chillet", map).PackId, Is.EqualTo("chillet-aloof"));
-            Assert.That(SpeciesPersonalityResolver.Resolve("Foxparks", map).PackId, Is.EqualTo("foxparks-fiery"));
-            Assert.That(SpeciesPersonalityResolver.Resolve("Cattiva", map).PackId, Is.EqualTo("cattiva-greedy"));
-            Assert.That(SpeciesPersonalityResolver.Resolve("Lamball", map).PackId, Is.EqualTo("lamball-timid"));
+            Assert.That(SpeciesPersonalityResolver.Resolve("CampGuardian", map).PackId, Is.EqualTo("camp-guardian-aloof"));
+            Assert.That(SpeciesPersonalityResolver.Resolve("CampScout", map).PackId, Is.EqualTo("camp-scout-fiery"));
+            Assert.That(SpeciesPersonalityResolver.Resolve("SpeciesBeta", map).PackId, Is.EqualTo("species-beta-greedy"));
+            Assert.That(SpeciesPersonalityResolver.Resolve("SpeciesAlpha", map).PackId, Is.EqualTo("species-alpha-timid"));
         });
     }
 
@@ -250,7 +250,7 @@ public class SpeciesPersonalityResolverTests
         // to call from any layer including hot-path prompt assembly.
         Assert.DoesNotThrow(() => SpeciesPersonalityResolver.Resolve(null, null, null));
         Assert.DoesNotThrow(() => SpeciesPersonalityResolver.Resolve(string.Empty, null, null));
-        Assert.DoesNotThrow(() => SpeciesPersonalityResolver.Resolve("Lamball", null, null));
+        Assert.DoesNotThrow(() => SpeciesPersonalityResolver.Resolve("SpeciesAlpha", null, null));
         Assert.DoesNotThrow(() => SpeciesPersonalityResolver.Resolve(null, new Dictionary<string, string>(), null));
         Assert.DoesNotThrow(() => SpeciesPersonalityResolver.Resolve(null, null, string.Empty));
         Assert.DoesNotThrow(() => SpeciesPersonalityResolver.Resolve("X", new Dictionary<string, string> { [string.Empty] = string.Empty }, null));

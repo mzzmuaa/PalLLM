@@ -23,42 +23,87 @@ New-Item -ItemType Directory -Force -Path $snapshotDirectory | Out-Null
 
 $tempDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ("PalLLM.OpenApi." + [Guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Force -Path $tempDirectory | Out-Null
+
+function Get-FreeLoopbackPort {
+    $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+    try {
+        $listener.Start()
+        return ([System.Net.IPEndPoint]$listener.LocalEndpoint).Port
+    }
+    finally {
+        $listener.Stop()
+    }
+}
+
+function Normalize-OpenApiDocument {
+    param(
+        [Parameter(Mandatory)][string]$Content
+    )
+
+    $normalized = $Content.Replace("`r`n", "`n").Replace('\r\n', '\n')
+    $lines = $normalized.Split([string[]]@("`n"), [System.StringSplitOptions]::None)
+    $kept = [System.Collections.Generic.List[string]]::new()
+    $skippingServers = $false
+    foreach ($line in $lines) {
+        if (-not $skippingServers -and $line -match '^\s{2}"servers":\s*\[') {
+            $skippingServers = $true
+            continue
+        }
+
+        if ($skippingServers) {
+            if ($line -match '^\s{2}\]\s*,?\s*$') {
+                $skippingServers = $false
+            }
+            continue
+        }
+
+        $kept.Add($line)
+    }
+
+    return ($kept -join "`n")
+}
+
+function Wait-ForOpenApiDocument {
+    param(
+        [Parameter(Mandatory)][string]$Url,
+        [int]$TimeoutSeconds = 30
+    )
+
+    $deadline = [DateTimeOffset]::UtcNow.AddSeconds($TimeoutSeconds)
+    $lastError = $null
+    while ([DateTimeOffset]::UtcNow -lt $deadline) {
+        try {
+            $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 2
+            if ($response.StatusCode -eq 200 -and -not [string]::IsNullOrWhiteSpace($response.Content)) {
+                return [string]$response.Content
+            }
+        }
+        catch {
+            $lastError = $_.Exception.Message
+        }
+
+        Start-Sleep -Milliseconds 250
+    }
+
+    throw "Timed out waiting for OpenAPI document at $Url. Last error: $lastError"
+}
+
 try {
     $previousAspNetCoreEnvironment = $env:ASPNETCORE_ENVIRONMENT
+    $previousAspNetCoreUrls = $env:ASPNETCORE_URLS
     $previousRuntimeRoot = $env:PalLLM__PalSavedRoot
     $env:ASPNETCORE_ENVIRONMENT = "OpenApiBuild"
+    $port = Get-FreeLoopbackPort
+    $env:ASPNETCORE_URLS = "http://127.0.0.1:$port"
     $env:PalLLM__PalSavedRoot = (Join-Path $tempDirectory "runtime-root")
 
     $projectDirectory = Split-Path -Parent $ProjectPath
-    $projectName = [System.IO.Path]::GetFileNameWithoutExtension($ProjectPath)
-    $openApiCachePath = Join-Path $projectDirectory ("obj/" + $projectName + ".OpenApiFiles.cache")
-    if (Test-Path $openApiCachePath) {
-        Remove-Item -LiteralPath $openApiCachePath -Force
-    }
-
-    $cleanArgs = @(
-        "clean", $ProjectPath,
-        "--configuration", $Configuration,
-        "--nologo",
-        "--verbosity", "minimal",
-        "--tl:off"
-    )
-
-    & dotnet @cleanArgs
-    if ($LASTEXITCODE -ne 0) {
-        throw "dotnet clean failed with exit code $LASTEXITCODE."
-    }
-
     $buildArgs = @(
         "build", $ProjectPath,
         "--configuration", $Configuration,
         "--nologo",
         "--verbosity", "minimal",
-        "--tl:off",
-        "--no-incremental",
-        "-p:OpenApiGenerateDocuments=true",
-        "-p:OpenApiGenerateDocumentsOnBuild=true",
-        "-p:OpenApiDocumentsDirectory=$tempDirectory"
+        "--tl:off"
     )
 
     & dotnet @buildArgs
@@ -66,30 +111,42 @@ try {
         throw "dotnet build failed with exit code $LASTEXITCODE."
     }
 
-    $generated = Get-ChildItem -Path $tempDirectory -Filter "*.json" -File -Recurse |
-        Where-Object { $_.BaseName -eq "palllm-sidecar-v1" } |
-        Select-Object -First 1
-
-    if (-not $generated) {
-        throw "Build completed but no generated OpenAPI document named 'palllm-sidecar-v1.json' was found under $tempDirectory."
+    $assemblyPath = Join-Path $projectDirectory ("bin/$Configuration/net10.0/PalLLM.Sidecar.dll")
+    if (-not (Test-Path $assemblyPath)) {
+        throw "Build completed but sidecar assembly was not found at $assemblyPath."
     }
 
-    # Pass 369: normalize line endings at two levels.
-    # 1. The file's own newlines ("`r`n" -> "`n").
-    # 2. JSON-escaped CR + LF sequences inside string values ("\\r\\n" -> "\\n").
-    #    The OpenAPI generator captures XML doc-comment summaries verbatim,
-    #    and on Windows the trailing newline of each summary line gets
-    #    JSON-escaped as "\\r\\n" while a Linux host emits just "\\n". Both
-    #    are semantically identical descriptions; normalizing here keeps
-    #    the snapshot portable across CI runners.
-    $generatedContent = [System.IO.File]::ReadAllText($generated.FullName).Replace("`r`n", "`n").Replace('\r\n', '\n')
+    $processInfo = [System.Diagnostics.ProcessStartInfo]::new("dotnet")
+    $processInfo.Arguments = '"' + $assemblyPath + '"'
+    $processInfo.WorkingDirectory = $projectDirectory
+    $processInfo.UseShellExecute = $false
+    $processInfo.RedirectStandardOutput = $true
+    $processInfo.RedirectStandardError = $true
+    $processInfo.EnvironmentVariables["ASPNETCORE_ENVIRONMENT"] = $env:ASPNETCORE_ENVIRONMENT
+    $processInfo.EnvironmentVariables["ASPNETCORE_URLS"] = $env:ASPNETCORE_URLS
+    $processInfo.EnvironmentVariables["PalLLM__PalSavedRoot"] = $env:PalLLM__PalSavedRoot
+
+    $sidecarProcess = [System.Diagnostics.Process]::Start($processInfo)
+    if ($null -eq $sidecarProcess) {
+        throw "Failed to launch sidecar for live OpenAPI export."
+    }
+
+    try {
+        $generatedContent = Normalize-OpenApiDocument (Wait-ForOpenApiDocument -Url "http://127.0.0.1:$port/openapi/v1.json")
+    }
+    finally {
+        if (-not $sidecarProcess.HasExited) {
+            $sidecarProcess.Kill()
+            $sidecarProcess.WaitForExit(5000) | Out-Null
+        }
+    }
 
     if ($Verify) {
         if (-not (Test-Path $SnapshotPath)) {
             throw "Committed snapshot missing at $SnapshotPath. Run scripts/export-openapi.ps1 once to create it."
         }
 
-        $snapshotContent = [System.IO.File]::ReadAllText($SnapshotPath).Replace("`r`n", "`n").Replace('\r\n', '\n')
+        $snapshotContent = Normalize-OpenApiDocument ([System.IO.File]::ReadAllText($SnapshotPath))
         if (-not [string]::Equals($generatedContent, $snapshotContent, [System.StringComparison]::Ordinal)) {
             throw "Committed snapshot drift detected at $SnapshotPath. Re-run scripts/export-openapi.ps1 and commit the updated file."
         }
@@ -107,6 +164,12 @@ try {
         $env:ASPNETCORE_ENVIRONMENT = $previousAspNetCoreEnvironment
     }
 
+    if ($null -eq $previousAspNetCoreUrls) {
+        Remove-Item Env:ASPNETCORE_URLS -ErrorAction SilentlyContinue
+    } else {
+        $env:ASPNETCORE_URLS = $previousAspNetCoreUrls
+    }
+
     if ($null -eq $previousRuntimeRoot) {
         Remove-Item Env:PalLLM__PalSavedRoot -ErrorAction SilentlyContinue
     } else {
@@ -118,6 +181,12 @@ finally {
         Remove-Item Env:ASPNETCORE_ENVIRONMENT -ErrorAction SilentlyContinue
     } else {
         $env:ASPNETCORE_ENVIRONMENT = $previousAspNetCoreEnvironment
+    }
+
+    if ($null -eq $previousAspNetCoreUrls) {
+        Remove-Item Env:ASPNETCORE_URLS -ErrorAction SilentlyContinue
+    } else {
+        $env:ASPNETCORE_URLS = $previousAspNetCoreUrls
     }
 
     if ($null -eq $previousRuntimeRoot) {

@@ -544,6 +544,7 @@ public sealed class ModelTierTests
         Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("cache_salt"));
         Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("performance-mode interactivity"));
         Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("RequestPriority"));
+        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("service_tier"));
         Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("StopSequences"));
         Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("/v1/responses"));
         Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("--kv-cache-dtype fp8"));

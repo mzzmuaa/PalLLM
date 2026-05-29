@@ -2,7 +2,7 @@
 
 Audience: someone already comfortable with the runtime who now has to keep it healthy in production.
 
-Last audited: `2026-05-23`
+Last audited: `2026-05-28`
 
 This is a how-to guide in the [Diataxis](https://diataxis.fr/) sense - each section answers a specific operational question. Skim the table of contents and skip to what you need.
 
@@ -151,7 +151,12 @@ signature files were present when the digest manifests were computed.
 Its `FullAuditEvidence` block reflects the latest durable source-tree audit
 artifact at `Runtime/ReleaseEvidence/latest-full-audit.json`, which is written
 by `scripts/run_full_audit.ps1` and points back to the timestamped
-`artifacts/full-audit/<stamp>/` bundle plus `RESULTS.md`.
+`artifacts/full-audit/<stamp>/` bundle plus `RESULTS.md`. Release readiness
+also reopens that bundle evidence: `RESULTS.md` and `steps/` must stay under
+the recorded audit root, pass/fail counts must reconcile with the total,
+enough step logs must exist, and the artifact status must match the PASS/FAIL
+verdict in `RESULTS.md`. Missing, contradictory, path-confused, oversized, or
+unreadable audit evidence is reported as `invalid` with a rerun hint.
 
 The packaged player launcher leaves behind its own support artifact too:
 `scripts/play-palllm.ps1` now persists
@@ -244,9 +249,15 @@ convenience:
   the minimal-API route registrations and cached server-side for
   `PalLLM:Http:OpenApiCacheMinutes` (10 minutes by default). Set the value to
   `0` to disable the cache for live contract iteration.
-- the repo also commits a build-time snapshot at
+- the repo also commits a live-endpoint snapshot at
   `docs/openapi/palllm-sidecar-v1.json`; `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/export-openapi.ps1 -Verify`
   is the contract-drift gate used by CI and `scripts/run_full_audit.ps1`.
+- The Field Console's physical-file fallback routes (`/`, `/app.js`,
+  `/styles.css`, `/welcome.html`, `/favicon.svg`, and
+  `/manifest.webmanifest`) emit weak content-hash `ETag`s and
+  `Last-Modified`, so packaged-player launches can reuse browser-cache
+  validators even when the self-contained EXE path bypasses the normal
+  static-web-assets manifest.
 - `scripts/run_full_audit.ps1` now also builds and verifies a candidate
   release zip by default, so the audit proves release-package shape as well
   as source/doc drift, and it persists a durable latest-full-audit artifact
@@ -419,6 +430,8 @@ is the quick-glance overview; the sections below go deeper per feature.
 | Live inference | OFF | `PalLLM:Inference:Enabled=true` | `palllm_inference_success_total` > 0 | flag `false`, restart |
 | Vision describe + world-state | OFF | `PalLLM:Vision:Enabled=true` | `POST /api/vision/describe` -> `Success=true` | flag off |
 | Structured vision outputs | ON | set `PalLLM:Vision:UseStructuredOutputs=false` to disable | `response_format` in outgoing request body | flag false |
+| Vision media cache IDs | ON | set `PalLLM:Vision:UseMediaCacheIds=false` to disable | `uuid` in outgoing `image_url` content part | flag false |
+| Multimodal processor caps | OFF | set `PalLLM:{Inference|Vision}:MultimodalProcessor:*` fields after endpoint proof | `mm_processor_kwargs` in outgoing multimodal request body | clear all fields |
 | Screenshot watcher | OFF | `PalLLM:Vision:EnableScreenshotWatcher=true` | `ScreenshotPendingCount` trends to 0 | flag off |
 | TTS synthesis | OFF | `PalLLM:Tts:Enabled=true` | `POST /api/tts/synthesize` -> `FilePath` | flag off |
 | Action intents (advisory) | OFF | `PalLLM:Automation:Enabled=true` + populated `AllowedActions` | `ChatResponse.Action` is non-null | clear allowlist |
@@ -470,6 +483,13 @@ promoting that setting, replay the same PalLLM route with both field names and
 record accepted request shape, usage counters, p95 latency, and fallback
 counters.
 
+`PalLLM:Inference:ThinkingTokenBudget` can forward vLLM's
+`thinking_token_budget` on reasoning-parser lanes. Leave it `null` for normal
+local play and use `EnableThinking=false` for fast non-thinking turns. Before
+promotion, replay the same route with no budget and with the configured budget,
+then record reasoning-parser config, accepted request shape, visible/reasoning
+token usage, p95 latency, and fallback counters.
+
 For a shared vLLM endpoint, `PalLLM:Inference:PrefixCacheSalt` can forward a
 stable non-secret `cache_salt` on chat-completions requests. Use one salt per
 player/save/profile trust domain when cache isolation matters; do not rotate it
@@ -478,6 +498,56 @@ For vLLM startup, prefer `--prefix-caching-hash-algo sha256_cbor` when
 deterministic cross-version cache identity matters, and prove sticky or KV
 cache-aware routing beats round-robin before putting multiple replicas behind a
 live PalLLM companion lane.
+
+For hosted prompt-cache canaries, `PalLLM:Inference:PromptCacheKey` can forward
+`prompt_cache_key`, and `PalLLM:Inference:PromptCacheRetention` can forward
+`prompt_cache_retention` (`in_memory` or `24h`). Leave both `null` for normal
+local play. Use stable non-secret keys per Palworld save/profile/task family,
+then compare accepted request shape, cached-token receipts, p95 latency, and
+fallback counters before trusting the hint.
+
+For hosted or compatible concise-output canaries,
+`PalLLM:Inference:Verbosity` can forward `verbosity` (`low`, `medium`, or
+`high`). Leave it `null` for normal local play until the endpoint proves support;
+then compare generated tokens, parser quality, p95 latency, and fallback
+counters before trusting `low` on player-facing turns. If
+`PalLLM:Inference:SafetyIdentifier` is set for a hosted lane, it must be a
+stable pseudonymous hash only. Do not put player names, save paths, account ids,
+emails, secrets, or raw save contents into request hints or support bundles.
+
+For hosted retention/posture proof, `PalLLM:Inference:StoreCompletions` can
+forward `store`, and `PalLLM:Inference:RequestMetadata` can forward bounded
+`metadata` labels. Leave both omitted/empty for normal local play. Treat
+metadata as low-cardinality proof labels only: route family, build channel, or
+canary id. Do not include prompt text, player names, save paths, account ids,
+emails, secrets, raw save contents, or metric labels. Before promotion, replay
+one hosted canary with `store=false`, confirm the accepted request shape, and
+verify public/support bundles contain only the bounded labels.
+
+For hosted support-correlation canaries,
+`PalLLM:Inference:ClientRequestIdHeader` can forward the current PalLLM
+chat/proof request id as either `x-client-request-id` or `x-request-id`.
+Leave it `null` for normal local play. When enabled, confirm the value is
+bounded visible ASCII, joins cleanly with provider `x-request-id` receipts when
+returned, and never appears as a metric label or contains prompts, save paths,
+player identity, or secrets.
+
+For llama.cpp prompt-cache proof lanes, `PalLLM:Inference:LlamaCppCachePrompt`,
+`LlamaCppSlotId`, and `LlamaCppCacheReuseTokens` can forward `cache_prompt`,
+`id_slot`, and `n_cache_reuse` on chat-completions requests. Leave all three
+`null` for normal local play and for non-llama endpoints. Before promotion,
+replay two same-prefix turns and one changed-prefix negative canary on the exact
+llama-server build; record accepted request shape, slot id, second-turn TTFT,
+cache metrics, cache RAM pressure, and fallback counters.
+
+For vLLM-compatible multimodal proof lanes,
+`PalLLM:Inference:MultimodalProcessor` and
+`PalLLM:Vision:MultimodalProcessor` can forward `mm_processor_kwargs` with
+`min_pixels`, `max_pixels`, `max_soft_tokens`, and `fps`. Leave every field
+`null` until the exact endpoint/model proves the request shape. Use these caps
+to bound screenshot, video, or audio-visual processor work; promotion evidence
+should include accepted JSON, cold/warm TTFT, processor token or pixel evidence,
+VRAM/queue pressure, parse stability, and fallback counters.
 
 For a shared vLLM endpoint that was launched with `--scheduling-policy priority`,
 `PalLLM:Inference:RequestPriority` can forward a `priority` integer on
@@ -518,6 +588,14 @@ them as `tools` and `tool_choice` only for that call and preserves returned
 `tool_calls` as a receipt. Ordinary companion chat omits those fields, and
 tool-call-only responses must still have a deterministic fallback path before
 any action/directive route is promoted.
+
+For vLLM-specific structured-output proof lanes, route-specific callers can
+set `InferencePrompt.StructuredOutputs`; PalLLM forwards it as
+`structured_outputs` only for that call. Use it for choice, regex, JSON,
+grammar, or structural-tag constraints after the exact vLLM endpoint accepts
+the request shape. Prefer `InferencePrompt.ResponseFormat` when portable
+OpenAI-compatible `response_format: json_schema` is enough. Ordinary companion
+chat omits `structured_outputs`.
 
 For predicted-output proof lanes, route-specific callers can set
 `InferencePrompt.Prediction`; PalLLM forwards it as `prediction` only for that
@@ -681,6 +759,27 @@ Other model families may want different values - tune
    Sec. "Phase 4: Native player delivery and voice" and
    [`IMPLEMENTATION_QUEUE.md`](IMPLEMENTATION_QUEUE.md) Sec. "Queue 4: Native
    speech loop integration".
+
+---
+
+## Turning on ASR
+
+1. Run an OpenAI-compatible transcription endpoint, for example a local vLLM
+   speech-to-text lane at `/v1/audio/transcriptions`.
+2. Set `PalLLM:Asr:Enabled=true`, point `BaseUrl` at the endpoint, and set the
+   exact `Model` id it expects.
+3. Optional `PalLLM:Asr:Language` sends a default multipart `language` hint such
+   as `en` when the request does not already specify one. Use it after endpoint
+   proof to reduce auto-detection latency and avoid language mis-detection.
+4. Optional `PalLLM:Asr:Prompt` sends a default multipart `prompt` hint for
+   short pronunciation or command-vocabulary guidance. Keep it non-secret and
+   language-matched; request-level `Prompt` still overrides it.
+5. Optional `PalLLM:Asr:Seed` sends a multipart `seed` only for
+   endpoint-proven vLLM ASR replay canaries. Use it to compare transcript
+   drift on the same clip, not as a broad determinism guarantee.
+6. Keep `MaxAudioBytes`, `MaxResponseBytes`, and `MaxTranscriptCharacters`
+   bounded. `RequestLogprobs`, `TimestampGranularities`, and verbose segment
+   quality receipts stay proof-only and content-free.
 
 ---
 
@@ -1020,7 +1119,8 @@ on, tagged by HttpClientInstrumentation).
 - `/health/*` and `/metrics` requests. These get scraped every few
   seconds and would drown the interesting chat/bridge spans. If you
   need health/metrics traffic in traces, remove the `options.Filter`
-  lambda in `src/PalLLM.Sidecar/Program.cs`.
+  lambda in
+  `src/PalLLM.Sidecar/Configuration/PalLlmObservabilityServiceCollectionExtensions.cs`.
 
 ### What about metrics?
 
@@ -1511,9 +1611,11 @@ remain deliberately separated.
 
 **Disabling MCP:**
 
-MCP is wired in `Program.cs` unconditionally so it's always
-available. To fully disable, remove the `builder.Services.AddMcpServer()`
-block and the `app.MapMcp("/mcp")` call, then rebuild. For most
+MCP services are wired in
+`src/PalLLM.Sidecar/Configuration/PalLlmMcpServiceCollectionExtensions.cs`
+and the route is mapped in `Program.cs`, so it's always available. To
+fully disable, remove the `AddPalLlmMcp(...)` call and the
+`app.MapMcp("/mcp")` call, then rebuild. For most
 deployments the `/mcp` endpoint is harmless when unused -
 unauthenticated clients that never send a JSON-RPC message never
 exercise the server.

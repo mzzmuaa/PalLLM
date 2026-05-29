@@ -1,6 +1,6 @@
 # Quick reference — every surface, alphabetically
 
-Last audited: `2026-05-23`
+Last audited: `2026-05-24`
 
 The pure-reference companion to [`CHEAT_SHEET.md`](CHEAT_SHEET.md).
 Where the cheat sheet is narrative, this doc is sortable / grep-able.
@@ -81,8 +81,8 @@ Deep-dive: [`LLAMA_CPP_BUNDLED.md`](LLAMA_CPP_BUNDLED.md) (hardware-tier matrix,
 | 1 | `Build_Release` | `dotnet build` zero warnings | n/a |
 | 2 | `Tests` | `[Test]` count green | n/a |
 | 3 | `Drift_Mojibake` | every tracked file | n/a |
-| 4 | `Drift_Api_route_count` | `Program.cs` `api.Map*` | README, ROADMAP, ARCHITECTURE, API |
-| 5 | `Drift_Api_reference_surface` | `Program.cs` route list | API.md |
+| 4 | `Drift_Api_route_count` | `Program.cs` + `RouteRegistrations/*.cs` `api.Map*` | README, ROADMAP, ARCHITECTURE, API |
+| 5 | `Drift_Api_reference_surface` | live route list | API.md |
 | 6 | `Drift_OpenApi_snapshot` | live route surface | `docs/openapi/palllm-sidecar-v1.json` |
 | 7 | `Drift_Feature_catalog_count` | `PalLlmFeatureCatalog.cs` `Id =` count | README, ROADMAP, ARCHITECTURE, HANDOFF, CODE_MAP |
 | 8 | `Drift_Feature_status_split` | catalog ready/scaffolded/deferred | README, ROADMAP, HANDOFF |
@@ -104,15 +104,15 @@ Deep-dive: [`LLAMA_CPP_BUNDLED.md`](LLAMA_CPP_BUNDLED.md) (hardware-tier matrix,
 | `ChatDispatchPlanner.Decide` | `ChatDispatchPlanner.cs` | < 5 ms | < 1 ms |
 | `FallbackBehaviorEngine.CreateGeneralDirector` | `FallbackBehaviorEngine.cs` | < 30 ms | < 10 ms |
 | `PresentationCuePlanner.Build` | `PresentationCuePlanner.cs` | < 20 ms | < 5 ms |
-| `PalLlmRuntime.GetWorldSnapshot` | `PalLlmRuntime.cs` | < 50 ms | < 20 ms |
-| `PalLlmRuntime.GetHealth` | `PalLlmRuntime.cs` | < 20 ms | < 5 ms |
+| `PalLlmRuntime.GetWorldSnapshot` | `PalLlmRuntime.Snapshot.cs` | < 50 ms | < 20 ms |
+| `PalLlmRuntime.GetHealth` | `PalLlmRuntime.Snapshot.cs` | < 20 ms | < 5 ms |
 | `OperatorHealthScorer.Score` | `OperatorHealthScorer.cs` | < 1 ms | < 1 ms |
 | `HardwareProfiler.CaptureCached` | `HardwareProfiler.cs` | < 20 ms | < 1 ms |
 | `PrivacyPostureBuilder.CaptureCached` | `PrivacyPostureBuilder.cs` | < 5 ms | < 1 ms |
 | `ResourceBudgetPostureBuilder.CaptureCached` | `ResourceBudgetPostureBuilder.cs` | < 3 ms | < 1 ms |
 | `AirGapVerifier.VerifyCached` | `AirGapVerifier.cs` | < 50 ms | < 1 ms |
 | `BridgeInboxWorker.ExecuteAsync` (per envelope) | `BridgeInboxWorker.cs` | < 100 ms | < 50 ms |
-| `PalLlmRuntime.WriteOutboxReplyAsync` | `PalLlmRuntime.cs` | < 20 ms | < 10 ms |
+| `PalLlmRuntime.WriteOutboxReplyAsync` | `PalLlmRuntime.Outbox.cs` | < 20 ms | < 10 ms |
 
 Full table with rationale in [`HOT_PATH.md`](HOT_PATH.md).
 

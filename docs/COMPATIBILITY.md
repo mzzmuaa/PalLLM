@@ -1,6 +1,6 @@
 # PalLLM Compatibility Matrix
 
-Last audited: `2026-05-22`
+Last audited: `2026-05-24`
 
 Known-compatible and known-conflicting setups for PalLLM. Consumed by
 `scripts/doctor.ps1` via [`scripts/compatibility.json`](../scripts/compatibility.json)
@@ -65,7 +65,7 @@ has no architecture gates beyond `<TargetFramework>net10.0</TargetFramework>`.
 
 To verify on your platform after a source build:
 ```powershell
-dotnet test PalLLM.sln --configuration Release    # 1154 / 1154 expected
+dotnet test PalLLM.sln --configuration Release    # 1315 / 1315 expected
 ```
 Tests use only platform-agnostic APIs (`HttpClient`, `JsonDocument`,
 `MemoryStream`); they pass on every supported RID.
@@ -108,7 +108,7 @@ profile (Intel i5-6500, 8 GiB DDR4, no discrete GPU, Windows 10):
 |---|---|
 | Sidecar runtime | Runs; chat replies via deterministic fallback |
 | Field Console dashboard | Renders in any 2017+ browser (ES2017 minimum) |
-| `/api/*` (56 routes) | All routes respond; latency in `Constrained` tier budget (1500 ms warm) |
+| `/api/*` (57 routes) | All routes respond; latency in `Constrained` tier budget (1500 ms warm) |
 | `/mcp` (38 tools) | All tools respond |
 | Local inference | warning: 1-3B model recommended; 7B+ will be slow |
 | Vision describe | warning: off by default; CPU-only multimodal is impractical at this tier |

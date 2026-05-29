@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using PalLLM.Domain.Configuration;
 using PalLLM.Domain.Inference;
 using PalLLM.Domain.Integration;
 using PalLLM.Domain.Packs;
@@ -35,6 +36,7 @@ namespace PalLLM.Domain;
 [JsonSerializable(typeof(InferenceChatCompletionsRequestBody))]
 [JsonSerializable(typeof(InferenceChatMessage))]
 [JsonSerializable(typeof(InferenceChatTemplateKwargs))]
+[JsonSerializable(typeof(MultimodalProcessorOptions))]
 // Pass 346: OllamaWarmupRequestBody removed (runtime now warms every engine
 // via the generic OpenAI-compatible chat-completions path).
 [JsonSerializable(typeof(VisionChatCompletionsRequestBody))]
@@ -55,6 +57,7 @@ namespace PalLLM.Domain;
 [JsonSerializable(typeof(string[]))]
 [JsonSerializable(typeof(List<string>))]
 [JsonSerializable(typeof(IReadOnlyList<string>))]
+[JsonSerializable(typeof(Dictionary<string, string>))]
 [JsonSerializable(typeof(Dictionary<string, int>))]
 [JsonSerializable(typeof(List<NarrativeCharacterProfile>))]
 [JsonSerializable(typeof(List<NarrativeRelationshipSeed>))]

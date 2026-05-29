@@ -1,6 +1,6 @@
 # Readiness - candid 10/10 scorecard
 
-Last audited: `2026-05-22`
+Last audited: `2026-05-24`
 
 > "Is it ready to run? Will users rate it 10/10 in every aspect?"
 >
@@ -136,13 +136,13 @@ queues 3-5. That's `~12.5%` of the honest roadmap remaining.
 
 **Realistic experience: 9.5/10 today.**
 
-- 64 audited docs, 16/16 drift gates, 0 build warnings.
+- 69 audited docs, 16/16 drift gates, 0 build warnings.
 - Diataxis-organized, ADR-backed, schemas in `docs/schemas/`.
 - One-command `pal context` JSON snapshot, `pal status`
   one-liner, `pal scaffold` placeholder generator.
 - Portable adapter seam (`PortableAdapterContracts.cs`) for
   lifting into other games.
-- Honest baseline: `1154 / 1154 tests`, every count in docs verified
+- Honest baseline: `1315 / 1315 tests`, every count in docs verified
   against code by drift gates.
 
 This is genuinely 10/10 if your goal is to take ideas / patterns /

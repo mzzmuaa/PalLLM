@@ -1,6 +1,6 @@
 # Anti-patterns — things PalLLM deliberately doesn't do
 
-Last audited: `2026-05-21`
+Last audited: `2026-05-24`
 
 A coding agent (or new contributor) often arrives with reasonable
 ideas that have already been tried, considered, or rejected for a
@@ -84,7 +84,7 @@ your PR description explaining why the trade-off has shifted.
 ## Code style / refactoring
 
 - **DON'T mass-reformat.** This repo's hot files (`PalLlmRuntime.cs`
-  at ~4729 lines, `PresentationCuePlanner.cs` at ~1427 lines, etc.)
+  at ~1104 lines, `PresentationCuePlanner.cs` at ~1427 lines, etc.)
   look intimidating but every method is documented inline. A
   formatter pass loses the carefully-grouped structure.
 - **DON'T delegate understanding via sub-agents when a Grep will
@@ -145,11 +145,38 @@ your PR description explaining why the trade-off has shifted.
 
 ## Things that look like anti-patterns but aren't
 
-- **`PalLlmRuntime.cs` is ~4744 lines.** Yes — and intentional.
-  Splitting it would scatter the hot chat path across files; the
-  monolith is searchable and inline-documented. If it grows past
-  ~5500 lines without a clear reason, *that's* the time to
-  refactor.
+- **`PalLlmRuntime.cs` is still ~1104 lines after the helper,
+  UI-probe, prompt, bridge-boot, bridge-activity, outbox, snapshot, and inference splits.** Yes —
+  and intentional for now. Phase 1a moved pure helpers into
+  `PalLlmRuntime.Helpers.cs`; Phase 1b moved diagnostics into
+  `PalLlmRuntime.UiProbe.cs`; Phase 1c moved prompt rendering into
+  `PalLlmRuntime.Prompt.cs`; Phase 1d moved bridge-boot/native-readiness
+  helpers into `PalLlmRuntime.BridgeBoot.cs`; Phase 1e moved bridge
+  drain/activity/proof helpers into `PalLlmRuntime.Bridge.cs`; Phase
+  1f moved outbox/archive helpers into `PalLlmRuntime.Outbox.cs`; Phase
+  1g moved snapshot/health helpers into `PalLlmRuntime.Snapshot.cs`;
+  Phase 1h moved inference warmup/metrics helpers into
+  `PalLlmRuntime.Inference.cs`; the remaining runtime spine stays
+  searchable and inline-documented. Phase 2a has now moved service
+  registration into `src/PalLLM.Sidecar/Configuration/*.cs`; Phase 2b
+  widened the route-count audit and moved the inference/MCP-upstream
+  routes into `src/PalLLM.Sidecar/RouteRegistrations/PalLlmInferenceRoutes.cs`;
+  Phase 2c moved the bridge/outbox routes into
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmBridgeRoutes.cs`;
+  Phase 2d moved the multimodal media routes into
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmMediaRoutes.cs`;
+  Phase 2e moved the health/manifest routes into
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmHealthRoutes.cs`;
+  Phase 2f moved the read-only inspection/advisory routes into
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmInspectionRoutes.cs`;
+  Phase 2g moved the memory, relationship, and session state routes into
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmStateRoutes.cs`;
+  Phase 2h moved the content/world routes into
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmContentWorldRoutes.cs`;
+  Phase 2i moved the promotion-loop routes into
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmPromotionRoutes.cs`;
+  Phase 2j moved the proof/readiness routes into
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmProofReadinessRoutes.cs`.
 - **Heavy XML doc comments on options classes.** The cost is real
   but the harvester benefit is large — every config knob is
   self-explaining without a separate config reference doc.

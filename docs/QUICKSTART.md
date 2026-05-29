@@ -148,8 +148,8 @@ curl -X POST http://localhost:5088/api/snapshot `
     "Characters": [
       {
         "Id": 7,
-        "DisplayName": "Foxparks",
-        "Species": "Foxparks",
+        "DisplayName": "Camp Guardian",
+        "Species": "camp-guardian",
         "Traits": ["calm", "loyal"]
       }
     ]

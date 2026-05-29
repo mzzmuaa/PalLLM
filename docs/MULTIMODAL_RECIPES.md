@@ -1,6 +1,6 @@
 # Multimodal recipes — vision, audio, realtime (2026)
 
-Last audited: `2026-05-22`
+Last audited: `2026-05-25`
 
 The companion to [`BLACKWELL_RECIPES.md`](BLACKWELL_RECIPES.md). Where
 that doc covers text-only inference on Blackwell, this doc covers
@@ -92,17 +92,31 @@ SGLang):
 }
 ```
 
-PalLLM's `VisionClient` already speaks this. No changes required
-on PalLLM's side — point the `VisionOptions:Model` at any
-single-image VLM (Gemma 4 31B, Qwen2-VL, LLaVA-Next, etc.) and
-the existing `/api/vision/describe` endpoint works.
+PalLLM's `VisionClient` already speaks this. Point the
+`VisionOptions:Model` at any single-image VLM (Gemma 4 31B,
+Qwen2-VL, LLaVA-Next, etc.) and the existing `/api/vision/describe`
+endpoint works.
 
 vLLM can cache repeated media processing when the caller supplies stable media
-UUIDs. For a future PalLLM screen-capture loop, use a deterministic id such as
-`sha256(frame-bytes)` for identical screenshots, or
-`ui-probe:<dump-id>:<frame-index>` when replaying a captured proof sequence.
-Send the media on cache misses; only skip the payload when that UUID is known
-to be warm in the same vLLM process.
+UUIDs. PalLLM tags each outgoing vision `image_url` part with a stable
+content-hash id (`palllm-image-sha256-*`) when
+`PalLLM:Vision:UseMediaCacheIds=true` (default). Prompt-level
+`InferencePrompt.UserContent` canaries do the same for local base64
+`image_url`, `video_url`, `audio_url`, and `input_audio` parts when
+`PalLLM:Inference:UseMediaCacheIds=true` (default), producing
+`palllm-{image|video|audio}-sha256-*` ids. Strict endpoints that reject unknown
+content-part fields can disable the matching knob without disabling vision or
+inference. Send the media on cache misses; only skip the payload in future work
+when that UUID is known to be warm in the same vLLM process.
+
+For vLLM-compatible lanes that spend too much time in image/video preprocessing,
+PalLLM can also emit `mm_processor_kwargs`. Configure
+`PalLLM:Vision:MultimodalProcessor` for screenshot requests, or
+`PalLLM:Inference:MultimodalProcessor` / prompt-level
+`InferencePrompt.MultimodalProcessor` for route-owned `UserContent` canaries.
+The supported fields are `min_pixels`, `max_pixels`, `max_soft_tokens`, and
+`fps`; all are omitted by default. Prove the exact endpoint accepts the shape
+and improves TTFT/VRAM before using the caps in a live Palworld companion lane.
 
 For heavier repeated-media loops, current vLLM v1 can also be paired with
 LMCache's encoder-cache connector. Treat this as a separate cache from text KV
@@ -397,9 +411,11 @@ is configured for a shared vLLM server, repeated screenshot proof should also
 record whether matching salts reuse cache while different trust-domain salts do
 not. If multiple replicas sit behind a router, prove sticky or KV cache-aware
 routing keeps repeated media on the cache-warm worker before using that pool for
-live companion turns. If the same vLLM lane also uses sleep mode for idle VRAM
-reclaim, treat wake-up as a cold-cache boundary and remeasure those cache claims
-before trusting the warm path.
+live companion turns. When processor caps are configured, record the exact
+`mm_processor_kwargs` beside the replay so reviewers can separate a media-cache
+win from a smaller pixel/token budget. If the same vLLM lane also uses sleep
+mode for idle VRAM reclaim, treat wake-up as a cold-cache boundary and remeasure
+those cache claims before trusting the warm path.
 
 vLLM can also accept precomputed multimodal embeddings through
 `--enable-mm-embeds`. Treat that as a future trusted-tool lane, not a player

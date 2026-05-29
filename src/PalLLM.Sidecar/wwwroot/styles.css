@@ -26,16 +26,20 @@ html {
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
     scroll-padding-top: var(--header-h, 104px);
+    max-width: 100%;
 }
 
 body {
     margin: 0;
+    width: 100%;
+    max-width: 100%;
     min-height: 100vh;
     font-family: var(--font-sans);
     font-size: 16px;
     line-height: 1.5;
     color: var(--fg);
     background: var(--bg);
+    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -135,7 +139,7 @@ ol {
     --r-pill: 9999px;
 
     /* layout */
-    --shell: min(1280px, calc(100vw - 2rem));
+    --shell: min(1280px, calc(100dvw - 2rem));
     --header-h: 104px;
 
     /* motion */
@@ -357,6 +361,18 @@ ol {
     gap: var(--sp-2);
 }
 
+.action-button,
+.action-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 2.75rem;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+}
+
 .action-button {
     padding: var(--sp-3) var(--sp-5);
     background: var(--accent);
@@ -429,7 +445,7 @@ ol {
 
 .status-strip {
     display: grid;
-    grid-template-columns: minmax(240px, 28%) minmax(0, 1fr);
+    grid-template-columns: minmax(320px, 40%) minmax(0, 1fr);
     gap: var(--sp-5);
     padding: var(--sp-4) 0;
     border-top: 1px solid var(--line-soft);
@@ -1001,7 +1017,7 @@ ol {
 
 .feature-list {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
     gap: var(--sp-3);
 }
 
@@ -1009,6 +1025,7 @@ ol {
     display: flex;
     flex-direction: column;
     gap: var(--sp-2);
+    min-width: 0;
     padding: var(--sp-4);
     background: var(--surface-2);
     border: 1px solid var(--line-soft);
@@ -1040,12 +1057,14 @@ ol {
     font-size: var(--fs-sm);
     color: var(--fg);
     line-height: 1.5;
+    overflow-wrap: anywhere;
 }
 
 .feature-notes {
     font-size: var(--fs-xs);
     color: var(--fg-soft);
     line-height: 1.5;
+    overflow-wrap: anywhere;
     padding-top: var(--sp-2);
     border-top: 1px dashed var(--line-soft);
 }
@@ -1220,6 +1239,7 @@ ol {
 
 @media (max-width: 720px) {
     :root {
+        --shell: calc(100dvw - 1rem);
         --header-h: 210px;
     }
 
@@ -1273,6 +1293,14 @@ ol {
         clip: rect(0, 0, 0, 0);
     }
 
+    .data-table thead tr,
+    .data-table thead th {
+        display: block;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+    }
+
     .data-table,
     .data-table tbody,
     .data-table tr,
@@ -1308,6 +1336,145 @@ ol {
 
     .data-table tbody tr:hover td {
         background: transparent;
+    }
+}
+
+@media (max-width: 420px), (max-height: 760px) and (max-width: 720px) {
+    :root {
+        --shell: calc(100dvw - 0.75rem);
+        --header-h: 132px;
+    }
+
+    .topbar {
+        position: static;
+        padding-top: var(--sp-2);
+    }
+
+    .topbar-main {
+        gap: var(--sp-3);
+        padding-bottom: var(--sp-3);
+    }
+
+    .app-title {
+        font-size: var(--fs-lg);
+        line-height: 1.15;
+    }
+
+    .app-copy {
+        display: none;
+    }
+
+    .action-cluster {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--sp-2);
+        width: 100%;
+    }
+
+    .action-button,
+    .action-link,
+    .toggle {
+        width: 100%;
+        min-height: 2.25rem;
+        padding: var(--sp-2);
+        font-size: var(--fs-xs);
+        line-height: 1.2;
+        white-space: normal;
+    }
+
+    .toggle {
+        justify-content: center;
+        min-width: 0;
+    }
+
+    .toggle input {
+        flex: 0 0 auto;
+    }
+
+    .status-strip {
+        gap: var(--sp-2);
+        padding: var(--sp-2) 0;
+    }
+
+    .status-label,
+    .status-meta {
+        display: none;
+    }
+
+    .status-banner {
+        padding: var(--sp-2);
+        font-size: var(--fs-sm);
+        line-height: 1.3;
+    }
+
+    .status-detail,
+    .refresh-meta,
+    .self-healing-chip,
+    .suggestions-badge {
+        font-size: var(--fs-xs);
+    }
+
+    .signal-ribbon {
+        flex-wrap: nowrap;
+        gap: var(--sp-1);
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        padding-bottom: var(--sp-1);
+        scrollbar-width: thin;
+    }
+
+    .tone-chip {
+        flex: 0 0 auto;
+        padding: var(--sp-1) var(--sp-2);
+    }
+
+    .section-nav {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        scrollbar-width: thin;
+        padding: var(--sp-1) 0 var(--sp-2);
+    }
+
+    .section-nav a {
+        flex: 0 0 auto;
+        padding: var(--sp-2) var(--sp-3);
+        font-size: var(--fs-xs);
+    }
+
+    .workspace {
+        gap: var(--sp-4);
+        padding-top: var(--sp-3);
+        padding-bottom: var(--sp-10);
+    }
+
+    .surface {
+        padding: var(--sp-4);
+        border-radius: var(--r-md);
+    }
+
+    #runtime.surface {
+        padding-top: calc(var(--sp-4) - 2px);
+    }
+
+    .surface-header {
+        gap: var(--sp-3);
+        margin-bottom: var(--sp-4);
+    }
+
+    .metric {
+        min-height: 76px;
+        padding: var(--sp-3);
+    }
+
+    .suggestions-card {
+        grid-template-columns: minmax(0, 1fr);
+        padding: var(--sp-3);
+    }
+
+    .data-table tbody td {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--sp-1);
     }
 }
 
@@ -1400,6 +1567,7 @@ ol {
     display: grid;
     grid-template-columns: 6rem 1fr;
     gap: 1rem;
+    min-width: 0;
     padding: 0.9rem 1rem;
     border-radius: 0.5rem;
     background: color-mix(in oklab, CanvasText 3%, Canvas);
@@ -1461,18 +1629,21 @@ ol {
 .quickstart-step-body {
     display: grid;
     gap: 0.45rem;
+    min-width: 0;
 }
 
 .quickstart-label {
     margin: 0;
     font-weight: 600;
     font-size: 1rem;
+    overflow-wrap: anywhere;
 }
 
 .quickstart-why {
     margin: 0;
     color: color-mix(in oklab, CanvasText 75%, Canvas);
     line-height: 1.45;
+    overflow-wrap: anywhere;
 }
 
 .quickstart-instructions {
@@ -1480,6 +1651,7 @@ ol {
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 0.25rem 0.75rem;
+    min-width: 0;
     font-size: 0.9rem;
 }
 
@@ -1498,6 +1670,8 @@ ol {
     line-height: 1.4;
     font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
     font-size: 0.85rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .quickstart-footnote {
@@ -1513,6 +1687,10 @@ ol {
 
 @media (max-width: 640px) {
     .quickstart-step {
+        grid-template-columns: 1fr;
+    }
+
+    .quickstart-instructions {
         grid-template-columns: 1fr;
     }
 
@@ -1606,12 +1784,13 @@ ol {
 
 .suggestions-card {
     display: grid;
-    grid-template-columns: minmax(8rem, max-content) 1fr;
+    grid-template-columns: minmax(min(8rem, 100%), max-content) minmax(0, 1fr);
     gap: 0.75rem 1rem;
     padding: 0.85rem 1rem;
     border-radius: 0.5rem;
     background: color-mix(in oklab, #d4a72c 7%, Canvas);
     border: 1px solid color-mix(in oklab, #d4a72c 22%, Canvas);
+    min-width: 0;
 }
 
 .suggestions-card[data-severity="urgent"] {
@@ -1656,6 +1835,8 @@ ol {
 .suggestions-body {
     display: grid;
     gap: 0.5rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .suggestions-message {
@@ -2001,7 +2182,7 @@ ol {
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
     gap: 0.75rem;
 }
 
@@ -2151,7 +2332,7 @@ ol {
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
     gap: 0.75rem;
 }
 
@@ -2527,3 +2708,102 @@ ol {
 }
 
 .chat-footnote a { color: inherit; text-decoration: underline; }
+
+/* Final narrow-pane overrides live after every feature module so the Field
+   Console stays usable when snapped beside the game or embedded in a thin
+   sidecar browser. */
+@media (max-width: 420px), (max-height: 760px) and (max-width: 720px) {
+    .eyebrow {
+        display: none;
+    }
+
+    .topbar-main {
+        gap: var(--sp-2);
+        padding-bottom: var(--sp-2);
+    }
+
+    .action-cluster {
+        gap: var(--sp-1);
+    }
+
+    .action-button,
+    .action-link,
+    .toggle {
+        min-height: 1.875rem;
+        padding: var(--sp-1) var(--sp-2);
+    }
+
+    .status-strip {
+        gap: var(--sp-1);
+        padding: var(--sp-1) 0;
+    }
+
+    .status-label,
+    .status-meta {
+        display: none;
+    }
+
+    .status-banner {
+        padding: var(--sp-1) var(--sp-2);
+        font-size: var(--fs-sm);
+        line-height: 1.3;
+    }
+
+    .signal-ribbon {
+        flex-wrap: nowrap;
+        gap: var(--sp-1);
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        padding-bottom: var(--sp-1);
+        scrollbar-width: thin;
+    }
+
+    .tone-chip {
+        flex: 0 0 auto;
+        padding: var(--sp-1) var(--sp-2);
+    }
+
+    .self-healing-chip,
+    .suggestions-badge {
+        width: 100%;
+        min-width: 0;
+        min-height: 1.75rem;
+        margin: 0;
+        padding: var(--sp-1) var(--sp-2);
+        justify-content: center;
+        font-size: var(--fs-xs);
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .self-healing-chip {
+        display: none;
+    }
+
+    .section-nav {
+        padding: 0 0 var(--sp-1);
+    }
+
+    .section-nav a {
+        padding: var(--sp-1) var(--sp-2);
+        line-height: 1.2;
+    }
+
+    .suggestions-message,
+    .suggestions-command-row,
+    .suggestions-command {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .suggestions-message,
+    .suggestions-command {
+        overflow-wrap: anywhere;
+    }
+
+    .suggestions-command {
+        white-space: pre-wrap;
+    }
+}

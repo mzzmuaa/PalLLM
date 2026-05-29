@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using PalLLM.Domain.Configuration;
 using PalLLM.Domain.Integration;
@@ -68,6 +69,12 @@ internal static class ReleaseFullAuditEvidenceBuilder
             if (normalized.TotalStepCount <= 0)
             {
                 return InvalidFrom(normalized, $"The latest full-audit artifact at '{artifactPath}' does not describe any executed audit steps.");
+            }
+
+            string? structuralError = ValidateStructure(normalized, maxBytes);
+            if (!string.IsNullOrWhiteSpace(structuralError))
+            {
+                return InvalidFrom(normalized, structuralError);
             }
 
             return normalized;
@@ -174,6 +181,118 @@ internal static class ReleaseFullAuditEvidenceBuilder
             CurrentBlockers = snapshot.CurrentBlockers,
             ReadyEvidence = snapshot.ReadyEvidence,
         };
+
+    private static string? ValidateStructure(ReleaseFullAuditEvidenceSnapshot snapshot, int maxBytes)
+    {
+        string? pathError = ValidatePathUnderRoot(snapshot.AuditRoot, snapshot.ResultsPath, "results report");
+        if (pathError is not null)
+        {
+            return pathError;
+        }
+
+        pathError = ValidatePathUnderRoot(snapshot.AuditRoot, snapshot.StepsDirectoryPath, "step-log directory");
+        if (pathError is not null)
+        {
+            return pathError;
+        }
+
+        if (snapshot.PassedStepCount + snapshot.FailedStepCount != snapshot.TotalStepCount)
+        {
+            return "The latest full-audit artifact has contradictory pass/fail counts; rerun scripts/run_full_audit.ps1 so the durable evidence matches RESULTS.md.";
+        }
+
+        if (string.Equals(snapshot.Status, "passed", StringComparison.OrdinalIgnoreCase) &&
+            (snapshot.FailedStepCount != 0 || snapshot.FailedSteps.Count > 0 || snapshot.PassedStepCount != snapshot.TotalStepCount))
+        {
+            return "The latest full-audit artifact claims PASS but also records failed or missing steps; rerun scripts/run_full_audit.ps1 before trusting this release candidate.";
+        }
+
+        if (string.Equals(snapshot.Status, "failed", StringComparison.OrdinalIgnoreCase) &&
+            snapshot.FailedStepCount == 0 &&
+            snapshot.FailedSteps.Count == 0 &&
+            snapshot.CurrentBlockers.Count == 0)
+        {
+            return "The latest full-audit artifact claims FAIL without naming a failed step or blocker; rerun scripts/run_full_audit.ps1 so the failure is actionable.";
+        }
+
+        if (snapshot.StepNames.Count > snapshot.TotalStepCount)
+        {
+            return "The latest full-audit artifact lists more step names than executed steps; rerun scripts/run_full_audit.ps1 so the step inventory is internally consistent.";
+        }
+
+        int logFileCount = Directory
+            .EnumerateFiles(snapshot.StepsDirectoryPath, "*.log", SearchOption.TopDirectoryOnly)
+            .Take(snapshot.TotalStepCount)
+            .Count();
+        if (logFileCount < snapshot.TotalStepCount)
+        {
+            return $"The latest full-audit artifact describes {snapshot.TotalStepCount} steps but only {logFileCount} step log(s) exist under '{snapshot.StepsDirectoryPath}'.";
+        }
+
+        string resultsText;
+        try
+        {
+            FileInfo resultsInfo = new(snapshot.ResultsPath);
+            int effectiveMaxBytes = Math.Max(1_024, maxBytes);
+            if (resultsInfo.Length > effectiveMaxBytes)
+            {
+                return ArtifactJsonFileReader.BuildFailureMessage(
+                    "The latest full-audit RESULTS.md",
+                    ArtifactJsonFileReader.ArtifactJsonReadFailureCode.Oversized,
+                    maxBytes);
+            }
+
+            using FileStream stream = File.OpenRead(snapshot.ResultsPath);
+            byte[] buffer = new byte[checked((int)resultsInfo.Length)];
+            stream.ReadExactly(buffer);
+            resultsText = Encoding.UTF8.GetString(buffer);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return ArtifactJsonFileReader.BuildFailureMessage(
+                "The latest full-audit RESULTS.md",
+                ArtifactJsonFileReader.ArtifactJsonReadFailureCode.Unreadable,
+                maxBytes);
+        }
+
+        string expectedVerdict = string.Equals(snapshot.Status, "passed", StringComparison.OrdinalIgnoreCase)
+            ? "- Overall: **PASS**"
+            : string.Equals(snapshot.Status, "failed", StringComparison.OrdinalIgnoreCase)
+                ? "- Overall: **FAIL**"
+                : string.Empty;
+
+        if (!string.IsNullOrEmpty(expectedVerdict) &&
+            resultsText.IndexOf(expectedVerdict, StringComparison.OrdinalIgnoreCase) < 0)
+        {
+            return $"The latest full-audit artifact status '{snapshot.Status}' does not match the verdict recorded in RESULTS.md.";
+        }
+
+        return null;
+    }
+
+    private static string? ValidatePathUnderRoot(string rootPath, string candidatePath, string label)
+    {
+        try
+        {
+            string fullRoot = Path.GetFullPath(rootPath);
+            string fullCandidate = Path.GetFullPath(candidatePath);
+            string rootWithSeparator = fullRoot.EndsWith(Path.DirectorySeparatorChar)
+                ? fullRoot
+                : fullRoot + Path.DirectorySeparatorChar;
+
+            if (!fullCandidate.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(fullCandidate, fullRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                return $"The latest full-audit artifact points its {label} outside the recorded audit root.";
+            }
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return $"The latest full-audit artifact has an invalid {label} path.";
+        }
+
+        return null;
+    }
 
     private static string[] NormalizeStrings(IEnumerable<string>? values) =>
         (values ?? Array.Empty<string>())

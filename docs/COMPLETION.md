@@ -1,6 +1,6 @@
 # Completion status - "are we 100%?"
 
-Last audited: `2026-05-22`
+Last audited: `2026-05-24`
 
 > A single canonical answer to the question that matters: **is the
 > program 100% complete?** This doc consolidates the per-phase numbers
@@ -25,7 +25,7 @@ reach has been pushed to its ceiling:
   `scaffolded` behind kill-switches because they need live build
   validation; one is `deferred` by design - see
   [`adr/0006-opt-in-everything-by-default.md`](adr/0006-opt-in-everything-by-default.md)).
-- **Tests:** `1154 / 1154` passing.
+- **Tests:** `1315 / 1315` passing.
 - **Drift gates:** `16 / 16` green on every audit.
 - **Build warnings:** `0`.
 - **Operator surface:** every script that gates a roadmap queue
@@ -233,7 +233,7 @@ $ pwsh ./pal.ps1 complete
 PalLLM completion status
   honest roadmap   : 76.2%
   remaining        : 23.8%  (live-Palworld + clean-machine work)
-test count       : 1154 / 1154
+test count       : 1315 / 1315
   drift gates      : 16 / 16
   readiness        : ~8.0 / 10 across 23 aspects
 
@@ -266,5 +266,4 @@ until their own evidence lands.
 - [`PROJECT_NUMBERS.json`](PROJECT_NUMBERS.json) - machine-readable
   rolling state
 - [`FUTURE_2035.md`](FUTURE_2035.md) - post-100% cutting-edge ideas
-
 

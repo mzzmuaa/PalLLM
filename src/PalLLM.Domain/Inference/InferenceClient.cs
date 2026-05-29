@@ -57,6 +57,8 @@ public sealed class HttpJsonInferenceClient : IInferenceClient, IInferenceLaneMe
     private const string ResponseLabel = "Inference response";
     private const float DefaultTopP = 0.8f;
     private const float DefaultPresencePenalty = 1.5f;
+    private const int MaxRequestHintIdentifierLength = 128;
+    private const int MaxClientRequestIdLength = 512;
 
     // Hosts whose API surface expects an extra enable_thinking request-body flag.
     // Keeping this as a private const array lets operators who point PalLLM at
@@ -251,6 +253,8 @@ public sealed class HttpJsonInferenceClient : IInferenceClient, IInferenceLaneMe
         {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", inference.ApiKey);
         }
+
+        AddClientRequestIdHeader(request, inference.ClientRequestIdHeader, prompt.ClientRequestId);
 
         request.Content = JsonContent.Create(
             requestBody,
@@ -499,17 +503,37 @@ public sealed class HttpJsonInferenceClient : IInferenceClient, IInferenceLaneMe
         float? minP = prompt.MinP ?? inference.MinP;
         float? repetitionPenalty = prompt.RepetitionPenalty ?? inference.RepetitionPenalty;
         string? reasoningEffort = InferenceReasoningEfforts.Normalize(prompt.ReasoningEffort ?? inference.ReasoningEffort);
+        int? thinkingTokenBudget = NormalizeThinkingTokenBudget(prompt.ThinkingTokenBudget ?? inference.ThinkingTokenBudget);
         string tokenBudgetField = InferenceTokenBudgetFields.Normalize(prompt.TokenBudgetField ?? inference.TokenBudgetField);
         bool useMaxCompletionTokens = InferenceTokenBudgetFields.UsesMaxCompletionTokens(tokenBudgetField);
         int? seed = prompt.Seed ?? inference.Seed;
         int? requestPriority = prompt.RequestPriority ?? inference.RequestPriority;
+        string? serviceTier = InferenceServiceTiers.Normalize(prompt.ServiceTier ?? inference.ServiceTier);
+        string? promptCacheKey = NormalizePromptCacheKey(prompt.PromptCacheKey ?? inference.PromptCacheKey);
+        string? promptCacheRetention = InferencePromptCacheRetentions.Normalize(
+            prompt.PromptCacheRetention ?? inference.PromptCacheRetention);
+        string? verbosity = InferenceVerbosities.Normalize(prompt.Verbosity ?? inference.Verbosity);
+        string? safetyIdentifier = NormalizeRequestHintIdentifier(
+            prompt.SafetyIdentifier ?? inference.SafetyIdentifier);
+        bool? storeCompletions = prompt.StoreCompletions ?? inference.StoreCompletions;
+        Dictionary<string, string>? requestMetadata = NormalizeRequestMetadata(
+            inference.RequestMetadata,
+            prompt.RequestMetadata);
+        bool? llamaCppCachePrompt = prompt.LlamaCppCachePrompt ?? inference.LlamaCppCachePrompt;
+        int? llamaCppSlotId = NormalizeLlamaCppSlotId(prompt.LlamaCppSlotId ?? inference.LlamaCppSlotId);
+        int? llamaCppCacheReuseTokens = NormalizeLlamaCppCacheReuseTokens(
+            prompt.LlamaCppCacheReuseTokens ?? inference.LlamaCppCacheReuseTokens);
         bool? parallelToolCalls = prompt.ParallelToolCalls ?? inference.ParallelToolCalls;
         string[]? stopSequences = NormalizeStopSequences(prompt.StopSequences ?? inference.StopSequences);
         JsonElement? tools = prompt.Tools;
         JsonElement? toolChoice = prompt.ToolChoice;
+        JsonElement? structuredOutputs = prompt.StructuredOutputs;
         JsonElement? prediction = prompt.Prediction;
         string[]? modalities = NormalizeModalities(prompt.Modalities);
         JsonElement? audio = prompt.Audio;
+        MultimodalProcessorOptions? multimodalProcessor = ResolveMultimodalProcessorOptions(
+            prompt.MultimodalProcessor,
+            prompt.UserContent.HasValue ? inference.MultimodalProcessor : null);
         bool? logprobs = prompt.Logprobs;
         int? topLogprobs = NormalizeTopLogprobs(prompt.TopLogprobs);
         if (topLogprobs.HasValue && logprobs is null)
@@ -559,11 +583,7 @@ public sealed class HttpJsonInferenceClient : IInferenceClient, IInferenceLaneMe
         JsonElement systemContent = JsonSerializer.SerializeToElement(
             prompt.SystemPrompt,
             PalLlmDomainJsonSerializerContext.Default.String);
-        JsonElement userContent = prompt.UserContent.HasValue
-            ? prompt.UserContent.Value.Clone()
-            : JsonSerializer.SerializeToElement(
-                prompt.UserPrompt,
-                PalLlmDomainJsonSerializerContext.Default.String);
+        JsonElement userContent = BuildUserContent(prompt, inference);
 
         return new InferenceChatCompletionsRequestBody
         {
@@ -589,15 +609,28 @@ public sealed class HttpJsonInferenceClient : IInferenceClient, IInferenceLaneMe
             MinP = minP,
             RepetitionPenalty = repetitionPenalty,
             ReasoningEffort = reasoningEffort,
+            ThinkingTokenBudget = thinkingTokenBudget,
             Seed = seed,
             Priority = requestPriority,
+            ServiceTier = serviceTier,
+            PromptCacheKey = promptCacheKey,
+            PromptCacheRetention = promptCacheRetention,
+            Verbosity = verbosity,
+            SafetyIdentifier = safetyIdentifier,
+            Store = storeCompletions,
+            Metadata = requestMetadata,
+            LlamaCppCachePrompt = llamaCppCachePrompt,
+            LlamaCppSlotId = llamaCppSlotId,
+            LlamaCppCacheReuseTokens = llamaCppCacheReuseTokens,
             ParallelToolCalls = parallelToolCalls,
             Stop = stopSequences,
             Tools = tools,
             ToolChoice = toolChoice,
+            StructuredOutputs = structuredOutputs,
             Prediction = prediction,
             Modalities = modalities,
             Audio = audio,
+            MmProcessorKwargs = multimodalProcessor,
             Logprobs = logprobs == true ? true : null,
             TopLogprobs = topLogprobs,
             ChatTemplateKwargs = chatTemplateKwargs,
@@ -606,6 +639,20 @@ public sealed class HttpJsonInferenceClient : IInferenceClient, IInferenceLaneMe
             Ttl = ttl,
             CacheSalt = cacheSalt,
         };
+    }
+
+    private static JsonElement BuildUserContent(InferencePrompt prompt, InferenceOptions inference)
+    {
+        if (!prompt.UserContent.HasValue)
+        {
+            return JsonSerializer.SerializeToElement(
+                prompt.UserPrompt,
+                PalLlmDomainJsonSerializerContext.Default.String);
+        }
+
+        return inference.UseMediaCacheIds
+            ? MultimodalContentPartMediaCacheIds.AddStableIds(prompt.UserContent.Value)
+            : prompt.UserContent.Value.Clone();
     }
 
     private static bool ShouldSendThinkingToggle(string baseUrl, bool? enableThinking)
@@ -671,6 +718,129 @@ public sealed class HttpJsonInferenceClient : IInferenceClient, IInferenceLaneMe
         return normalized.Count == 0 ? null : normalized.ToArray();
     }
 
+    private static string? NormalizePromptCacheKey(string? promptCacheKey)
+    {
+        return NormalizeRequestHintIdentifier(promptCacheKey);
+    }
+
+    private static int? NormalizeThinkingTokenBudget(int? thinkingTokenBudget) =>
+        thinkingTokenBudget is > 0 ? thinkingTokenBudget : null;
+
+    private static int? NormalizeLlamaCppSlotId(int? slotId)
+    {
+        if (!slotId.HasValue)
+        {
+            return null;
+        }
+
+        return slotId.Value >= -1 ? slotId.Value : null;
+    }
+
+    private static int? NormalizeLlamaCppCacheReuseTokens(int? cacheReuseTokens)
+    {
+        if (!cacheReuseTokens.HasValue)
+        {
+            return null;
+        }
+
+        return cacheReuseTokens.Value >= 0 ? cacheReuseTokens.Value : null;
+    }
+
+    private static string? NormalizeRequestHintIdentifier(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        string trimmed = value.Trim();
+        return trimmed.Length <= MaxRequestHintIdentifierLength ? trimmed : null;
+    }
+
+    private static Dictionary<string, string>? NormalizeRequestMetadata(
+        IReadOnlyDictionary<string, string>? configuredMetadata,
+        IReadOnlyDictionary<string, string>? promptMetadata)
+    {
+        var normalized = new Dictionary<string, string>(StringComparer.Ordinal);
+        AddRequestMetadata(normalized, configuredMetadata);
+        AddRequestMetadata(normalized, promptMetadata);
+        return normalized.Count == 0 ? null : normalized;
+    }
+
+    private static void AddRequestMetadata(
+        Dictionary<string, string> target,
+        IReadOnlyDictionary<string, string>? source)
+    {
+        if (source is null || source.Count == 0)
+        {
+            return;
+        }
+
+        foreach (KeyValuePair<string, string> pair in source)
+        {
+            if (string.IsNullOrWhiteSpace(pair.Key) ||
+                string.IsNullOrWhiteSpace(pair.Value))
+            {
+                continue;
+            }
+
+            string key = pair.Key.Trim();
+            string value = pair.Value.Trim();
+            if (key.Length > InferenceRequestMetadataLimits.MaxKeyLength ||
+                value.Length > InferenceRequestMetadataLimits.MaxValueLength)
+            {
+                continue;
+            }
+
+            if (!target.ContainsKey(key) &&
+                target.Count >= InferenceRequestMetadataLimits.MaxEntries)
+            {
+                continue;
+            }
+
+            target[key] = value;
+        }
+    }
+
+    private static void AddClientRequestIdHeader(
+        HttpRequestMessage request,
+        string? configuredHeader,
+        string? clientRequestId)
+    {
+        string? headerName = InferenceClientRequestIdHeaders.Normalize(configuredHeader);
+        string? normalizedRequestId = NormalizeClientRequestId(clientRequestId);
+        if (string.IsNullOrEmpty(headerName) || string.IsNullOrEmpty(normalizedRequestId))
+        {
+            return;
+        }
+
+        request.Headers.TryAddWithoutValidation(headerName, normalizedRequestId);
+    }
+
+    private static string? NormalizeClientRequestId(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        string trimmed = value.Trim();
+        if (trimmed.Length > MaxClientRequestIdLength)
+        {
+            return null;
+        }
+
+        foreach (char ch in trimmed)
+        {
+            if (ch < 0x21 || ch > 0x7E)
+            {
+                return null;
+            }
+        }
+
+        return trimmed;
+    }
+
     private static string[]? NormalizeModalities(IReadOnlyList<string>? modalities)
     {
         if (modalities is null || modalities.Count == 0)
@@ -701,6 +871,16 @@ public sealed class HttpJsonInferenceClient : IInferenceClient, IInferenceLaneMe
 
     private static int? NormalizeTopLogprobs(int? topLogprobs) =>
         topLogprobs is >= 0 and <= 20 ? topLogprobs : null;
+
+    private static MultimodalProcessorOptions? ResolveMultimodalProcessorOptions(
+        MultimodalProcessorOptions? promptOptions,
+        MultimodalProcessorOptions? configuredOptions)
+    {
+        MultimodalProcessorOptions? candidate = promptOptions?.HasAny == true
+            ? promptOptions
+            : configuredOptions;
+        return candidate?.HasAny == true ? candidate : null;
+    }
 }
 
 internal sealed class InferenceChatCompletionsRequestBody
@@ -728,6 +908,10 @@ internal sealed class InferenceChatCompletionsRequestBody
     [JsonPropertyName("response_format")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public JsonElement? ResponseFormat { get; init; }
+
+    [JsonPropertyName("structured_outputs")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public JsonElement? StructuredOutputs { get; init; }
 
     [JsonPropertyName("top_p")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -757,6 +941,10 @@ internal sealed class InferenceChatCompletionsRequestBody
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ReasoningEffort { get; init; }
 
+    [JsonPropertyName("thinking_token_budget")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ThinkingTokenBudget { get; init; }
+
     [JsonPropertyName("seed")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? Seed { get; init; }
@@ -764,6 +952,46 @@ internal sealed class InferenceChatCompletionsRequestBody
     [JsonPropertyName("priority")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? Priority { get; init; }
+
+    [JsonPropertyName("service_tier")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ServiceTier { get; init; }
+
+    [JsonPropertyName("prompt_cache_key")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PromptCacheKey { get; init; }
+
+    [JsonPropertyName("prompt_cache_retention")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PromptCacheRetention { get; init; }
+
+    [JsonPropertyName("verbosity")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Verbosity { get; init; }
+
+    [JsonPropertyName("safety_identifier")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? SafetyIdentifier { get; init; }
+
+    [JsonPropertyName("store")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Store { get; init; }
+
+    [JsonPropertyName("metadata")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, string>? Metadata { get; init; }
+
+    [JsonPropertyName("cache_prompt")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? LlamaCppCachePrompt { get; init; }
+
+    [JsonPropertyName("id_slot")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? LlamaCppSlotId { get; init; }
+
+    [JsonPropertyName("n_cache_reuse")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? LlamaCppCacheReuseTokens { get; init; }
 
     [JsonPropertyName("parallel_tool_calls")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -788,6 +1016,10 @@ internal sealed class InferenceChatCompletionsRequestBody
     [JsonPropertyName("audio")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public JsonElement? Audio { get; init; }
+
+    [JsonPropertyName("mm_processor_kwargs")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MultimodalProcessorOptions? MmProcessorKwargs { get; init; }
 
     [JsonPropertyName("logprobs")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -874,11 +1106,98 @@ public sealed class InferencePrompt
 
     public string? ReasoningEffort { get; init; }
 
+    /// <summary>
+    /// Optional vLLM-compatible <c>thinking_token_budget</c> cap forwarded only
+    /// for route-specific reasoning-model canaries. Leave empty for normal
+    /// companion chat; set positive values only after the exact vLLM server was
+    /// launched with a reasoning parser and accepted the request shape.
+    /// </summary>
+    public int? ThinkingTokenBudget { get; init; }
+
     public string? TokenBudgetField { get; init; }
 
     public int? Seed { get; init; }
 
     public int? RequestPriority { get; init; }
+
+    /// <summary>
+    /// Optional OpenAI-compatible <c>service_tier</c> hint forwarded only for
+    /// endpoint-proven routing canaries. Ordinary local companion chat omits it.
+    /// </summary>
+    public string? ServiceTier { get; init; }
+
+    /// <summary>
+    /// Optional OpenAI-compatible <c>prompt_cache_key</c> hint forwarded only
+    /// for route-specific cache-routing canaries. Leave empty for ordinary
+    /// local companion chat and for strict endpoints that reject hosted-only
+    /// fields.
+    /// </summary>
+    public string? PromptCacheKey { get; init; }
+
+    /// <summary>
+    /// Optional OpenAI-compatible <c>prompt_cache_retention</c> hint forwarded
+    /// only for route-specific long-prefix cache canaries. Allowed values are
+    /// normalized by <see cref="InferencePromptCacheRetentions"/>.
+    /// </summary>
+    public string? PromptCacheRetention { get; init; }
+
+    /// <summary>
+    /// Optional OpenAI-compatible <c>verbosity</c> hint forwarded only for
+    /// route-specific concise or expanded-output canaries. Leave empty for
+    /// ordinary local companion chat so strict endpoints never see the field.
+    /// </summary>
+    public string? Verbosity { get; init; }
+
+    /// <summary>
+    /// Optional OpenAI-compatible <c>safety_identifier</c> value forwarded only
+    /// for hosted lanes that need a pseudonymous safety correlation id. Keep it
+    /// stable and non-secret; never pass player names, emails, paths, or raw
+    /// save identifiers.
+    /// </summary>
+    public string? SafetyIdentifier { get; init; }
+
+    /// <summary>
+    /// Optional OpenAI-compatible <c>store</c> switch forwarded only for
+    /// hosted retention-posture canaries. Leave empty for normal companion
+    /// chat; prefer <c>false</c> over <c>true</c> unless an operator is
+    /// deliberately running an eval/distillation lane outside gameplay.
+    /// </summary>
+    public bool? StoreCompletions { get; init; }
+
+    /// <summary>
+    /// Optional OpenAI-compatible <c>metadata</c> labels forwarded only for
+    /// route-owned proof canaries. Values are bounded, trimmed, and merged
+    /// over <c>PalLLM:Inference:RequestMetadata</c>; never pass player names,
+    /// save paths, prompts, secrets, or raw game-state text.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? RequestMetadata { get; init; }
+
+    /// <summary>
+    /// Optional bounded ASCII correlation id sent as the configured outbound
+    /// HTTP request-id header when <c>PalLLM:Inference:ClientRequestIdHeader</c>
+    /// is set. Normal companion chat passes the already-generated PalLLM chat
+    /// request id; the header itself remains omitted unless explicitly enabled.
+    /// </summary>
+    public string? ClientRequestId { get; init; }
+
+    /// <summary>
+    /// Optional llama.cpp <c>cache_prompt</c> toggle forwarded only for
+    /// endpoint-proven prompt-cache canaries. Leave empty for ordinary local
+    /// companion chat and for strict non-llama OpenAI-compatible endpoints.
+    /// </summary>
+    public bool? LlamaCppCachePrompt { get; init; }
+
+    /// <summary>
+    /// Optional llama.cpp <c>id_slot</c> selector for route-owned warm-slot
+    /// canaries. Values below -1 are suppressed before serialization.
+    /// </summary>
+    public int? LlamaCppSlotId { get; init; }
+
+    /// <summary>
+    /// Optional llama.cpp <c>n_cache_reuse</c> floor for measured stable-prefix
+    /// canaries. Negative values are suppressed before serialization.
+    /// </summary>
+    public int? LlamaCppCacheReuseTokens { get; init; }
 
     public bool? ParallelToolCalls { get; init; }
 
@@ -917,6 +1236,15 @@ public sealed class InferencePrompt
     public JsonElement? Prediction { get; init; }
 
     /// <summary>
+    /// Optional vLLM-compatible <c>structured_outputs</c> payload forwarded
+    /// verbatim for endpoint-specific choice, regex, grammar, JSON, or
+    /// structural-tag canaries. Leave empty for normal companion chat and prefer
+    /// <see cref="ResponseFormat"/> when a portable OpenAI-compatible schema is
+    /// enough.
+    /// </summary>
+    public JsonElement? StructuredOutputs { get; init; }
+
+    /// <summary>
     /// Optional OpenAI-compatible <c>modalities</c> output list forwarded only
     /// for route-specific audio-output canaries. Leave empty for normal
     /// companion chat so strict local endpoints never see the field.
@@ -929,6 +1257,13 @@ public sealed class InferencePrompt
     /// Use this only after the exact endpoint proves it accepts the shape.
     /// </summary>
     public JsonElement? Audio { get; init; }
+
+    /// <summary>
+    /// Optional vLLM-compatible <c>mm_processor_kwargs</c> payload for
+    /// route-owned multimodal canaries. Overrides configured
+    /// <c>PalLLM:Inference:MultimodalProcessor</c> when supplied.
+    /// </summary>
+    public MultimodalProcessorOptions? MultimodalProcessor { get; init; }
 
     /// <summary>
     /// Optional OpenAI-compatible <c>logprobs</c> request switch forwarded only

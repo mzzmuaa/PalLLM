@@ -3,7 +3,7 @@
   "$comment": "Machine-readable verb manifest - mirrors what 'pwsh ./pal.ps1 list' prints, but as JSON so any agent can discover the verb table without parsing PowerShell. Source of truth: pal.ps1's Run-List function. Drift-gated indirectly by scripts/run_full_audit.ps1 path-reference checks.",
 
   "schemaVersion": 1,
-  "lastAudited": "2026-05-23",
+  "lastAudited": "2026-05-24",
 
   "runner": {
     "shell": "pwsh ./pal.ps1 <verb> [args]",

@@ -1,6 +1,6 @@
 # PalLLM Handoff
 
-Last audited: `2026-05-23`
+Last audited: `2026-05-28`
 
 This is the shortest safe starting point for a temporary coding handoff,
 including Claude, Codex, or any other replacement agent. It is meant to
@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 374)
+## Codex handoff (read first — Pass 417)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -41,19 +41,15 @@ ends at green.
 
 ### 3. The next queued work, in priority order
 
-1. **REFACTORING_ROADMAP.md Phase 1a — extract `PalLlmRuntime.Helpers.cs`.**
-   See [`REFACTORING_ROADMAP.md`](REFACTORING_ROADMAP.md). Smallest
-   blast radius, zero behavioural change, pure static helpers.
-   Verification: `dotnet test` reports the same `1315` tests with
-   the same names; `Drift_Hot_file_line_count` passes.
-2. **Phase 1b through 1h** — six more partial-class extractions
-   from `PalLlmRuntime.cs`. Same pattern, one file at a time. Each
-   phase is its own commit + audit + push.
-3. **Phase 2** — `Program.cs` extraction into service-collection
-   extensions + route-registration files.
-4. **Live Palworld native-proof run** — `pal.ps1 proof` requires a
+1. **Live Palworld native-proof run** — `pal.ps1 proof` requires a
    running Palworld + UE4SS instance. Not closable autonomously.
-5. **Dependabot PR triage** — `gh pr list --repo mzzmuaa/PalLLM`
+2. **Packaged release proof on a clean profile** — run the packaged
+   EXE path on a clean machine or clean user profile and capture the
+   generated proof/support bundle.
+3. **Post-Phase-2 startup cleanup** — Phase 2 route extraction is
+   complete; any further `Program.cs` split should be proposed as a
+   new scoped phase, likely around middleware/static-asset helpers only.
+4. **Dependabot PR triage** — `gh pr list --repo mzzmuaa/PalLLM`
    for the current queue. Each PR must pass the 5 required status
    checks before merge.
 
@@ -102,7 +98,8 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 
 ## Current audited state
 
-- `57` `/api` routes in `src/PalLLM.Sidecar/Program.cs`
+- `57` `/api` routes across `src/PalLLM.Sidecar/Program.cs` and
+  `src/PalLLM.Sidecar/RouteRegistrations/*.cs`
 - `6` operational routes outside `/api`
 - `1` separate `/mcp` protocol route
 - `38` MCP tools, `6` direct resources + `1` templated resource, `4` prompts
@@ -112,9 +109,48 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 - `19` deterministic fallback strategies
 - `1315` passing tests from `dotnet test PalLLM.sln`
 - `16 / 16` drift gates PASS on the latest audit
+- `1104` lines in `PalLlmRuntime.cs`, `391` lines in
+  `PalLlmRuntime.Helpers.cs`, `357` lines in
+  `PalLlmRuntime.Inference.cs`, `628` lines in
+  `PalLlmRuntime.UiProbe.cs`, `482` lines in
+  `PalLlmRuntime.BridgeBoot.cs`, `912` lines in
+  `PalLlmRuntime.Bridge.cs`, `312` lines in
+  `PalLlmRuntime.Prompt.cs`, `489` lines in
+  `PalLlmRuntime.Snapshot.cs`, and `289` lines in
+  `PalLlmRuntime.Outbox.cs` after the Phase 1h split
+- `336` lines in `Program.cs` after the post-Phase-2 static-asset route extraction;
+  service companions are `172` lines (`Core`), `142` (`Inference`),
+  `56` (`MCP`), `46` (`Health/OpenAPI`), and `76` (`Observability`);
+  route companions are
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmStaticAssetRoutes.cs`
+  (`125` lines) and
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmInferenceRoutes.cs`
+  (`99` lines) and
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmBridgeRoutes.cs`
+  (`32` lines) and
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmMediaRoutes.cs`
+  (`92` lines) and
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmHealthRoutes.cs`
+  (`143` lines) and
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmInspectionRoutes.cs`
+  (`200` lines) and
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmStateRoutes.cs`
+  (`65` lines) and
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmContentWorldRoutes.cs`
+  (`127` lines) and
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmPromotionRoutes.cs`
+  (`203` lines) and
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmProofReadinessRoutes.cs`
+  (`91` lines) and
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmConversationRoutes.cs`
+  (`358` lines) and
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmPlanningRoutes.cs`
+  (`95` lines)
+- bridge-directory health counts are exact up to `1024` files per
+  snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260523-171149/RESULTS.md`](../artifacts/full-audit/20260523-171149/RESULTS.md)
+  [`../artifacts/full-audit/20260528-014035/RESULTS.md`](../artifacts/full-audit/20260528-014035/RESULTS.md)
 - committed OpenAPI snapshot:
   [`openapi/palllm-sidecar-v1.json`](openapi/palllm-sidecar-v1.json)
 
@@ -123,6 +159,1003 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
+
+- **Pass 417 - Add vLLM ASR seed replay canary.** Operator
+  directive: continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan, publication
+  safety, and next-best PalLLM work. Rechecked current vLLM
+  OpenAI-compatible transcription parameter guidance and added optional
+  `PalLLM:Asr:Seed`. `HttpAudioTranscriptionClient` forwards it as
+  multipart `seed` only when explicitly configured; normal ASR calls and
+  strict OpenAI-compatible transcription endpoints remain field-free by
+  default. The public `AudioTranscriptionRequest` shape is unchanged, so
+  per-request audio payloads still carry only audio bytes plus optional
+  language/prompt hints. Docs and model-collaboration hints frame the field
+  as a vLLM ASR replay canary requiring accepted multipart shape, served ASR
+  model id, runtime version, transcript drift, latency, and fallback counters
+  before promotion. A scoped read-only scan of active sibling workspaces
+  reinforced generic voice-lane replay proof patterns; no sibling code,
+  names, prompts, assets, branding, product identity, or unrelated IP were
+  copied. Verification: focused inference/backend/model-tier coverage passed
+  `121 / 121`; `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260528-014035/RESULTS.md` passes `16 / 16`
+  with `0` build warnings.
+
+- **Pass 416 - Add vLLM thinking-token budget canaries.** Operator
+  directive: continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan, publication
+  safety, and next-best PalLLM work. Rechecked current vLLM reasoning-output
+  and SamplingParams guidance for `thinking_token_budget`, then added optional
+  `PalLLM:Inference:ThinkingTokenBudget` and prompt-level
+  `InferencePrompt.ThinkingTokenBudget`. `HttpJsonInferenceClient` forwards
+  `thinking_token_budget` only when a positive budget is explicitly configured
+  or supplied by a route-owned prompt; ordinary companion chat remains
+  field-free, and startup validation rejects zero/negative budgets so
+  operators use `EnableThinking=false` for fast non-thinking turns. Docs and
+  model-collaboration hints frame the field as a vLLM reasoning-parser proof
+  lane requiring accepted request shape, reasoning-parser config,
+  visible/reasoning token usage, p95 latency, and fallback counters before
+  promotion. A scoped read-only scan of active sibling workspaces reinforced
+  generic reasoning-budget proof patterns; no sibling code, names, prompts,
+  assets, branding, product identity, or unrelated IP were copied.
+  Verification: focused inference/backend coverage passed `103 / 103`;
+  `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260525-091835/RESULTS.md` passes `16 / 16`
+  with `0` build warnings.
+
+- **Pass 415 - Add ASR language/prompt defaults.** Operator directive:
+  continue optimizing, production-hardening, full code/doc audit, current
+  model/runtime research, active `D:\Coding` idea scan, publication safety,
+  and next-best PalLLM work. Rechecked current OpenAI transcription and
+  speech-to-text guidance plus current vLLM OpenAI-compatible ASR endpoint
+  support, then added optional `PalLLM:Asr:Language` and
+  `PalLLM:Asr:Prompt` defaults. `AudioTranscriptionClient` uses
+  request-level `Language` / `Prompt` when present and otherwise falls back to
+  configured defaults; blank values remain omitted so strict local ASR
+  endpoints stay field-free. Startup validation keeps language hints to two
+  ASCII letters and caps the prompt at `2048` characters. Docs frame the
+  prompt as a short non-secret pronunciation/command hint, never player
+  identity, save paths, raw chat, or transcript content. A scoped read-only
+  scan of active sibling workspaces reinforced generic push-to-talk/client-VAD
+  and short ASR vocabulary-hint patterns; no sibling code, names, prompts,
+  assets, branding, product identity, or unrelated IP were copied.
+  Verification: focused inference/backend coverage passed `103 / 103`;
+  `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260525-081429/RESULTS.md` passes `16 / 16`
+  with `0` build warnings.
+
+- **Pass 414 - Add vLLM structured-output canaries.** Operator
+  directive: continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current vLLM
+  stable structured-output guidance and OpenAI-compatible extra-parameter
+  guidance, then added prompt-level `InferencePrompt.StructuredOutputs`.
+  `HttpJsonInferenceClient` forwards it as `structured_outputs` only when a
+  route-owned proof caller supplies it; ordinary companion chat remains
+  field-free, and `InferencePrompt.ResponseFormat` remains the portable
+  OpenAI-compatible JSON-schema path. Docs and feature-catalog notes now
+  frame `structured_outputs` as a vLLM-specific choice/regex/JSON/grammar/
+  structural-tag canary that requires accepted request shape, backend id,
+  schema/constraint digest, parse/schema validation, token, latency, and
+  fallback receipts before promotion. A scoped read-only scan of active
+  sibling workspaces reinforced generic schema-digest/request-shape proof
+  receipts; no sibling code, names, prompts, assets, branding, product
+  identity, or unrelated IP were copied. Verification: focused
+  `InferenceClientTests` passed `72 / 72`; `dotnet test` passed
+  `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260525-071416/RESULTS.md` passes `16 / 16`
+  with `0` build warnings.
+
+- **Pass 413 - Add multimodal processor canaries.** Operator
+  directive: continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current vLLM
+  multimodal and OpenAI-compatible serving guidance for
+  `mm_processor_kwargs`, then added omitted-by-default
+  `PalLLM:Inference:MultimodalProcessor`, prompt-level
+  `InferencePrompt.MultimodalProcessor`, and
+  `PalLLM:Vision:MultimodalProcessor`. `HttpJsonInferenceClient` now forwards
+  processor caps only for route-owned multimodal `UserContent` canaries, and
+  `HttpVisionClient` forwards them only for configured vision requests;
+  ordinary text chat remains field-free. Startup validation bounds pixel and
+  FPS values and accepts only soft-token budgets `70`, `140`, `280`, `560`,
+  or `1120`. Docs and feature-catalog notes frame the caps as proof-only
+  latency/VRAM controls for proven local multimodal lanes. A scoped read-only
+  scan of active sibling workspaces reinforced generic processor-cap and
+  cold/warm media-proof patterns; no sibling code, names, prompts, assets,
+  branding, product identity, or unrelated IP were copied. Verification:
+  focused inference/backend coverage passed `103 / 103`; `dotnet test` passed
+  `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260525-062042/RESULTS.md` passes `16 / 16`
+  with `0` build warnings.
+
+- **Pass 412 - Add hosted request-metadata canaries.** Operator
+  directive: continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current Chat
+  Completions request guidance for bounded `metadata` maps and vLLM
+  OpenAI-compatible serving guidance, then added omitted-by-default
+  `PalLLM:Inference:RequestMetadata` plus prompt-level
+  `InferencePrompt.RequestMetadata`. `HttpJsonInferenceClient` now forwards
+  `metadata` only for explicitly configured hosted canaries or route-owned
+  prompts; normal local companion chat remains field-free. Startup validation
+  enforces 16 entries, 64-character keys, and 512-character values, and docs
+  frame the map as low-cardinality proof labels only, never prompt text,
+  player identity, save paths, secrets, raw game state, or metric-label values.
+  A scoped read-only scan of active sibling workspaces under `D:\Coding`
+  reinforced bounded request-label and request-correlation receipts; no sibling
+  code, names, prompts, assets, branding, product identity, or unrelated IP
+  were copied. Verification: focused inference/backend/model-tier coverage
+  passed `121 / 121`; `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260525-051528/RESULTS.md` passes `16 / 16`
+  with `0` build warnings.
+
+- **Pass 411 - Add llama.cpp prompt-cache canaries.** Operator
+  directive: continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  llama.cpp server documentation for prompt-cache/slot request fields and
+  vLLM OpenAI-compatible serving guidance, then added omitted-by-default
+  `PalLLM:Inference:LlamaCppCachePrompt`, `LlamaCppSlotId`, and
+  `LlamaCppCacheReuseTokens`, with prompt-level overrides, so proven
+  llama-server lanes can forward `cache_prompt`, `id_slot`, and
+  `n_cache_reuse` without polluting strict OpenAI-compatible endpoints.
+  Startup validation rejects invalid slot/reuse values. Model-collaboration
+  guidance, appsettings, env-var/tuning/operations/API/architecture docs,
+  research notes, changelog, and `pal.ps1 handoff` now frame these knobs as
+  measured warm-slot/prefix-reuse canaries, not gameplay defaults. A scoped
+  read-only scan of active sibling workspaces under `D:\Coding` reinforced
+  explicit cache-proof receipts; no sibling code, names, prompts, assets,
+  branding, product identity, or unrelated IP were copied.
+  Verification: focused inference/backend/model-tier coverage passed
+  `121 / 121`; `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260525-043024/RESULTS.md` passes `16 / 16`
+  with `0` build warnings.
+
+- **Pass 410 - Add outbound request-id inference canary.** Operator
+  directive: continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current OpenAI
+  API debugging guidance for `X-Client-Request-Id` and vLLM
+  OpenAI-compatible serving guidance for request-id headers. Added optional
+  `PalLLM:Inference:ClientRequestIdHeader`, allowlisted to
+  `x-client-request-id` or `x-request-id`, so compatible endpoints can join
+  provider/local logs to the existing PalLLM chat/proof `RequestId` without
+  sending prompt text, save paths, player identity, secrets, or metric labels.
+  The header is omitted by default; invalid/non-visible-ASCII request ids are
+  suppressed before transport. Model-collaboration guidance, feature catalog,
+  appsettings, env-var/tuning/operations/API docs, research notes, changelog,
+  and `pal.ps1 handoff` now document the support-correlation canary. A scoped
+  read-only scan of active sibling workspaces under `D:\Coding` reinforced
+  bounded request-correlation proof receipts; no sibling code, names, prompts,
+  assets, branding, product identity, or unrelated IP were copied.
+  Verification: focused inference/backend/model-tier coverage passed
+  `121 / 121`; `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260525-031509/RESULTS.md` passes `16 / 16`
+  with `0` build warnings.
+
+- **Pass 409 - Add hosted store retention canary.** Operator directive:
+  continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current Chat
+  Completions request guidance, Ollama OpenAI compatibility notes, vLLM
+  structured-output guidance, and llama.cpp speculative-serving notes.
+  `PalLLM:Inference:StoreCompletions`, with prompt-level overrides, now
+  forwards OpenAI-compatible `store` only when explicitly configured.
+  Ordinary local companion chat stays field-free; docs frame the safe hosted
+  retention-posture canary as endpoint-proven `store=false`, not a gameplay
+  default and not a prompt/completion retention feature for public bundles.
+  A scoped read-only scan of active sibling workspaces under `D:\Coding`
+  reinforced explicit hosted-retention proof and sanitized evidence patterns;
+  no sibling code, names, prompts, assets, branding, product identity, or
+  unrelated IP were copied. Verification: focused inference/backend coverage
+  passed `103 / 103`; `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260525-021658/RESULTS.md` passes `16 / 16`
+  with `0` build warnings.
+
+- **Pass 408 - Harden full-audit release evidence.** Operator directive:
+  continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. `GET
+  /api/release/readiness` now treats `latest-full-audit.json` as a
+  pointer to proof rather than proof by itself: the reader verifies
+  audit-root path containment, pass/fail count consistency, step-log
+  presence, `RESULTS.md` readability, and matching PASS/FAIL verdicts
+  before reporting `FullAuditEvidence` as trusted. Contradictory,
+  missing-log, path-confused, oversized, or unreadable full-audit
+  evidence is downgraded to `invalid` with a sanitized rerun hint.
+  Existing release-readiness endpoint coverage now writes realistic
+  full-audit evidence and proves contradictory pass/fail receipts are
+  rejected. A scoped read-only scan of active sibling workspaces under
+  `D:\Coding` reinforced proof-bundle validation patterns; no sibling
+  code, names, prompts, assets, branding, or unrelated IP were copied.
+  Verification: focused sidecar endpoint coverage passed `54 / 54`;
+  `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260525-011603/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 407 - Add verbosity and safety-id inference canaries.** Operator
+  directive: continue optimizing, production-hardening, full code/doc
+  audit, current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current Chat
+  Completions request guidance and vLLM OpenAI-compatible serving notes,
+  then scanned active sibling workspaces for transferable request-hint
+  and proof-receipt patterns. `PalLLM:Inference:Verbosity` and
+  `SafetyIdentifier`, with prompt-level overrides, now forward
+  `verbosity` / `safety_identifier` only when explicitly configured,
+  validated, and normalized. Ordinary local companion chat keeps the
+  same field-free request shape; safety ids are capped at 128 chars and
+  documented as stable pseudonymous hashes only, never player names,
+  save paths, account ids, emails, secrets, or raw save contents. The
+  planner, tuning/env-var/API/operations/research docs, appsettings,
+  and validation tests now describe this as a hosted or endpoint-proven
+  canary, not a default. A scoped read-only scan of active sibling
+  workspaces under `D:\Coding` reinforced proof-scoped request hints and
+  pseudonymous hosted identifiers; no sibling code, names, prompts,
+  assets, branding, or unrelated IP were copied. Verification: focused
+  inference/backend/model-tier coverage passed `121 / 121`; `dotnet
+  test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260525-001432/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 406 - Add prompt-cache inference canaries.** Operator
+  directive: continue optimizing, production-hardening, full code/doc
+  audit, current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  OpenAI prompt-caching and Chat Completions request guidance alongside
+  vLLM OpenAI-compatible serving and llama.cpp prompt-cache/state-cache
+  notes. `PalLLM:Inference:PromptCacheKey` and
+  `PromptCacheRetention`, with prompt-level overrides, now forward
+  `prompt_cache_key` / `prompt_cache_retention` only when explicitly
+  configured, validated, and normalized. The same pass extended
+  `service_tier` validation to include `scale`, kept every new hosted
+  hint omitted by default, and refreshed planner, feature catalog,
+  tuning, env-var, API, architecture, operations, and research notes
+  with cache-key hygiene and proof receipts. A scoped read-only scan of
+  active sibling workspaces under `D:\Coding` reinforced cache-routing
+  and proof-receipt patterns; no sibling code, names, prompts, assets,
+  branding, or unrelated IP were copied. Verification: focused
+  inference/backend/model-tier coverage passed `121 / 121`; `dotnet
+  test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-231618/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 405 - Add service-tier inference canaries.** Operator
+  directive: continue optimizing, production-hardening, full code/doc
+  audit, current platform/model research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  OpenAI Chat Completions `service_tier`, Priority processing, and Flex
+  processing guidance alongside vLLM multimodal cached-input guidance
+  and llama.cpp speculative-serving notes. `PalLLM:Inference:ServiceTier`
+  and prompt-level `InferencePrompt.ServiceTier` now provide a
+  validated, normalized, omitted-by-default `service_tier` pass-through
+  for route-specific canaries. The planner, feature catalog, tuning/env
+  docs, API notes, and research notes keep this as proof-scoped
+  priority-vs-flex routing evidence, not a default for ordinary local
+  companion chat. A scoped read-only scan of active sibling workspaces
+  under `D:\Coding` reinforced separated foreground/background model
+  lanes; no sibling code, names, prompts, or assets were copied.
+  Verification: focused inference/backend/model-tier coverage passed
+  `121 / 121`; `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-221341/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 404 - Add date-validator static asset revalidation.** Operator
+  directive: continue optimizing, production-hardening, full code/doc
+  audit, current platform/model research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  ASP.NET Core output-cache/static-validator guidance, System.Text.Json
+  source-generation guidance, vLLM multimodal cached-input guidance,
+  llama.cpp speculative-serving notes, Ollama vision payload docs, and
+  vLLM-Omni Qwen3-Omni realtime notes. Field Console physical-file
+  routes now treat `If-Modified-Since` as a second cheap validator when
+  no `If-None-Match` header is present, and static asset `Last-Modified`
+  values are normalized to whole HTTP-date seconds so browser
+  revalidation does not miss on sub-second filesystem ticks. The
+  existing root dashboard integration test now pins both ETag and date
+  validator `304 Not Modified` behavior. `pal.ps1 handoff` now reports
+  the current handoff pass instead of the stale Pass 400 label. Public
+  routes, OpenAPI, MCP surface, feature catalog count, fallback
+  strategies, and test count stay unchanged. A scoped read-only scan of
+  active sibling workspaces under `D:\Coding` reinforced browser-cache
+  validator parity and proof-first runtime evidence; no sibling code,
+  names, prompts, or assets were copied. Verification: focused root
+  dashboard static-asset revalidation coverage passed `1 / 1`;
+  `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-211052/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 403 - Source-generate conditional ETags.** Operator
+  directive: continue optimizing, production-hardening, full code/doc
+  audit, current platform/model research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  System.Text.Json source-generation guidance and ASP.NET Core
+  output-cache revalidation guidance. `ConditionalHttp.CreateStrongEtag`
+  now requires a generated `JsonTypeInfo<T>`, and the dashboard,
+  feature-catalog, self-description, inference-performance,
+  upstream-MCP, release-readiness, and bridge-proof routes pass exact
+  `PalLlmJsonSerializerContext.Default.*` metadata for their ETag
+  fingerprint payloads. Public routes, OpenAPI, MCP surface, feature
+  catalog count, fallback strategies, cache semantics, and test count
+  stay unchanged. A scoped read-only scan of active sibling workspaces
+  under `D:\Coding` reinforced validator-first dashboard polling and
+  cache-proof receipts that avoid raw cache-secret retention, but no
+  sibling code, names, prompts, or assets were copied. Verification:
+  focused hot-path/conditional-cache coverage passed `10 / 10`;
+  `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-201022/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 402 - Extract static asset route companion.** Operator
+  directive: continue optimizing, production-hardening, full code/doc
+  audit, current platform/model research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  ASP.NET Core static asset, request-timeout, rate-limiting, and
+  output-cache guidance. `PalLlmStaticAssetRoutes.cs` now owns the Field
+  Console physical-file routes (`/`, `/app.js`, `/styles.css`,
+  `/index.html`, `/welcome.html`, `/favicon.svg`, and
+  `/manifest.webmanifest`) and gives the packaged-EXE fallback weak
+  content-hash `ETag`s, `Last-Modified`, and cheap `304 Not Modified`
+  revalidation. The hash cache is keyed by path, byte length, and UTC
+  write ticks so stable packaged assets avoid repeated hashing while
+  edited assets rehash deterministically. Public `/api` routes,
+  operational route count, OpenAPI, MCP surface, feature catalog count,
+  fallback strategies, and test count stay unchanged. A scoped read-only
+  scan of active sibling workspaces under `D:\Coding` reinforced
+  ETag/content-fingerprint validators for low-latency dashboards and
+  proof surfaces, but no sibling code, names, prompts, or assets were
+  copied. Verification: focused Field Console static-asset revalidation
+  coverage passed; `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-191235/RESULTS.md` passes `16 / 16`
+  with `0` build warnings.
+
+- **Pass 401 - Extend multimodal media cache IDs.** Operator directive:
+  continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  vLLM multimodal media UUID/cached-input guidance and ASP.NET Core
+  output-cache guidance. Prompt-level `InferencePrompt.UserContent`
+  canaries now add stable `palllm-{image|video|audio}-sha256-*`
+  UUIDs to local base64 `image_url`, `video_url`, `audio_url`, and
+  `input_audio` parts when `PalLLM:Inference:UseMediaCacheIds=true`
+  (default). Ordinary companion chat still sends a plain string user
+  message, and strict endpoints can opt out with
+  `PalLLM:Inference:UseMediaCacheIds=false`. The vision client now
+  uses the same shared hash helper while preserving Pass 400's
+  `PalLLM:Vision:UseMediaCacheIds` behavior. Public routes, OpenAPI,
+  MCP surface, feature catalog count, fallback strategies, and test
+  count stay unchanged. A scoped read-only scan of active sibling
+  workspaces under `D:\Coding` reinforced content-addressed local
+  proof evidence, strict-endpoint opt-outs, and route-specific media
+  promotion proof, but no sibling code, names, or assets were copied.
+  Verification: focused inference/backend validation checks passed
+  `103 / 103`; `scripts/export-openapi.ps1 -Verify` matched the
+  committed snapshot; `dotnet test` passed `1315 / 1315`; full audit
+  at `../artifacts/full-audit/20260524-181158/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 400 - Add vision media cache IDs.** Operator directive:
+  continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  vLLM multimodal cached-input UUID guidance, Ollama vision payload
+  shape, ASP.NET Core request-timeout/output-cache guidance, Gemma 4
+  MTP notes, and Qwen3-Omni/vLLM-Omni realtime proof-lane docs. The
+  vision client now adds a stable content-hash `uuid` to outgoing
+  `image_url` content parts when `PalLLM:Vision:UseMediaCacheIds=true`
+  (default), giving vLLM-compatible endpoints a deterministic repeated
+  screenshot media-cache key. Strict endpoints can opt out with
+  `PalLLM:Vision:UseMediaCacheIds=false`. Public routes, OpenAPI, MCP
+  surface, feature catalog, fallback strategies, and test count stay
+  unchanged. A scoped read-only scan of active sibling workspaces under
+  `D:\Coding` reinforced content-addressed proof/media IDs, capability
+  proof before model-feature claims, and split audio/video proof lanes,
+  but no sibling code, names, or assets were copied. Verification:
+  focused inference/backend validation checks passed `103 / 103`;
+  `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-171441/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 399 - Cache ui_probe dump parsing.** Operator directive:
+  continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  ASP.NET Core/.NET 10 in-memory caching guidance, vLLM multimodal
+  cached-input/media-control docs, Gemma 4 MTP notes, and Qwen3-Omni
+  realtime/video proof-lane docs. Closed the documented `ui_probe`
+  diagnostics rebuild debt: `PalLlmRuntime.UiProbe.cs` now keeps a
+  bounded in-process parsed-dump cache keyed by path, file length, and
+  UTC write ticks, clears entries when retained files disappear, and
+  falls back to the bounded JSON reader whenever metadata changes.
+  Public routes, OpenAPI, MCP surface, feature catalog, fallback
+  strategies, and test count stay unchanged. A scoped read-only scan of
+  active sibling workspaces under `D:\Coding` reinforced local proof
+  caches, machine-readable evidence, and route-specific model promotion,
+  but no sibling code, names, or assets were copied. Verification:
+  focused `ui_probe` + meta regression checks passed `2 / 2`;
+  `scripts/export-openapi.ps1 -Verify` matched the committed snapshot;
+  `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-161339/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 398 - Extract planning route companion.** Operator directive:
+  continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  ASP.NET Core/.NET 10 request-timeout/static-asset guidance and
+  current local model-serving notes for multimodal caching, cached media
+  inputs, speculative decoding, and Ollama vision payload shape.
+  Completed the Phase 2l route pass:
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmPlanningRoutes.cs`
+  now owns `/api/directives/plan`, `/api/duo/plan`,
+  `/api/disagreement/check`, and `/api/why`. Public routes, route order,
+  OpenAPI, MCP surface, feature catalog, fallback strategies, and test
+  count stay unchanged. `Program.cs` dropped `475 -> 393` lines; inline
+  `api.Map{Get,Post}` calls dropped `4 -> 0`; route companion
+  `api.Map{Get,Post}` calls rose `53 -> 57`; the new planning route
+  companion is `95` lines. Phase 2 route extraction is now complete.
+  A scoped scan of active sibling workspaces under `D:\Coding`
+  reinforced proof artifacts, auditable model decisions,
+  latency-budgeting, and separated text/vision/audio lanes, but did not
+  produce a safer PalLLM code lift than this route-split pass.
+  Verification: Release build passed with `0` warnings;
+  `scripts/export-openapi.ps1 -Verify` matches the committed snapshot;
+  `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-150943/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 397 - Extract conversation route companion.** Operator
+  directive: continue optimizing, production-hardening, full code/doc
+  audit, current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  ASP.NET Core/.NET 10 Minimal API route-group/request-timeout/static-asset
+  guidance and current local model-serving notes for proof-gated
+  multimodal/cache/speculative lanes. Completed the next Phase 2k route
+  pass: `src/PalLLM.Sidecar/RouteRegistrations/PalLlmConversationRoutes.cs`
+  now owns `/api/chat/party`, `/api/chat`, `/api/chat/stream`, and
+  `/api/chat/plan`. Public routes, route order, OpenAPI, MCP surface,
+  feature catalog, fallback strategies, and test count stay unchanged.
+  `Program.cs` dropped `811 -> 475` lines; inline
+  `api.Map{Get,Post}` calls dropped `8 -> 4`; route companion
+  `api.Map{Get,Post}` calls rose `49 -> 53`; the new conversation route
+  companion is `358` lines. A scoped scan of active sibling workspaces
+  under `D:\Coding` reinforced proof-gated runtime evidence, model-lane
+  separation, and latency budget discipline, but did not produce a safer
+  PalLLM code lift than this route-split pass. Verification: Release build
+  passed with `0` warnings; `scripts/export-openapi.ps1 -Verify` matches
+  the committed snapshot; `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-141259/RESULTS.md` passes `16 / 16`
+  with `0` build warnings.
+
+- **Pass 396 - Extract proof/readiness route companion.** Operator
+  directive: continue optimizing, production-hardening, full code/doc
+  audit, current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  ASP.NET Core/.NET 10 Minimal API route-group/request-timeout/output-cache
+  guidance, static-asset endpoint guidance, and current local model-serving
+  notes for proof-gated multimodal/cache/speculative lanes. Completed the
+  next Phase 2j route pass:
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmProofReadinessRoutes.cs`
+  now owns `/api/proof/packet`, `/api/release/readiness`, and
+  `/api/bridge/proof`. Public routes, route order, OpenAPI, MCP surface,
+  feature catalog, fallback strategies, and test count stay unchanged.
+  `Program.cs` dropped `877 -> 811` lines; inline
+  `api.Map{Get,Post}` calls dropped `11 -> 8`; route companion
+  `api.Map{Get,Post}` calls rose `46 -> 49`; the new proof/readiness
+  route companion is `87` lines. A scoped scan of active sibling
+  workspaces under `D:\Coding` reinforced dependency-light audio
+  inspection, proof-gated runtime evidence, model-lane separation, and
+  latency budget discipline, but did not produce a safer PalLLM code lift
+  than this route-split pass. Verification: Release build passed with
+  `0` warnings; `scripts/export-openapi.ps1 -Verify` matches the
+  committed snapshot; `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-130948/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 395 - Extract promotion route companion.** Operator
+  directive: continue optimizing, production-hardening, full code/doc
+  audit, current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  ASP.NET Core/.NET 10 Minimal API route-group/request-timeout/output-cache
+  guidance, static-asset endpoint guidance, and current local model-serving
+  notes for proof-gated multimodal/cache/speculative lanes. Completed the
+  next Phase 2i route pass:
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmPromotionRoutes.cs`
+  now owns `/api/promotion/record`, `/api/promotion/summary`,
+  `/api/promotion/suggestions`, `/api/promotion/apply/preview`, and
+  `/api/promotion/apply`. Public routes, route order, OpenAPI, MCP
+  surface, feature catalog, fallback strategies, and test count stay
+  unchanged. `Program.cs` dropped `1068 -> 877` lines; inline
+  `api.Map{Get,Post}` calls dropped `16 -> 11`; route companion
+  `api.Map{Get,Post}` calls rose `41 -> 46`; the new promotion route
+  companion is `203` lines. A scoped scan of active sibling workspaces
+  under `D:\Coding` reinforced proof-gated runtime evidence, but did
+  not produce a safer PalLLM code lift than this route-split pass.
+  Verification: Release build passed with `0` warnings;
+  `scripts/export-openapi.ps1 -Verify` matches the committed snapshot;
+  `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-120943/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 394 - Extract content/world route companion.** Operator
+  directive: continue optimizing, production-hardening, full code/doc
+  audit, current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  ASP.NET Core/.NET 10 Minimal API route-group/request-timeout guidance,
+  vLLM multimodal caching and media-loading CPU guidance, llama.cpp
+  speculative-serving notes, Ollama keep-alive behavior, Gemma model
+  capability docs, Qwen3-Omni multimodal capability docs, and
+  vLLM-Omni production-readiness notes. Completed the next Phase 2h
+  route pass:
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmContentWorldRoutes.cs`
+  now owns `/api/packs`, `/api/packs/resolve`, `/api/logs`,
+  `/api/world`, `/api/packs/reload`, `/api/packs/validate`, and
+  `/api/snapshot`. Public routes, route order, OpenAPI, MCP surface,
+  feature catalog, fallback strategies, and test count stay unchanged.
+  `Program.cs` dropped `1186 -> 1068` lines; inline
+  `api.Map{Get,Post}` calls dropped `23 -> 16`; route companion
+  `api.Map{Get,Post}` calls rose `34 -> 41`; the new content/world
+  route companion is `127` lines. A scoped scan of active sibling
+  workspaces under `D:\Coding` reinforced proof-gated model lanes,
+  bounded tool surfaces, cache/proof receipts, and machine-readable
+  runtime evidence, but did not produce a safer PalLLM code lift than
+  this route-split pass. Verification: Release build passed with `0`
+  warnings; `scripts/export-openapi.ps1 -Verify` matches the committed
+  snapshot; `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-110850/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 393 - Extract state route companion.** Operator directive:
+  continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  ASP.NET Core/.NET 10 request-timeout guidance, vLLM optimization
+  guidance, llama.cpp speculative-serving notes, Ollama vision and
+  keep-alive behavior, and Qwen3-Omni multimodal capability research.
+  Completed the next Phase 2g route pass:
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmStateRoutes.cs` now
+  owns `/api/memory/recall`, `/api/relationships`,
+  `/api/relationships/{characterId:int}`, `/api/session/save`, and
+  `/api/session/reload`. Public routes, route order, OpenAPI, MCP
+  surface, feature catalog, fallback strategies, and test count stay
+  unchanged. `Program.cs` dropped `1234 -> 1186` lines; inline
+  `api.Map*` calls dropped `28 -> 23`; route companion `api.Map*`
+  calls rose `29 -> 34`; the new state route companion is `65`
+  lines. A scoped scan of active sibling workspaces under `D:\Coding`
+  reinforced proof-gated multimodal/audio/runtime-optimizer claims and
+  machine-readable latency evidence, but did not produce a safer
+  PalLLM code lift than this route-split pass. Verification: Release
+  build passed; `scripts/export-openapi.ps1 -Verify` matches the
+  committed snapshot; `dotnet test` passed `1315 / 1315`; full audit
+  at `../artifacts/full-audit/20260524-100814/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 392 - Extract inspection route companion.** Operator directive:
+  continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  ASP.NET Core/.NET 10 Minimal API, request-timeout, rate-limit,
+  output-cache, OpenAPI, vLLM and llama.cpp speculative-serving notes,
+  Ollama multimodal serving notes, Gemma parameter-efficient
+  multimodal guidance, and Qwen 3.6 visual/audio model capability docs.
+  Completed the next Phase 2f route pass:
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmInspectionRoutes.cs`
+  now owns `/api/self-healing/status`, `/api/airgap/verify`,
+  `/api/roles`, `/api/hardware`, `/api/degradation/advisory`,
+  `/api/budgets`, `/api/narration/cue`,
+  `/api/relationships/lifetime`,
+  `/api/characters/{characterId:int}/mood`, and
+  `/api/privacy/posture`. Public routes, route order, OpenAPI, MCP
+  surface, feature catalog, fallback strategies, and test count stay
+  unchanged. `Program.cs` dropped `1421 -> 1234` lines; inline
+  `api.Map*` calls dropped `38 -> 28`; route companion `api.Map*`
+  calls rose `19 -> 29`; the new inspection route companion is `200`
+  lines. The existing meta-test for bounded lifetime-relationship JSON
+  ingress now scans sidecar route sources instead of assuming that route
+  remains inline in `Program.cs`. A scoped scan of active sibling
+  workspaces under `D:\Coding` reinforced proof-gated multimodal/MTP
+  activation and machine-readable execution evidence, but did not
+  produce a safer PalLLM code lift than this route-split pass.
+  Verification: Release build passed; `scripts/export-openapi.ps1
+  -Verify` matches the committed snapshot; `dotnet test` passed
+  `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-091501/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 391 - Extract health route companion.** Operator directive:
+  continue optimizing, production-hardening, full code/doc audit,
+  current model/runtime research, active `D:\Coding` idea scan,
+  publication safety, and next-best PalLLM work. Rechecked current
+  ASP.NET Core/.NET 10 Minimal API, request-timeout, rate-limit,
+  output-cache, OpenAPI, and Native AOT guidance plus current Ollama,
+  llama.cpp, vLLM, Gemma, and Qwen multimodal/speculative-serving
+  notes. Completed the next Phase 2e route pass:
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmHealthRoutes.cs` now
+  owns `/api/health`, `/api/dashboard`, `/metrics`, `/health/live`,
+  `/health/ready`, `/api/features`, `/api/describe`, and
+  `/api/quickstart`. Public routes, route order, OpenAPI, MCP surface,
+  feature catalog, fallback strategies, and test count stay unchanged.
+  `Program.cs` dropped `1546 -> 1421` lines; inline `api.Map*` calls
+  dropped `43 -> 38`; route companion `api.Map*` calls rose
+  `14 -> 19`; the new health route companion is `137` lines. The full
+  audit's operational-route counter now scans `RouteRegistrations/*.cs`
+  alongside `Program.cs`. A scoped scan of active sibling workspaces
+  under `D:\Coding` reinforced served-runtime proof gates and
+  capability-vs-proof separation, but did not produce a safer PalLLM
+  code lift than this route-split pass. Verification: Release build
+  passed; `scripts/export-openapi.ps1 -Verify` matches the committed
+  snapshot; `dotnet test` passed `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-081131/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 390 - Extract multimodal media route companion.** Operator
+  directive: continue optimizing, production-hardening, full code/doc
+  audit, current model/runtime research, publication safety, and next-best
+  PalLLM work. Rechecked current ASP.NET Core/.NET 10 Minimal API,
+  request-timeout, rate-limit, output-cache, and OpenAPI guidance plus
+  current Ollama, llama.cpp, vLLM, Gemma, and Qwen multimodal-serving
+  notes. Completed the next Phase 2d route pass:
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmMediaRoutes.cs` now owns
+  `/api/vision/describe`, `/api/vision/world-state`,
+  `/api/vision/screenshots/process`, `/api/tts/synthesize`, and
+  `/api/audio/transcribe`. Public routes, route order, OpenAPI, MCP
+  surface, feature catalog, fallback strategies, and test count stay
+  unchanged. `Program.cs` dropped `1621 -> 1546` lines; inline
+  `api.Map*` calls dropped `48 -> 43`; route companion `api.Map*` calls
+  rose `9 -> 14`; the new media route companion is `92` lines.
+  Verification: Release build passed; `scripts/export-openapi.ps1
+  -Verify` matches the committed snapshot; `dotnet test` passed
+  `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-070854/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 389 - Extract bridge route companion.** Operator directive:
+  continue optimizing, production-hardening, full code/doc audit, current
+  model/runtime research, publication safety, and next-best PalLLM work.
+  Rechecked current ASP.NET Core/.NET 10 Minimal API/OpenAPI/output-cache
+  guidance plus current Gemma/Qwen, llama.cpp, Ollama, and vLLM
+  multimodal-serving notes. Completed the next Phase 2c route pass:
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmBridgeRoutes.cs` now owns
+  `/api/bridge/drain`, `/api/bridge/outbox`, `/api/bridge/ui-probe`, and
+  `/api/bridge/outbox/clear`. Public routes, route order, OpenAPI, MCP
+  surface, feature catalog, fallback strategies, and test count stay
+  unchanged. `Program.cs` dropped `1642 -> 1621` lines; inline
+  `api.Map*` calls dropped `52 -> 48`; the new route companion is `32`
+  lines. A scoped scan of active sibling workspaces under `D:\Coding`
+  reinforced model-serving and proof-lane ideas but did not produce a
+  safer PalLLM code lift than this route-split pass. Verification:
+  Release build passed; focused sidecar/meta fixtures passed `82 / 82`;
+  `scripts/export-openapi.ps1 -Verify` matches the committed snapshot;
+  full audit at
+  `../artifacts/full-audit/20260524-061216/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 388 - Extract inference route companion.** Operator
+  directive: continue optimizing, production-hardening, full code/doc
+  audit, current model/runtime research, publication safety, and next-best
+  PalLLM work. Rechecked current ASP.NET Core/.NET 10 Minimal API/OpenAPI
+  guidance plus current Gemma/Qwen, llama.cpp, Ollama, and vLLM
+  multimodal-serving notes. Completed the first Phase 2b route pass:
+  `scripts/run_full_audit.ps1` now counts `api.Map*` calls across
+  `Program.cs` and `src/PalLLM.Sidecar/RouteRegistrations/*.cs`, and
+  `src/PalLLM.Sidecar/RouteRegistrations/PalLlmInferenceRoutes.cs`
+  owns `/api/inference/performance`, `/api/inference/collaboration`,
+  `/api/inference/collaboration/plan`, `/api/inference/warmup`, and
+  `/api/mcp/upstream`. Public routes, route order, OpenAPI, MCP surface,
+  feature catalog, fallback strategies, and test count stay unchanged.
+  `Program.cs` dropped `1721 -> 1642` lines; the new route companion is
+  `95` lines. Also neutralized specific creature/species example names in
+  current source/docs/tests/scripts and renamed the starter narrative pack to
+  `docs/examples/camp-guardian-pack.json` so publication-facing examples stay
+  generic while the Palworld/UE4SS integration scope remains explicit.
+  Updated route-source documentation across CODE_MAP,
+  REFACTORING_ROADMAP, ARCHITECTURE, API, CHEAT_SHEET, COOKBOOK,
+  CONVENTIONS, EXTENSION_POINTS, HARVEST, INDEX, ROADMAP, ADR 0004,
+  and agent/operator quick references. Verification: Release build
+  passed; focused route/publication-safety fixtures passed `272 / 272`;
+  `scripts/export-openapi.ps1 -Verify` matches the committed snapshot;
+  full audit at
+  `../artifacts/full-audit/20260524-052504/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 387 - Extract sidecar service-registration companions.**
+  Operator directive: continue optimizing, production-hardening, full
+  code/doc audit, current model/runtime research, publication safety,
+  and next-best PalLLM work. Rechecked current ASP.NET Core/.NET 10
+  Minimal API / output-cache / `IHttpClientFactory` guidance plus
+  current llama.cpp, Ollama, and vLLM multimodal and latency-serving
+  notes. Started REFACTORING_ROADMAP.md Phase 2a by adding five
+  sidecar service-registration extension files under
+  `src/PalLLM.Sidecar/Configuration/`: core HTTP policy, inference
+  clients/runtime workers, MCP, health/OpenAPI, and opt-in
+  OpenTelemetry. `Program.cs` now keeps host creation, middleware,
+  static assets, and all route registrations; public routes, OpenAPI,
+  feature catalog, fallback strategies, and test count stay
+  unchanged. `Program.cs` dropped `2146 -> 1721` lines. Updated
+  CODE_MAP, REFACTORING_ROADMAP, CHEAT_SHEET, ANTI_PATTERNS,
+  HARVEST, INDEX, COOKBOOK, CONVENTIONS, EXTENSION_POINTS,
+  OPERATIONS, Copilot quick reference, `pal handoff`, CHANGELOG, and
+  this handoff. Extended the existing MetaTests startup guard so
+  request-timeout and pooled-HTTP-client registration can live in the
+  new configuration companions. Verification: `dotnet test` reports
+  `1315 / 1315`; `scripts/export-openapi.ps1 -Verify` matches the
+  committed snapshot; full audit at
+  `../artifacts/full-audit/20260524-041620/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 386 - Extract runtime inference partial.**
+  Operator directive: continue optimizing, production-hardening, full
+  code/doc audit, current model/runtime research, publication safety,
+  and next-best PalLLM work. Rechecked current ASP.NET Core/.NET 10
+  performance and source-generation guidance plus llama.cpp/Ollama
+  multimodal/residency notes. Completed REFACTORING_ROADMAP.md Phase
+  1 by adding `src/PalLLM.Domain/Runtime/PalLlmRuntime.Inference.cs`
+  as a behavior-preserving partial class. Moved inference performance
+  snapshots, circuit/model metadata, warmup, live-inference residency
+  tracking, warmup status rendering, and inference operation receipts
+  out of the primary runtime spine. Public methods, DI shape, route
+  registrations, OpenAPI, feature catalog, fallback strategies, and
+  test count all stay unchanged. `PalLlmRuntime.cs` dropped
+  `1452 -> 1104` lines; the new inference companion is `357` lines.
+  Added a `MetaTests` source-shape guard so inference warmup/metrics
+  stay in the inference partial. Updated CODE_MAP, REFACTORING_ROADMAP,
+  CHEAT_SHEET, ANTI_PATTERNS, HARVEST, INDEX, Claude/Copilot quick
+  references, `pal handoff`, CHANGELOG, and this handoff so line-count
+  mirrors and next queued work now point at Phase 2 (`Program.cs`
+  service/route extraction). Verification: `dotnet test` reports
+  `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-031615/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 385 - Extract runtime snapshot partial.**
+  Operator directive: continue optimizing, production-hardening, full
+  code/doc audit, current model/runtime research, publication safety,
+  and next-best PalLLM work. Rechecked current .NET 10 Minimal API and
+  System.Text.Json source-generation guidance plus current local
+  multimodal serving notes from llama.cpp and Ollama. Continued
+  REFACTORING_ROADMAP.md Phase 1 by adding
+  `src/PalLLM.Domain/Runtime/PalLlmRuntime.Snapshot.cs` as a
+  behavior-preserving partial class. Moved health/dashboard assembly,
+  world-state reads, directory-activity snapshot caching, snapshot
+  updates, vision world-state application, world-event appenders,
+  weather/production/travel snapshot mutation, and snapshot-backed
+  character lookup out of the primary runtime spine. Public methods,
+  DI shape, route registrations, OpenAPI, feature catalog, fallback
+  strategies, and test count all stay unchanged. `PalLlmRuntime.cs`
+  dropped `1931 -> 1452` lines; the new snapshot companion is `489`
+  lines. Added a `MetaTests` source-shape guard so snapshot/health
+  assembly and event-driven snapshot mutation stay in the snapshot
+  partial. Updated CODE_MAP, REFACTORING_ROADMAP, CHEAT_SHEET,
+  ANTI_PATTERNS, HARVEST, INDEX, QUICKREF, HOT_PATH, Claude/Copilot
+  quick references, `pal handoff`, CHANGELOG, and this handoff so
+  line-count mirrors and next queued work now point at Phase 1h
+  (`PalLlmRuntime.Inference.cs`). Verification: `dotnet test` reports
+  `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-021333/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 384 - Remove build-time OpenAPI package dependency.**
+  Operator directive: find a way to preserve functionality and
+  performance while getting rid of dependencies. Rechecked official
+  ASP.NET Core OpenAPI guidance, OpenTelemetry .NET package guidance,
+  MCP C# SDK package split, and ASP.NET Core integration-test guidance.
+  Removed the direct `Microsoft.Extensions.ApiDescription.Server`
+  package reference from `src/PalLLM.Sidecar/PalLLM.Sidecar.csproj`.
+  Reworked `scripts/export-openapi.ps1` so it now builds the sidecar,
+  launches the built assembly on a random loopback URL with an isolated
+  runtime root, fetches `/openapi/v1.json`, removes the host-specific
+  root `servers` block, normalizes line endings, and writes or verifies
+  `docs/openapi/palllm-sidecar-v1.json`. Live `/openapi/v1.json` and
+  `/openapi/v1.yaml` behavior stays unchanged; the separate MSBuild
+  OpenAPI generator package is no longer needed. Added a `MetaTests`
+  source guard so the dependency and old `OpenApiGenerateDocuments`
+  path cannot silently return. Verification: `scripts/export-openapi.ps1
+  -Verify` matches the committed snapshot; `dotnet test` reports
+  `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-012955/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 383 - Extract runtime outbox partial.**
+  Operator directive: continue optimizing, production-hardening, full
+  code/doc audit, current model/runtime research, publication safety,
+  and next-best PalLLM work. Continued REFACTORING_ROADMAP.md Phase 1
+  by adding `src/PalLLM.Domain/Runtime/PalLlmRuntime.Outbox.cs` as a
+  behavior-preserving partial class. Moved screenshot queue processing,
+  pending screenshot pruning, outbox listing, outbox clearing, outbox
+  reply writing, archive retention, and outbox source-generated JSON
+  metadata out of the primary runtime spine. Public methods, DI shape,
+  route registrations, OpenAPI, feature catalog, fallback strategies,
+  and test count all stay unchanged. `PalLlmRuntime.cs` dropped
+  `2214 -> 1931` lines; the new outbox companion is `289` lines.
+  Updated CODE_MAP, REFACTORING_ROADMAP, CHEAT_SHEET, ANTI_PATTERNS,
+  HARVEST, INDEX, QUICKREF, HOT_PATH, Claude/Copilot quick references,
+  `pal handoff`, CHANGELOG, and this handoff so line-count mirrors and
+  next queued work now point at Phase 1g (`PalLlmRuntime.Snapshot.cs`).
+  Verification: `dotnet test` reports `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-011219/RESULTS.md` passes
+  `16 / 16` with `0` build warnings.
+
+- **Pass 382 - Extract runtime bridge partial.**
+  Operator directive: continue optimizing, production-hardening, full
+  code/doc audit, current model/runtime research, publication safety,
+  and next-best PalLLM work. Continued REFACTORING_ROADMAP.md Phase 1
+  by adding `src/PalLLM.Domain/Runtime/PalLlmRuntime.Bridge.cs` as a
+  behavior-preserving partial class. Moved bridge inbox draining,
+  bridge event dispatch, bridge activity snapshots, loop-proof
+  assembly, reply-delivery receipts, speech-playback receipts, action
+  feedback, discovered-base promotion, and assistant fallback memory
+  tagging out of the primary runtime spine. Public methods, DI shape,
+  route registrations, OpenAPI, feature catalog, fallback strategies,
+  and test count all stay unchanged. `PalLlmRuntime.cs` dropped
+  `3116 -> 2214` lines; the new bridge companion is `912` lines.
+  Updated CODE_MAP, REFACTORING_ROADMAP, CHEAT_SHEET, ANTI_PATTERNS,
+  HARVEST, INDEX, Claude/Copilot quick references, `pal handoff`,
+  CHANGELOG, and this handoff so line-count mirrors and next queued
+  work now point at Phase 1f (`PalLlmRuntime.Outbox.cs`).
+  Verification: `dotnet test` reports `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260524-002128/RESULTS.md` passes
+  `16 / 16`.
+
+- **Pass 381 - Extract runtime bridge-boot partial.**
+  Operator directive: continue optimizing, production-hardening, full
+  code/doc audit, current model/runtime research, publication safety,
+  and next-best PalLLM work. Continued REFACTORING_ROADMAP.md Phase 1
+  by adding `src/PalLLM.Domain/Runtime/PalLlmRuntime.BridgeBoot.cs`
+  as a behavior-preserving partial class. Moved bridge-boot heartbeat
+  normalization, compatibility-signal parsing, bridge-boot cloning,
+  native-readiness snapshot assembly, HUD-bind recommendation logic,
+  compat-signal lookup, and HUD target normalization out of the
+  primary runtime spine. Public methods, DI shape, route
+  registrations, OpenAPI, feature catalog, fallback strategies, and
+  test count all stay unchanged. `PalLlmRuntime.cs` dropped
+  `3591 -> 3116` lines; the new bridge-boot companion is `482`
+  lines. Updated CODE_MAP, REFACTORING_ROADMAP, CHEAT_SHEET,
+  ANTI_PATTERNS, HARVEST, INDEX, Claude/Copilot quick references,
+  `pal handoff`, CHANGELOG, and this handoff so line-count mirrors
+  and next queued work now point at Phase 1e
+  (`PalLlmRuntime.Bridge.cs`). Verification: `dotnet test` reports
+  `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260523-231118/RESULTS.md` passes
+  `16 / 16`.
+
+- **Pass 380 - Extract runtime prompt partial.**
+  Operator directive: continue optimizing, production-hardening, full
+  code/doc audit, current model/runtime research, publication safety,
+  and next-best PalLLM work. Continued REFACTORING_ROADMAP.md Phase 1
+  by adding `src/PalLLM.Domain/Runtime/PalLlmRuntime.Prompt.cs` as a
+  behavior-preserving partial class. Moved system prompt assembly,
+  relationship/world/character/lore/memory context appenders, bounded
+  text trimming, assistant-message/status formatting, and prompt
+  snapshot formatting helpers out of the primary runtime spine. Public
+  methods, DI shape, route registrations, OpenAPI, feature catalog,
+  fallback strategies, and test count all stay unchanged.
+  `PalLlmRuntime.cs` dropped `3804 -> 3592` lines;
+  `PalLlmRuntime.Helpers.cs` is now `392` lines; the new prompt
+  companion is `311` lines. Updated CODE_MAP, REFACTORING_ROADMAP,
+  CHEAT_SHEET, ANTI_PATTERNS, HARVEST, INDEX, Claude/Copilot quick
+  references, `pal handoff`, CHANGELOG, and this handoff so line-count
+  mirrors and next queued work now point at Phase 1d
+  (`PalLlmRuntime.BridgeBoot.cs`). Verification: `dotnet test`
+  reports `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260523-221223/RESULTS.md` passes
+  `16 / 16`.
+
+- **Pass 379 - Field Console side-pane fit and asset delivery.**
+  Operator report: the sidecar interface was substantially cut off
+  when kept beside the game. Live Kestrel probing found the sharper
+  failure: direct `/styles.css`, `/app.js`, `/index.html`, and favicon
+  requests returned `200` with zero-byte bodies, leaving the console at
+  risk of rendering as an unstyled or scriptless strip. Added explicit
+  high-priority physical `wwwroot` routes for the Field Console assets
+  and only falls back to `MapStaticAssets` when the core physical shell
+  assets are unavailable. Tightened the CSS side-pane posture with
+  dynamic viewport shell sizing, compact header/status/nav controls,
+  horizontal-scrolling chip/nav ribbons, shrink-safe suggestion / mesh /
+  promotion grids, and wrapping for long command text. Extended the
+  root-shell regression so empty CSS/JS assets and missing side-pane CSS
+  hooks fail fast. Verification: live asset probes now return real
+  bytes and content types; Playwright verified `280x760`, `390x844`,
+  and `1365x768` with no horizontal overflow; `dotnet test` reports
+  `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260523-215023/RESULTS.md` passes
+  `16 / 16`.
+
+- **Pass 378 - Extract runtime UI-probe partial.** Operator
+  directive: continue optimizing, production-hardening, code/doc
+  auditing, publication safety, and current model/runtime research.
+  Continued REFACTORING_ROADMAP.md Phase 1 by adding
+  `src/PalLLM.Domain/Runtime/PalLlmRuntime.UiProbe.cs` as a
+  behavior-preserving partial class. Moved the `ui_probe` diagnostics
+  slice out of the primary runtime file: the public
+  `GetUiProbeDiagnostics` accessor, diagnostics cache state,
+  diagnostics retention, bounded dump parsing, HUD candidate ranking,
+  UI-probe snapshot/cloning helpers, JSON source-generation context,
+  `UiProbeDumpDocument`, `UiProbeCandidateAccumulator`, and the nested
+  `DirectoryActivitySnapshot` type. Public methods, DI shape, route
+  registrations, OpenAPI, feature catalog, fallback strategies, and
+  test count all stay unchanged. `PalLlmRuntime.cs` dropped
+  `4291 -> 3804` lines; the new UI-probe companion is `501` lines.
+  Updated CODE_MAP, REFACTORING_ROADMAP, CHEAT_SHEET, ANTI_PATTERNS,
+  HARVEST, INDEX, Claude/Copilot quick references, `pal handoff`, and
+  this handoff so line-count mirrors and next queued work now point at
+  Phase 1c (`PalLlmRuntime.Prompt.cs`). Verification: `dotnet test`
+  reports `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260523-212401/RESULTS.md` passes
+  `16 / 16`.
+
+- **Pass 377 - Field Console browser hardening.** Operator directive:
+  perform a frontend debugging pass across DOM structure, browser
+  compatibility, console health, and responsive layout. The in-app
+  Browser reproduced a parse-time `SyntaxError` from duplicate
+  top-level `escapeHtml` declarations in `wwwroot/app.js`; because the
+  dashboard script is an ES module, that left the Field Console stuck
+  on the static Loading shell. Removed the duplicate helper, wrapped
+  auto-refresh localStorage access in safe helpers so blocked storage
+  cannot abort startup, reconnected the feature renderer to its
+  existing CSS class contract, tightened feature/quickstart wrapping
+  rules, fixed the mobile hidden-table-header overflow, and linked the
+  existing SVG favicon + manifest from `index.html` to avoid Chromium
+  `/favicon.ico` console noise. Extended the existing root-shell
+  regression to pin those contracts without changing the test count.
+  Browser proof: in-app Browser confirmed the original parse failure
+  and populated dashboard after the JS fix; after it later refused
+  loopback navigations with `net::ERR_BLOCKED_BY_CLIENT`, regular
+  Playwright fallback verified desktop + 390px mobile renders with
+  zero fresh console warnings/errors, Refresh Now interaction, and no
+  horizontal overflow. No public route, OpenAPI schema,
+  feature-catalog, or test-count change. Pass 378 has since landed
+  Phase 1b, so the current autonomous refactor queue is Phase 1c
+  (`PalLlmRuntime.Prompt.cs`).
+  Verification: `dotnet test` reports `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260523-212401/RESULTS.md` passes
+  `16 / 16`.
+
+- **Pass 376 - Bound health directory counting.** Operator directive:
+  perform a multi-pass O(1) performance analysis. Identified
+  `PalLlmRuntime.GetHealth`'s bridge directory activity snapshot as
+  the concrete above-O(1) hot/posture operation worth changing: the
+  previous `CountFiles` helper fully enumerated each bridge directory
+  once per TTL refresh. Updated
+  `src/PalLLM.Domain/Runtime/PalLlmRuntime.Helpers.cs` so directory
+  counts are exact until `1024` entries, then cap at `1024`; the
+  pattern count is fixed and the per-pattern scan budget is fixed, so
+  health polling no longer grows with runaway backlog size. Extended
+  the existing health-count regression in `RuntimeTests` to prove a
+  `1050`-file outbox reports the cap. Documented the cap in
+  HOT_PATH and API docs. No public route, OpenAPI schema,
+  feature-catalog, or test-count change. Pass 378 has since landed
+  Phase 1b, so the current autonomous refactor queue is Phase 1c
+  (`PalLlmRuntime.Prompt.cs`).
+  Verification: `dotnet test` reports `1315 / 1315`; focused boundary
+  coverage proves `1023` stays exact and `1050` caps to `1024`; full
+  audit at `../artifacts/full-audit/20260523-205240/RESULTS.md` passes
+  `16 / 16`.
+
+- **Pass 375 - Extract runtime helper partial.** Operator directive:
+  continue production-hardening, optimization, code/doc audit, and
+  current research. Verified the green baseline first (`pal.ps1 audit`
+  passed `16 / 16`, `dotnet test` passed `1315 / 1315`), checked
+  current ASP.NET Core output-caching guidance plus vLLM/SGLang
+  local-model serving guidance, then landed REFACTORING_ROADMAP.md
+  Phase 1a. Added
+  `src/PalLLM.Domain/Runtime/PalLlmRuntime.Helpers.cs` as a partial
+  class for the pure static helper surface: endpointing normalization,
+  MIME routing/playback hints, directory counting, voice-selection
+  token helpers, stable bridge/read failure descriptions, receipt
+  sanitizers, bounded trimming, request/message bounds, prompt/status
+  formatting, and sorted file enumeration. Removed the same methods
+  from the primary runtime file with no public API, route, feature, or
+  test-count change. `PalLlmRuntime.cs` dropped `4744 -> 4291` lines;
+  the helper companion is `462` lines. Updated CODE_MAP,
+  REFACTORING_ROADMAP, CHEAT_SHEET, ANTI_PATTERNS, HARVEST, INDEX,
+  `pal handoff`, Claude/Copilot quick references, and this handoff so
+  line-count mirrors and next queued work now point at Phase 1b
+  (`PalLlmRuntime.UiProbe.cs`). Updated the Lua/runtime playback-hint
+  source-shape guard to scan `PalLlmRuntime*.cs`, so future partial
+  extractions remain covered. Verification: `dotnet test` reports
+  `1315 / 1315`; full audit at
+  `../artifacts/full-audit/20260523-183801/RESULTS.md` passes
+  `16 / 16`.
 
 - **Pass 374 - Prepare clean Codex handoff.** Operator directive:
   "get every phase of the program's coding ready to be cleanly driven
@@ -2589,7 +3622,7 @@ once they reached the changelog):
   per-function rationale with license + size + alternatives.
 - **Pass 315 - New SpeciesPersonalityResolver feature: per-species personality packs.**
   First substantive code addition in this campaign — closes the
-  "all Lamballs share a timid voice" gap surfaced in the user's
+  "all species-alpha companions share a timid voice" gap surfaced in the user's
   earlier audit question. Operators map species names to pack ids
   once in config, no need to author a separate pack per character.
   
@@ -2656,7 +3689,7 @@ once they reached the changelog):
   the prior turn: "do Pals have personalities per species?". Before
   Pass 315, the personality format was strictly per-character-id, so
   every tame needed its own pack. Now an operator can configure once
-  ("Lamball -> lamball-timid-pack") and every Lamball the player
+  ("SpeciesAlpha -> species-alpha-timid-pack") and every SpeciesAlpha the player
   ever tames inherits that voice while still building its own
   per-character memory and relationship affinity. The pack format
   stays per-character — this is the *lookup table* that decides
@@ -2784,8 +3817,8 @@ once they reached the changelog):
     `scripts/install-mod.ps1`, `scripts/PalLLM.InstallManifest.ps1`,
     `docs/schemas/install-manifest.schema.json`, `Makefile` all
     exist.
-  - Sample personality pack at `runtime-root/Packs/chillet-pack.json`
-    is real (sourced from `docs/examples/chillet-pack.json`).
+  - Sample personality pack at `runtime-root/Packs/camp-guardian-pack.json`
+    is real (sourced from `docs/examples/camp-guardian-pack.json`).
   - Manifest `Kind` enum
     (`directory`/`file`/`junction`/`enabled-file`/`sample-pack`)
     matches `[ValidateSet(...)]` at
@@ -2817,7 +3850,7 @@ once they reached the changelog):
     "37 tools, 6 resources + 1 template, 4 prompts" verbatim.
   - All 4 example file references (`compose.yaml`,
     `vscode-mcp.json`, `claude-desktop-config.json`,
-    `chillet-pack.json`) exist under `docs/examples/`.
+    `camp-guardian-pack.json`) exist under `docs/examples/`.
   
   Stamps refreshed `2026-05-01` -> `2026-05-21` (UNINSTALL) and
   `2026-05-06` -> `2026-05-21` (MCP_QUICKSTART). No code changed;
@@ -3302,10 +4335,10 @@ once they reached the changelog):
   PASS at `../artifacts/full-audit/20260521-010352/RESULTS.md`.
   Routes, MCP tools, feature catalog entries, fallback strategy counts,
   and OpenAPI schema unchanged.
-For Passes 48-295 see [`../CHANGELOG.md`](../CHANGELOG.md). The changelog
-preserves the verbatim entry for every pass; this file keeps only the most
-recent batch (Passes 296-330) so a fresh agent gets immediate
-context without scanning 2,000+ lines of historical work.
+For older passes see [`../CHANGELOG.md`](../CHANGELOG.md). The changelog
+preserves the verbatim entry for every pass; this file keeps only recent
+high-signal handoff context so a fresh agent gets immediate context
+without scanning thousands of lines of historical work.
 
 ## Highest-value remaining blockers
 
@@ -3325,14 +4358,18 @@ order and acceptance criteria.
 
 If you only do one substantive thing next, do this:
 
-1. Run a live Palworld session with
-   `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-native-proof.ps1`.
-2. Use the resulting `/api/bridge/proof` evidence to confirm the top HUD target
-   is real and ship-worthy.
-3. If the proof is stable, promote that seam into the default native-delivery
-   path before moving on to audio or richer actions.
+1. If a live game is available, run `pal.ps1 proof` and capture the
+   in-Palworld `delivery_proven` evidence. That is still the highest
+   release blocker.
+2. If no live game is available, prove the packaged EXE path on a
+   clean profile and export the release/support proof bundle.
+3. Keep route registration order, middleware order, OpenAPI output,
+   and all `57` `/api` route counts unchanged; Phase 2 route extraction
+   is complete and should not be reopened without a new scoped phase.
 
-Everything else is lower leverage until that proof exists.
+The live Palworld native proof remains the highest release blocker,
+but it requires a running game + UE4SS session and is not closable by
+an unattended coding pass.
 
 ## High-signal files
 
@@ -3341,6 +4378,25 @@ Everything else is lower leverage until that proof exists.
 - `src/PalLLM.Sidecar/ReleaseReadinessBuilder.cs`
 - `src/PalLLM.Sidecar/ReleaseArtifactIntegrityEvidenceBuilder.cs`
 - `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs`
+- `src/PalLLM.Domain/Runtime/PalLlmRuntime.Helpers.cs`
+- `src/PalLLM.Domain/Runtime/PalLlmRuntime.Inference.cs`
+- `src/PalLLM.Domain/Runtime/PalLlmRuntime.UiProbe.cs`
+- `src/PalLLM.Domain/Runtime/PalLlmRuntime.BridgeBoot.cs`
+- `src/PalLLM.Domain/Runtime/PalLlmRuntime.Bridge.cs`
+- `src/PalLLM.Domain/Runtime/PalLlmRuntime.Prompt.cs`
+- `src/PalLLM.Domain/Runtime/PalLlmRuntime.Snapshot.cs`
+- `src/PalLLM.Domain/Runtime/PalLlmRuntime.Outbox.cs`
+- `src/PalLLM.Sidecar/RouteRegistrations/PalLlmInferenceRoutes.cs`
+- `src/PalLLM.Sidecar/RouteRegistrations/PalLlmBridgeRoutes.cs`
+- `src/PalLLM.Sidecar/RouteRegistrations/PalLlmMediaRoutes.cs`
+- `src/PalLLM.Sidecar/RouteRegistrations/PalLlmHealthRoutes.cs`
+- `src/PalLLM.Sidecar/RouteRegistrations/PalLlmInspectionRoutes.cs`
+- `src/PalLLM.Sidecar/RouteRegistrations/PalLlmStateRoutes.cs`
+- `src/PalLLM.Sidecar/RouteRegistrations/PalLlmContentWorldRoutes.cs`
+- `src/PalLLM.Sidecar/RouteRegistrations/PalLlmPromotionRoutes.cs`
+- `src/PalLLM.Sidecar/RouteRegistrations/PalLlmProofReadinessRoutes.cs`
+- `src/PalLLM.Sidecar/RouteRegistrations/PalLlmConversationRoutes.cs`
+- `src/PalLLM.Sidecar/RouteRegistrations/PalLlmPlanningRoutes.cs`
 - `scripts/run-native-proof.ps1`
 - `scripts/export-release-proof-bundle.ps1`
 - `scripts/export-support-bundle.ps1`

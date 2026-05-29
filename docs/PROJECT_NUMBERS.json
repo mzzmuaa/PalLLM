@@ -36,7 +36,7 @@
 
   "linksToSourceOfTruth": {
     "tests": "tests/PalLLM.Tests/*.cs ([Test] + [TestCase] executable NUnit case count)",
-    "apiRoutes": "src/PalLLM.Sidecar/Program.cs (api.Map* call count)",
+    "apiRoutes": "src/PalLLM.Sidecar/Program.cs + src/PalLLM.Sidecar/RouteRegistrations/*.cs (api.Map* call count)",
     "featureCatalog": "src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs (Id = entries)",
     "fallbackStrategies": "src/PalLLM.Domain/Runtime/FallbackBehaviorEngine.cs (Try_* methods)",
     "adrsAccepted": "docs/adr/ (markdown files with Status: Accepted)"

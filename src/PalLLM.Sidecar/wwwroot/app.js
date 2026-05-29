@@ -11,6 +11,7 @@ const PROMOTION_SUGGESTIONS_ENDPOINT = "/api/promotion/suggestions";
 const CHAT_ENDPOINT = "/api/chat";
 const CHAT_STREAM_ENDPOINT = "/api/chat/stream";
 const CHAT_PLAN_ENDPOINT = "/api/chat/plan";
+const AUTO_REFRESH_STORAGE_KEY = "palllm:autoRefresh";
 
 // DuoCooperationPattern enum values — match server-side numeric order
 // so we can render a friendly label when the endpoint returns an int.
@@ -681,12 +682,12 @@ function renderFeatures(features) {
 
     setMarkup(featuresList, unique.map((feature) => `
         <article class="feature-item">
-            <header>
-                <h3>${escapeHtml(toTitleCase(feature.Id.replaceAll("-", " ")))}</h3>
+            <header class="feature-head">
+                <h3 class="feature-title">${escapeHtml(toTitleCase(feature.Id.replaceAll("-", " ")))}</h3>
                 <span class="badge" data-status="${escapeHtml(feature.Status || "ready")}">${escapeHtml(feature.Status || "ready")}</span>
             </header>
-            <p>${escapeHtml(feature.Summary || "")}</p>
-            <small>${escapeHtml(feature.Notes || "")}</small>
+            <p class="feature-desc">${escapeHtml(feature.Summary || "")}</p>
+            <small class="feature-notes">${escapeHtml(feature.Notes || "")}</small>
         </article>
     `).join(""));
 
@@ -747,7 +748,7 @@ function resolveAutoRefreshPreference() {
         return true;
     }
 
-    const stored = window.localStorage.getItem("palllm:autoRefresh");
+    const stored = readLocalStorage(AUTO_REFRESH_STORAGE_KEY);
     if (stored) {
         return stored !== "off";
     }
@@ -756,7 +757,24 @@ function resolveAutoRefreshPreference() {
 }
 
 function storeAutoRefreshPreference(enabled) {
-    window.localStorage.setItem("palllm:autoRefresh", enabled ? "on" : "off");
+    writeLocalStorage(AUTO_REFRESH_STORAGE_KEY, enabled ? "on" : "off");
+}
+
+function readLocalStorage(key) {
+    try {
+        return window.localStorage?.getItem(key) ?? null;
+    } catch {
+        return null;
+    }
+}
+
+function writeLocalStorage(key, value) {
+    try {
+        window.localStorage?.setItem(key, value);
+    } catch {
+        // Storage can be blocked by private browsing, enterprise
+        // policies, or embedded webviews. Query-string state remains.
+    }
 }
 
 function syncRefreshQueryParam(enabled) {
@@ -1338,15 +1356,6 @@ function renderQuickstartGuide(guide, panel, headline, list) {
     });
 
     list.innerHTML = fragments.join("");
-}
-
-function escapeHtml(text) {
-    return String(text)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll("\"", "&quot;")
-        .replaceAll("'", "&#39;");
 }
 
 // --------------------------------------------------------------------

@@ -22,20 +22,20 @@ public class LifetimeRelationshipAggregatorTests
         LifetimeRelationshipAggregate prior = LifetimeRelationshipAggregator.Empty();
         var rels = new[]
         {
-            new CharacterRelationship { CharacterId = 1, CharacterName = "Lamball", Affinity = 20, Mood = RelationshipMood.Warm },
-            new CharacterRelationship { CharacterId = 2, CharacterName = "Cattiva", Affinity = -5, Mood = RelationshipMood.Neutral },
+            new CharacterRelationship { CharacterId = 1, CharacterName = "SpeciesAlpha", Affinity = 20, Mood = RelationshipMood.Warm },
+            new CharacterRelationship { CharacterId = 2, CharacterName = "SpeciesBeta", Affinity = -5, Mood = RelationshipMood.Neutral },
         };
         DateTimeOffset now = new(2026, 4, 24, 12, 0, 0, TimeSpan.Zero);
 
         LifetimeRelationshipAggregate result = LifetimeRelationshipAggregator.Merge(prior, rels, now);
 
         Assert.That(result.Characters, Has.Count.EqualTo(2));
-        var lamball = result.Characters.Single(c => c.CharacterId == 1);
-        Assert.That(lamball.SessionCount, Is.EqualTo(1));
-        Assert.That(lamball.FirstSeenUtc, Is.EqualTo(now));
-        Assert.That(lamball.LastSeenUtc, Is.EqualTo(now));
-        Assert.That(lamball.PeakAffinity, Is.EqualTo(20));
-        Assert.That(lamball.FloorAffinity, Is.EqualTo(20));
+        var speciesAlpha = result.Characters.Single(c => c.CharacterId == 1);
+        Assert.That(speciesAlpha.SessionCount, Is.EqualTo(1));
+        Assert.That(speciesAlpha.FirstSeenUtc, Is.EqualTo(now));
+        Assert.That(speciesAlpha.LastSeenUtc, Is.EqualTo(now));
+        Assert.That(speciesAlpha.PeakAffinity, Is.EqualTo(20));
+        Assert.That(speciesAlpha.FloorAffinity, Is.EqualTo(20));
     }
 
     [Test]
@@ -45,7 +45,7 @@ public class LifetimeRelationshipAggregatorTests
             LifetimeRelationshipAggregator.Empty(),
             new[]
             {
-                new CharacterRelationship { CharacterId = 1, CharacterName = "Lamball", Affinity = 20, Mood = RelationshipMood.Warm },
+                new CharacterRelationship { CharacterId = 1, CharacterName = "SpeciesAlpha", Affinity = 20, Mood = RelationshipMood.Warm },
             },
             new DateTimeOffset(2026, 4, 20, 12, 0, 0, TimeSpan.Zero));
 
@@ -53,19 +53,19 @@ public class LifetimeRelationshipAggregatorTests
             first,
             new[]
             {
-                new CharacterRelationship { CharacterId = 1, CharacterName = "Lamball", Affinity = 80, Mood = RelationshipMood.Warm },
+                new CharacterRelationship { CharacterId = 1, CharacterName = "SpeciesAlpha", Affinity = 80, Mood = RelationshipMood.Warm },
             },
             new DateTimeOffset(2026, 4, 24, 12, 0, 0, TimeSpan.Zero));
 
-        LifetimeRelationship lamball = second.Characters.Single();
-        Assert.That(lamball.SessionCount, Is.EqualTo(2));
-        Assert.That(lamball.FirstSeenUtc, Is.EqualTo(new DateTimeOffset(2026, 4, 20, 12, 0, 0, TimeSpan.Zero)),
+        LifetimeRelationship speciesAlpha = second.Characters.Single();
+        Assert.That(speciesAlpha.SessionCount, Is.EqualTo(2));
+        Assert.That(speciesAlpha.FirstSeenUtc, Is.EqualTo(new DateTimeOffset(2026, 4, 20, 12, 0, 0, TimeSpan.Zero)),
             "FirstSeenUtc must be preserved across merges.");
-        Assert.That(lamball.LastSeenUtc, Is.EqualTo(new DateTimeOffset(2026, 4, 24, 12, 0, 0, TimeSpan.Zero)));
-        Assert.That(lamball.PeakAffinity, Is.EqualTo(80));
-        Assert.That(lamball.FloorAffinity, Is.EqualTo(20));
-        Assert.That(lamball.CurrentAffinity, Is.EqualTo(80));
-        Assert.That(lamball.CumulativeAffinity, Is.EqualTo(100L));
+        Assert.That(speciesAlpha.LastSeenUtc, Is.EqualTo(new DateTimeOffset(2026, 4, 24, 12, 0, 0, TimeSpan.Zero)));
+        Assert.That(speciesAlpha.PeakAffinity, Is.EqualTo(80));
+        Assert.That(speciesAlpha.FloorAffinity, Is.EqualTo(20));
+        Assert.That(speciesAlpha.CurrentAffinity, Is.EqualTo(80));
+        Assert.That(speciesAlpha.CumulativeAffinity, Is.EqualTo(100L));
     }
 
     [Test]
@@ -73,7 +73,7 @@ public class LifetimeRelationshipAggregatorTests
     {
         LifetimeRelationship record = new(
             CharacterId: 1,
-            CharacterName: "Lamball",
+            CharacterName: "SpeciesAlpha",
             FirstSeenUtc: new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
             LastSeenUtc: new DateTimeOffset(2026, 4, 24, 0, 0, 0, TimeSpan.Zero),
             SessionCount: 10,
@@ -91,7 +91,7 @@ public class LifetimeRelationshipAggregatorTests
 
         Assert.That(summary.AverageAffinity, Is.EqualTo(65.0));
         Assert.That(summary.DominantMood, Is.EqualTo("Warm"));
-        Assert.That(summary.LifeStory, Does.Contain("Lamball"));
+        Assert.That(summary.LifeStory, Does.Contain("SpeciesAlpha"));
         Assert.That(summary.LifeStory, Does.Contain("10 session(s)"));
     }
 
@@ -102,14 +102,14 @@ public class LifetimeRelationshipAggregatorTests
             LifetimeRelationshipAggregator.Empty(),
             new[]
             {
-                new CharacterRelationship { CharacterId = 1, CharacterName = "Lamball", Affinity = 42, Mood = RelationshipMood.Warm },
+                new CharacterRelationship { CharacterId = 1, CharacterName = "SpeciesAlpha", Affinity = 42, Mood = RelationshipMood.Warm },
             });
 
         string json = LifetimeRelationshipAggregator.Serialize(original);
         LifetimeRelationshipAggregate roundTripped = LifetimeRelationshipAggregator.Deserialize(json);
 
         Assert.That(roundTripped.Characters, Has.Count.EqualTo(1));
-        Assert.That(roundTripped.Characters[0].CharacterName, Is.EqualTo("Lamball"));
+        Assert.That(roundTripped.Characters[0].CharacterName, Is.EqualTo("SpeciesAlpha"));
         Assert.That(roundTripped.Characters[0].CurrentAffinity, Is.EqualTo(42));
     }
 

@@ -3,7 +3,7 @@
   "$comment": "Machine-readable agent capability manifest for PalLLM. Companion to AGENTS.md (the human-readable briefing). Designed to be loaded by an AI coding agent (or any caller) at session start so the agent knows in one structured payload what this repo is, what entry points exist, what the hard rules are, and how to verify a change. Drift-gated: scripts/run_full_audit.ps1 verifies that every path mentioned here actually exists and that the counts match the live code. Schema validation: this file conforms to docs/schemas/agents.schema.json (JSON Schema 2020-12).",
 
   "schemaVersion": 1,
-  "lastAudited": "2026-05-23",
+  "lastAudited": "2026-05-24",
 
   "project": {
     "name": "PalLLM",
@@ -71,7 +71,7 @@
       "machineReadablePerf": "/api/inference/performance",
       "machineReadablePrivacy": "/api/privacy/posture",
       "machineReadableHardware": "/api/hardware",
-      "registrations": "src/PalLLM.Sidecar/Program.cs (api.Map* call site)"
+      "registrations": "src/PalLLM.Sidecar/Program.cs + src/PalLLM.Sidecar/RouteRegistrations/*.cs (api.Map* call sites)"
     },
 
     "mcpSurface": {
@@ -79,7 +79,7 @@
       "doc": "docs/MCP_QUICKSTART.md",
       "exampleConfigs": "docs/examples/",
       "wireWithOneCommand": "pwsh ./pal.ps1 mcp connect <client>",
-      "registrations": "src/PalLLM.Sidecar/Program.cs (api.MapMcp + ToolRegistration entries)"
+      "registrations": "src/PalLLM.Sidecar/Program.cs (app.MapMcp) + src/PalLLM.Sidecar/Configuration/PalLlmMcpServiceCollectionExtensions.cs + src/PalLLM.Sidecar/Mcp/*"
     },
 
     "deterministicFallback": {
@@ -149,7 +149,7 @@
     ],
     "drift": [
       { "id": "Drift_Mojibake",                  "what": "No mojibake byte sequences in source or docs." },
-      { "id": "Drift_Api_route_count",           "what": "README + ROADMAP + ARCHITECTURE + API + CODE_MAP + HANDOFF agree with Program.cs api.Map* count." },
+      { "id": "Drift_Api_route_count",           "what": "README + ROADMAP + ARCHITECTURE + API + CODE_MAP + HANDOFF agree with Program.cs + RouteRegistrations api.Map* count." },
       { "id": "Drift_Api_reference_surface",     "what": "API.md cross-references match code (operational + protocol routes counted separately)." },
       { "id": "Drift_OpenApi_snapshot",          "what": "Live build's OpenAPI matches the committed snapshot at docs/openapi/palllm-sidecar-v1.json." },
       { "id": "Drift_Feature_catalog_count",     "what": "Feature catalog count matches across docs and PalLlmFeatureCatalog.cs." },
@@ -216,7 +216,7 @@
       { "name": "Bridge proof packet",             "doc": "docs/API.md",                  "files": ["src/PalLLM.Sidecar/BridgeProofBuilder.cs"] },
       { "name": "Promotion ledger",                "doc": "docs/STATE_MACHINES.md",       "files": ["src/PalLLM.Domain/Runtime/PromotionLedger.cs"] },
       { "name": "TTL-cached posture surfaces",     "doc": "docs/adr/0005-ttl-cache-for-posture-surfaces.md", "files": ["src/PalLLM.Domain/Runtime/TtlCache.cs"] },
-      { "name": "Privacy posture API",             "doc": "docs/PRIVACY.md",              "files": ["src/PalLLM.Sidecar/Program.cs (privacy/posture endpoint)"] }
+      { "name": "Privacy posture API",             "doc": "docs/PRIVACY.md",              "files": ["src/PalLLM.Sidecar/RouteRegistrations/PalLlmInspectionRoutes.cs (privacy/posture endpoint)"] }
     ]
   },
 

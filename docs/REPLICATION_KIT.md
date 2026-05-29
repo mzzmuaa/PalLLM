@@ -114,7 +114,7 @@ user-facing surfaces:
 |---|---|---|
 | `/welcome.html` | non-technical / first-time | Friendly Pal avatar + chat + voice in/out + accessibility toggles + PWA install. Zero jargon. |
 | `/` | operator / power user | Field Console dashboard with health, packs, memory, MCP discovery, bridge proof. |
-| `/openapi/v1.json` | API integrator | Full machine-readable API contract (56 routes). |
+| `/openapi/v1.json` | API integrator | Full machine-readable API contract (57 routes). |
 | `/mcp` | MCP client (Claude Desktop, VS Code, Cursor) | JSON-RPC 2.0 streaming HTTP, 38 tools. |
 
 Plus `/metrics` (Prometheus exposition), `/health/live`,
@@ -201,7 +201,7 @@ Dependabot.
 
 | Contract | Authoritative source | Schema |
 |---|---|---|
-| HTTP API | `src/PalLLM.Sidecar/Program.cs` (route registration) | [`openapi/palllm-sidecar-v1.json`](openapi/palllm-sidecar-v1.json) |
+| HTTP API | `src/PalLLM.Sidecar/Program.cs` + `src/PalLLM.Sidecar/RouteRegistrations/*.cs` (route registration) | [`openapi/palllm-sidecar-v1.json`](openapi/palllm-sidecar-v1.json) |
 | MCP tool surface | `src/PalLLM.Sidecar/Mcp/PalLlmMcpTools.cs` | derived from `[McpServerTool]` attributes |
 | Bridge inbox events | `src/PalLLM.Domain/Integration/Contracts.cs` (`BridgeEventEnvelope`) | [`schemas/bridge-event-envelope.schema.json`](schemas/bridge-event-envelope.schema.json) |
 | Bridge outbox replies | `src/PalLLM.Domain/Integration/Contracts.cs` (`OutboxEnvelope`) | [`schemas/outbox-envelope.schema.json`](schemas/outbox-envelope.schema.json) |
@@ -266,5 +266,3 @@ pwsh ./pal.ps1 hello   # deterministic chat reply (sidecar must be running)
 
 This doc is the **first read**, not the only read. The full doc
 map is in [`INDEX.md`](INDEX.md).
-
-

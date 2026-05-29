@@ -26,6 +26,8 @@ public sealed class BackendValidationTests
                 BaseUrl = "http://127.0.0.1:11434/v1/",
                 Model = " ",
                 PrefixCacheSalt = new string('x', 129),
+                PromptCacheKey = new string('y', 129),
+                SafetyIdentifier = new string('z', 129),
             },
         };
 
@@ -34,6 +36,8 @@ public sealed class BackendValidationTests
         Assert.That(result.Failed, Is.True);
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:Model"));
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:PrefixCacheSalt"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:PromptCacheKey"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:SafetyIdentifier"));
     }
 
     [Test]
@@ -133,7 +137,25 @@ public sealed class BackendValidationTests
                 TopP = -0.1f,
                 PresencePenalty = -2.5f,
                 ReasoningEffort = "turbo",
+                ThinkingTokenBudget = 0,
                 TokenBudgetField = "max_new_tokens",
+                ServiceTier = "express",
+                PromptCacheRetention = "week",
+                Verbosity = "chatty",
+                ClientRequestIdHeader = "x-pal-trace-id",
+                LlamaCppSlotId = -2,
+                LlamaCppCacheReuseTokens = -1,
+                RequestMetadata = new Dictionary<string, string>
+                {
+                    [" "] = "blank-key",
+                },
+                MultimodalProcessor = new MultimodalProcessorOptions
+                {
+                    MinPixels = 4096,
+                    MaxPixels = 1024,
+                    MaxSoftTokens = 13,
+                    Fps = 0,
+                },
                 FrequencyPenalty = 2.5f,
                 TopK = 0,
                 MinP = 1.5f,
@@ -148,7 +170,16 @@ public sealed class BackendValidationTests
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:TopP"));
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:PresencePenalty"));
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:ReasoningEffort"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:ThinkingTokenBudget"));
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:TokenBudgetField"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:ServiceTier"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:PromptCacheRetention"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:Verbosity"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:ClientRequestIdHeader"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:LlamaCppSlotId"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:LlamaCppCacheReuseTokens"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:RequestMetadata"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:MultimodalProcessor"));
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:FrequencyPenalty"));
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:TopK"));
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Inference:MinP"));
@@ -170,6 +201,7 @@ public sealed class BackendValidationTests
                     TopP = 1.0f,
                     PresencePenalty = 2.0f,
                     ReasoningEffort = allowed,
+                    ThinkingTokenBudget = 1,
                     FrequencyPenalty = -2.0f,
                     TopK = 1,
                     MinP = 0.0f,
@@ -193,6 +225,12 @@ public sealed class BackendValidationTests
             {
                 Enabled = false,
                 Temperature = float.NaN,
+                MultimodalProcessor = new MultimodalProcessorOptions
+                {
+                    MinPixels = -1,
+                    MaxSoftTokens = 999,
+                    Fps = 121,
+                },
             },
         };
 
@@ -200,10 +238,11 @@ public sealed class BackendValidationTests
 
         Assert.That(result.Failed, Is.True);
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Vision:Temperature"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Vision:MultimodalProcessor"));
     }
 
     [Test]
-    public void OptionsValidator_WhenTokenBudgetFieldIsKnown_SucceedsValidation()
+    public void OptionsValidator_WhenRequestFieldAllowlistValuesAreKnown_SucceedsValidation()
     {
         var validator = new PalLlmOptionsValidator();
         foreach (string allowed in InferenceTokenBudgetFields.Allowed.Select(v => v.ToUpperInvariant()))
@@ -219,6 +258,100 @@ public sealed class BackendValidationTests
             ValidateOptionsResult result = validator.Validate(name: null, options);
             Assert.That(result.Succeeded, Is.True,
                 $"TokenBudgetField='{allowed}' should validate. Failures: " +
+                string.Join("; ", result.Failures ?? Array.Empty<string>()));
+        }
+
+        foreach (string allowed in InferenceServiceTiers.Allowed.Select(v => v.ToUpperInvariant()))
+        {
+            PalLlmOptions options = new()
+            {
+                Inference = new InferenceOptions
+                {
+                    Enabled = false,
+                    ServiceTier = allowed,
+                },
+            };
+            ValidateOptionsResult result = validator.Validate(name: null, options);
+            Assert.That(result.Succeeded, Is.True,
+                $"ServiceTier='{allowed}' should validate. Failures: " +
+                string.Join("; ", result.Failures ?? Array.Empty<string>()));
+        }
+
+        foreach (string allowed in InferencePromptCacheRetentions.Allowed.Select(v => v.ToUpperInvariant()))
+        {
+            PalLlmOptions options = new()
+            {
+                Inference = new InferenceOptions
+                {
+                    Enabled = false,
+                    PromptCacheRetention = allowed,
+                },
+            };
+            ValidateOptionsResult result = validator.Validate(name: null, options);
+            Assert.That(result.Succeeded, Is.True,
+                $"PromptCacheRetention='{allowed}' should validate. Failures: " +
+                string.Join("; ", result.Failures ?? Array.Empty<string>()));
+        }
+
+        foreach (string allowed in InferenceVerbosities.Allowed.Select(v => v.ToUpperInvariant()))
+        {
+            PalLlmOptions options = new()
+            {
+                Inference = new InferenceOptions
+                {
+                    Enabled = false,
+                    Verbosity = allowed,
+                },
+            };
+            ValidateOptionsResult result = validator.Validate(name: null, options);
+            Assert.That(result.Succeeded, Is.True,
+                $"Verbosity='{allowed}' should validate. Failures: " +
+                string.Join("; ", result.Failures ?? Array.Empty<string>()));
+        }
+
+        foreach (string allowed in InferenceClientRequestIdHeaders.Allowed.Select(v => v.ToUpperInvariant()))
+        {
+            PalLlmOptions options = new()
+            {
+                Inference = new InferenceOptions
+                {
+                    Enabled = false,
+                    ClientRequestIdHeader = allowed,
+                },
+            };
+            ValidateOptionsResult result = validator.Validate(name: null, options);
+            Assert.That(result.Succeeded, Is.True,
+                $"ClientRequestIdHeader='{allowed}' should validate. Failures: " +
+                string.Join("; ", result.Failures ?? Array.Empty<string>()));
+        }
+
+        foreach (int softTokens in new[] { 70, 140, 280, 560, 1120 })
+        {
+            PalLlmOptions options = new()
+            {
+                Inference = new InferenceOptions
+                {
+                    Enabled = false,
+                    MultimodalProcessor = new MultimodalProcessorOptions
+                    {
+                        MinPixels = 28 * 28,
+                        MaxPixels = 1280 * 28 * 28,
+                        MaxSoftTokens = softTokens,
+                        Fps = 1,
+                    },
+                },
+                Vision = new VisionOptions
+                {
+                    Enabled = false,
+                    MultimodalProcessor = new MultimodalProcessorOptions
+                    {
+                        MaxSoftTokens = softTokens,
+                    },
+                },
+            };
+            ValidateOptionsResult result = validator.Validate(name: null, options);
+            Assert.That(result.Succeeded, Is.True,
+                $"MaxSoftTokens='{softTokens}' should validate. Failures: " +
                 string.Join("; ", result.Failures ?? Array.Empty<string>()));
         }
     }
@@ -401,6 +534,8 @@ public sealed class BackendValidationTests
                 Enabled = true,
                 BaseUrl = "not a uri",
                 Model = new string('a', 257),
+                Language = "eng",
+                Prompt = new string('p', 2_049),
                 TimeoutSeconds = 0,
                 ResponseFormat = "xml",
                 TimestampGranularities = ["segment", "phoneme"],
@@ -421,6 +556,8 @@ public sealed class BackendValidationTests
         Assert.That(result.Failed, Is.True);
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Asr:BaseUrl"));
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Asr:Model"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Asr:Language"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Asr:Prompt"));
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Asr:TimeoutSeconds"));
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Asr:ResponseFormat"));
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Asr:TimestampGranularities"));
@@ -659,6 +796,10 @@ public sealed class BackendValidationTests
             "appsettings.json should document the TTS request timeout so operators can tune stuck-request hardening without reading Program.cs.");
         Assert.That(rawJson, Does.Contain("\"Asr\""),
             "appsettings.json should document the ASR block so operators can qualify audio transcription without reading PalLlmOptions.");
+        Assert.That(rawJson, Does.Contain("\"Language\""),
+            "appsettings.json should document the ASR language hint so operators can reduce transcription latency without per-request payload changes.");
+        Assert.That(rawJson, Does.Contain("\"Prompt\""),
+            "appsettings.json should document the ASR prompt hint so pronunciation/vocabulary canaries stay explicit.");
         Assert.That(rawJson, Does.Contain("\"MaxTranscriptCharacters\""),
             "appsettings.json should document the ASR transcript cap so audio proof lanes stay bounded.");
         Assert.That(rawJson, Does.Contain("\"EndpointSilenceMs\""),
@@ -673,6 +814,30 @@ public sealed class BackendValidationTests
             "appsettings.json should document the ASR chunking_strategy opt-in so VAD chunking canaries stay explicit.");
         Assert.That(rawJson, Does.Contain("\"RequestPriority\""),
             "appsettings.json should document the opt-in request-priority pass-through so vLLM operators can tune foreground scheduling without reading InferenceClient.");
+        Assert.That(rawJson, Does.Contain("\"ServiceTier\""),
+            "appsettings.json should document the opt-in service-tier pass-through so hosted-routing canaries stay explicit.");
+        Assert.That(rawJson, Does.Contain("\"PromptCacheKey\""),
+            "appsettings.json should document the opt-in prompt-cache key so hosted cache-routing canaries stay explicit.");
+        Assert.That(rawJson, Does.Contain("\"PromptCacheRetention\""),
+            "appsettings.json should document the opt-in prompt-cache retention policy so hosted long-prefix cache canaries stay explicit.");
+        Assert.That(rawJson, Does.Contain("\"Verbosity\""),
+            "appsettings.json should document the opt-in verbosity pass-through so concise-output canaries stay explicit.");
+        Assert.That(rawJson, Does.Contain("\"SafetyIdentifier\""),
+            "appsettings.json should document the opt-in pseudonymous safety id so hosted-lane privacy expectations are explicit.");
+        Assert.That(rawJson, Does.Contain("\"StoreCompletions\""),
+            "appsettings.json should document the opt-in store switch so hosted retention-posture canaries stay explicit.");
+        Assert.That(rawJson, Does.Contain("\"RequestMetadata\""),
+            "appsettings.json should document the opt-in request metadata map so hosted proof labels stay explicit and bounded.");
+        Assert.That(rawJson, Does.Contain("\"ClientRequestIdHeader\""),
+            "appsettings.json should document the opt-in client request id header so hosted support traces stay explicit.");
+        Assert.That(rawJson, Does.Contain("\"LlamaCppCachePrompt\""),
+            "appsettings.json should document the opt-in llama.cpp cache_prompt pass-through so local prompt-cache canaries stay explicit.");
+        Assert.That(rawJson, Does.Contain("\"LlamaCppSlotId\""),
+            "appsettings.json should document the opt-in llama.cpp id_slot pass-through so warm-slot canaries stay explicit.");
+        Assert.That(rawJson, Does.Contain("\"LlamaCppCacheReuseTokens\""),
+            "appsettings.json should document the opt-in llama.cpp n_cache_reuse pass-through so prefix-reuse canaries stay explicit.");
+        Assert.That(rawJson, Does.Contain("\"UseMediaCacheIds\""),
+            "appsettings.json should document the media-cache id switch so vLLM-style multimodal proof lanes can opt out for strict endpoints.");
         Assert.That(rawJson, Does.Contain("\"Temperature\""),
             "appsettings.json should document baseline sampler bounds so operators can tune chat and vision without reading PalLlmOptions.");
         Assert.That(rawJson, Does.Contain("\"TopP\""),
@@ -681,6 +846,8 @@ public sealed class BackendValidationTests
             "appsettings.json should document the baseline presence-penalty sampler so operators can tune live chat without reading InferenceClient.");
         Assert.That(rawJson, Does.Contain("\"TokenBudgetField\""),
             "appsettings.json should document the token-budget field selector so reasoning-model lanes can qualify max_completion_tokens without reading InferenceClient.");
+        Assert.That(rawJson, Does.Contain("\"ThinkingTokenBudget\""),
+            "appsettings.json should document the thinking-token cap so reasoning-model lanes can bound hidden-token latency without reading InferenceClient.");
         Assert.That(rawJson, Does.Contain("\"FrequencyPenalty\""),
             "appsettings.json should document the opt-in frequency-penalty pass-through so operators can tune repetition control without reading InferenceClient.");
         Assert.That(rawJson, Does.Contain("\"TopK\""),
@@ -886,6 +1053,7 @@ public sealed class BackendValidationTests
                 BaseUrl = "http://127.0.0.1:11434/v1/",
                 Model = "gemma4:e2b",
                 UseStructuredOutputs = false,
+                UseMediaCacheIds = false,
             },
         };
         var client = new HttpVisionClient(httpClient, options);
@@ -899,6 +1067,11 @@ public sealed class BackendValidationTests
         using JsonDocument body = JsonDocument.Parse(handler.LastRequestBody);
         Assert.That(body.RootElement.TryGetProperty("response_format", out _), Is.False,
             "When no ResponseFormat is supplied the request body must NOT carry one.");
+        JsonElement imagePart = body.RootElement
+            .GetProperty("messages")[0]
+            .GetProperty("content")[0];
+        Assert.That(imagePart.TryGetProperty("uuid", out _), Is.False,
+            "Strict endpoints can disable vLLM-style media cache ids independently from structured outputs.");
     }
 
     private sealed class BodyCapturingHandler : HttpMessageHandler

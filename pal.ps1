@@ -858,7 +858,7 @@ function Run-CheckUpdates {
 }
 
 function Run-Handoff {
-    # Pass 374: one-screen briefing for an incoming agent (Codex et
+    # Pass 417: one-screen briefing for an incoming agent (Codex et
     # al). Mirrors the "Codex handoff" section at the top of
     # docs/HANDOFF.md without forcing the agent to open the file.
     # Output is intentionally compact - call it, read it, then audit.
@@ -873,7 +873,7 @@ function Run-Handoff {
     } catch { $currentSha = $null }
 
     Write-Host ""
-    Write-Host "PalLLM handoff briefing (Pass 374)" -ForegroundColor Cyan
+    Write-Host "PalLLM handoff briefing (Pass 417)" -ForegroundColor Cyan
     Write-Host "==================================="
     if ($numbers) {
         Write-Host ("  Tests:           {0}" -f $numbers.tests)
@@ -904,11 +904,10 @@ function Run-Handoff {
     Write-Host "  - The four blocked sibling names                         (Pass 372 guard)"
     Write-Host ""
     Write-Host "Next queued work, in priority order:" -ForegroundColor Yellow
-    Write-Host "  1. REFACTORING_ROADMAP.md Phase 1a - extract PalLlmRuntime.Helpers.cs"
-    Write-Host "  2. Phase 1b through 1h - 6 more partial-class extractions"
-    Write-Host "  3. Phase 2 - Program.cs into service + route extension files"
-    Write-Host "  4. Live Palworld native-proof (requires running game; not autonomous)"
-    Write-Host "  5. Dependabot PR triage: gh pr list --repo mzzmuaa/PalLLM"
+    Write-Host "  1. Live Palworld native-proof (requires running game; not autonomous)"
+    Write-Host "  2. Packaged release proof on a clean profile"
+    Write-Host "  3. Post-Phase-2 startup cleanup (new scoped phase only)"
+    Write-Host "  4. Dependabot PR triage: gh pr list --repo mzzmuaa/PalLLM"
     Write-Host ""
     Write-Host "Deeper reading:" -ForegroundColor DarkGray
     Write-Host "  - docs/HANDOFF.md (this verb is the TL;DR of its 'Codex handoff' section)"

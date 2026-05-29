@@ -1,6 +1,6 @@
 # PalLLM Roadmap
 
-Last audited: `2026-05-23`
+Last audited: `2026-05-24`
 
 This roadmap is derived from the live code, tests, Lua bridge, scripts, and
 operator docs in this repository. The official score is weighted by
@@ -11,7 +11,8 @@ count.
 
 Verified directly against the current tree and a fresh test run:
 
-- `57` `/api` routes in `src/PalLLM.Sidecar/Program.cs`
+- `57` `/api` routes across `src/PalLLM.Sidecar/Program.cs` and
+  `src/PalLLM.Sidecar/RouteRegistrations/*.cs`
 - `6` operational routes outside `/api`: `/`, `/metrics`, `/health/live`,
   `/health/ready`, `/openapi/v1.json`, `/openapi/v1.yaml`
 - `1` separate protocol route: `/mcp`
@@ -135,7 +136,8 @@ Verified directly against the current tree and a fresh test run:
   reset to the same `76.2%` baseline used here and reordered to be
   dependency-safe.
 - Official source of truth for counts:
-  - routes: `src/PalLLM.Sidecar/Program.cs`
+  - routes: `src/PalLLM.Sidecar/Program.cs` +
+    `src/PalLLM.Sidecar/RouteRegistrations/*.cs`
   - feature status: `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs`
   - test count: `dotnet test PalLLM.sln`
 

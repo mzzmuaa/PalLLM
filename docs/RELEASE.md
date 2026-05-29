@@ -1,6 +1,6 @@
 # PalLLM Release Checklist
 
-Last audited: `2026-05-23`
+Last audited: `2026-05-25`
 
 This is the maintainers' publication guide: the shortest path from a green
 working tree to a release that is traceable, supportable, and less likely to
@@ -185,7 +185,10 @@ native-HUD config, optional-file, blocker, or ready-evidence fields.
 `Runtime/ReleaseEvidence/latest-full-audit.json` plus a timestamped history
 artifact. Keep that artifact with the same validation bundle whenever you want
 durable proof that the current source tree, OpenAPI snapshot, docs, tests, and
-candidate-package verification all passed together.
+candidate-package verification all passed together. `/api/release/readiness`
+does not trust the JSON receipt alone: it verifies the referenced `RESULTS.md`
+verdict, audit-root path containment, pass/fail count consistency, and step-log
+count before reporting the full-audit evidence as trusted.
 
 `GET /api/release/readiness` now also marks `SmokeEvidence`,
 `NativeProofEvidence`, `ProofBundleEvidence`, `SupportBundleEvidence`,

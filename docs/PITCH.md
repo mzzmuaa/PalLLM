@@ -10,14 +10,14 @@ Last audited: `2026-05-22`
 
 Imagine your Pal actually **reacting** to what you're doing.
 
-- You're low on health mid-raid -> Lamball yells "Hang in there!"
+- You're low on health mid-raid -> your companion yells "Hang in there!"
   without you asking.
-- You lost your crafting queue at 2am -> Cattiva remembers what you
+- You lost your crafting queue at 2am -> another companion remembers what you
   were building and nudges you when you log back in.
-- You tell Lamball "stop mining and help me fight" -> the companion
+- You tell a companion "stop mining and help me fight" -> the companion
   understands and a safe, allowlisted action signal reaches the
   game.
-- You take a screenshot of a rare biome -> Cattiva describes what
+- You take a screenshot of a rare biome -> the companion describes what
   she sees and stores it in her memory for next time.
 
 Today's Palworld companions are scripted. PalLLM gives them a live
@@ -36,7 +36,7 @@ character.
    between 19 hand-authored reply strategies so the companion is
    never mute. Cost of a chat reply with no AI configured: zero.
 3. **Character continuity across sessions.** Relationships persist.
-   If you treated Lamball kindly yesterday, that carries over. The
+   If you treated a companion kindly yesterday, that carries over. The
    cross-session "lifetime memory" tracks peak affinity, first-seen
    date, session count, and dominant mood so the companion greets
    you with genuine context.
@@ -142,6 +142,5 @@ every opt-in toggle.
 - **Want the full feature inventory?** Hit
   `GET /api/features` on a running sidecar - 121 entries, every
   subsystem, live status.
-
 
 

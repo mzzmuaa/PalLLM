@@ -74,7 +74,10 @@ public sealed class HttpVisionClient : IVisionClient
 
         string mimeType = string.IsNullOrWhiteSpace(request.ImageMimeType) ? "image/png" : request.ImageMimeType;
         string dataUrl = $"data:{mimeType};base64,{request.ImageBase64}";
-        VisionChatCompletionsRequestBody requestBody = BuildRequestBody(request, vision, dataUrl);
+        string? mediaCacheId = vision.UseMediaCacheIds
+            ? MediaCacheIdBuilder.Build("image", mimeType, request.ImageBase64)
+            : null;
+        VisionChatCompletionsRequestBody requestBody = BuildRequestBody(request, vision, dataUrl, mediaCacheId);
         GenAiOperationContext telemetryContext = GenAiTelemetry.CreateContext(
             GenAiTelemetry.OperationGenerateContent,
             vision.BaseUrl,
@@ -293,7 +296,11 @@ public sealed class HttpVisionClient : IVisionClient
         return new Uri(new Uri(normalized), ChatCompletionsPath).ToString();
     }
 
-    private static VisionChatCompletionsRequestBody BuildRequestBody(VisionRequest request, VisionOptions vision, string dataUrl)
+    private static VisionChatCompletionsRequestBody BuildRequestBody(
+        VisionRequest request,
+        VisionOptions vision,
+        string dataUrl,
+        string? mediaCacheId)
     {
         List<VisionChatMessage> messages = [];
         if (!string.IsNullOrWhiteSpace(request.SystemPrompt))
@@ -316,6 +323,7 @@ public sealed class HttpVisionClient : IVisionClient
             {
                 Type = "image_url",
                 ImageUrl = new VisionImageUrl { Url = dataUrl },
+                Uuid = mediaCacheId,
             },
             new()
             {
@@ -340,6 +348,7 @@ public sealed class HttpVisionClient : IVisionClient
             MaxTokens = request.MaxTokens ?? vision.DefaultMaxTokens,
             Messages = [.. messages],
             ResponseFormat = request.ResponseFormat,
+            MmProcessorKwargs = vision.MultimodalProcessor.HasAny ? vision.MultimodalProcessor : null,
         };
 
         // Structured outputs are an opt-in per-request hint. Endpoints that
@@ -392,6 +401,10 @@ internal sealed class VisionChatCompletionsRequestBody
     [JsonPropertyName("response_format")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public JsonElement? ResponseFormat { get; init; }
+
+    [JsonPropertyName("mm_processor_kwargs")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MultimodalProcessorOptions? MmProcessorKwargs { get; init; }
 }
 
 internal sealed class VisionChatMessage
@@ -411,6 +424,10 @@ internal sealed class VisionContentPart
     [JsonPropertyName("image_url")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public VisionImageUrl? ImageUrl { get; init; }
+
+    [JsonPropertyName("uuid")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Uuid { get; init; }
 
     [JsonPropertyName("text")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

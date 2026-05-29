@@ -68,13 +68,13 @@ public sealed class SnapshotVisionFallbackTests
             IsWorldLoaded = true,
             Characters =
             [
-                new GameCharacterSnapshot { Id = 1, DisplayName = "Chillet", Species = "Chillet" },
+                new GameCharacterSnapshot { Id = 1, DisplayName = "CampGuardian", Species = "CampGuardian" },
             ],
         };
 
         string description = SnapshotVisionFallback.Compose(snapshot);
 
-        Assert.That(description, Does.Contain("Chillet is nearby"));
+        Assert.That(description, Does.Contain("CampGuardian is nearby"));
     }
 
     [Test]
@@ -85,14 +85,14 @@ public sealed class SnapshotVisionFallbackTests
             IsWorldLoaded = true,
             Characters =
             [
-                new GameCharacterSnapshot { Id = 1, DisplayName = "Chillet" },
-                new GameCharacterSnapshot { Id = 2, DisplayName = "Rushoar" },
+                new GameCharacterSnapshot { Id = 1, DisplayName = "CampGuardian" },
+                new GameCharacterSnapshot { Id = 2, DisplayName = "TrailGuard" },
             ],
         };
 
         string description = SnapshotVisionFallback.Compose(snapshot);
 
-        Assert.That(description, Does.Contain("Chillet and Rushoar nearby"));
+        Assert.That(description, Does.Contain("CampGuardian and TrailGuard nearby"));
     }
 
     [Test]
@@ -103,8 +103,8 @@ public sealed class SnapshotVisionFallbackTests
             IsWorldLoaded = true,
             Characters =
             [
-                new GameCharacterSnapshot { Id = 1, DisplayName = "Chillet" },
-                new GameCharacterSnapshot { Id = 2, DisplayName = "Rushoar" },
+                new GameCharacterSnapshot { Id = 1, DisplayName = "CampGuardian" },
+                new GameCharacterSnapshot { Id = 2, DisplayName = "TrailGuard" },
                 new GameCharacterSnapshot { Id = 3, DisplayName = "Tanzee" },
                 new GameCharacterSnapshot { Id = 4, DisplayName = "Foxsparks" },
             ],
@@ -113,7 +113,7 @@ public sealed class SnapshotVisionFallbackTests
         string description = SnapshotVisionFallback.Compose(snapshot);
 
         // Names the first two, summarises the rest with a count.
-        Assert.That(description, Does.Contain("Chillet and Rushoar plus 2 others"));
+        Assert.That(description, Does.Contain("CampGuardian and TrailGuard plus 2 others"));
     }
 
     [Test]
@@ -210,8 +210,8 @@ public sealed class SnapshotVisionFallbackTests
             KnownBases = [new GameBaseSnapshot { BaseId = "main-camp" }],
             Characters =
             [
-                new GameCharacterSnapshot { Id = 1, DisplayName = "Chillet" },
-                new GameCharacterSnapshot { Id = 2, DisplayName = "Rushoar" },
+                new GameCharacterSnapshot { Id = 1, DisplayName = "CampGuardian" },
+                new GameCharacterSnapshot { Id = 2, DisplayName = "TrailGuard" },
             ],
             NearbyHostiles = ["Syndicate Thug"],
             CurrentObjective = "Secure the perimeter",
@@ -223,7 +223,7 @@ public sealed class SnapshotVisionFallbackTests
         Assert.That(description, Does.Contain("Dusk"));
         Assert.That(description, Does.Contain("main-camp"));
         Assert.That(description, Does.Contain("rainy"));
-        Assert.That(description, Does.Contain("Chillet and Rushoar"));
+        Assert.That(description, Does.Contain("CampGuardian and TrailGuard"));
         Assert.That(description, Does.Contain("Syndicate Thug"));
         Assert.That(description, Does.Contain("Secure the perimeter"));
 

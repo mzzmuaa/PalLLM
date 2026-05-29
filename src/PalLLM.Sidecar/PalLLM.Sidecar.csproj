@@ -10,8 +10,6 @@
          friendlier to trimming/AOT experiments without changing runtime
          configuration semantics. -->
     <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
-    <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
-    <OpenApiGenerateDocumentsOptions>--document-name v1 --file-name palllm-sidecar-v1</OpenApiGenerateDocumentsOptions>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,15 +29,6 @@
          APIs. Generates a JSON Schema 2020-12-compliant spec from the
          route registrations in Program.cs. See docs/API.md. -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
-
-    <!-- Build-time OpenAPI document generation. Microsoft documents this as
-         the path for checked-in specs and spec-based integration tests.
-         Keep it private to this project: consumers only need the emitted
-         JSON snapshot, not the MSBuild task package. -->
-    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.7">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
 
     <!-- Opt-in OpenTelemetry distributed tracing. The runtime only
          activates when OTEL_EXPORTER_OTLP_ENDPOINT is set in the

@@ -1,6 +1,6 @@
 # Extension points — where to add code for X
 
-Last audited: `2026-05-07`
+Last audited: `2026-05-24`
 
 A purely structural map: "I want to add X. Which file, which
 section, which existing example should I copy?" Pairs with
@@ -16,8 +16,9 @@ new addition into one of them keeps the codebase legible.
 
 | To add a... | Edit | Existing example to copy |
 |---|---|---|
-| `GET /api/*` route | `src/PalLLM.Sidecar/Program.cs` (find the relevant subsystem block) | `api.MapGet("/budgets", ...)` near the budget block |
-| `POST /api/*` route | `src/PalLLM.Sidecar/Program.cs` | `api.MapPost("/chat/party", ...)` |
+| `GET /api/*` route | `src/PalLLM.Sidecar/Program.cs` or a focused `src/PalLLM.Sidecar/RouteRegistrations/*.cs` companion | `api.MapGet("/budgets", ...)` in `PalLlmInspectionRoutes.cs`; `PalLlmHealthRoutes.cs` or `PalLlmBridgeRoutes.cs` for a split domain |
+| `POST /api/*` route | `src/PalLLM.Sidecar/Program.cs` or the matching route companion | `api.MapPost("/chat/party", ...)`; `api.MapPost("/inference/warmup", ...)`; `api.MapPost("/bridge/drain", ...)` |
+| Sidecar service registration | `src/PalLLM.Sidecar/Configuration/*ServiceCollectionExtensions.cs` | `AddPalLlmInference(...)` for pooled model clients |
 | MCP tool | `src/PalLLM.Sidecar/Mcp/PalLlmMcpTools.cs` | `[McpTool] PalChatPlan(...)` |
 | MCP resource | `src/PalLLM.Sidecar/Mcp/PalLlmMcpResources.cs` | `palllm://world/snapshot` resource |
 | MCP prompt | `src/PalLLM.Sidecar/Mcp/PalLlmMcpPrompts.cs` | the existing 4 prompts |
@@ -32,7 +33,7 @@ new addition into one of them keeps the codebase legible.
 | TTL-cached posture surface | extend an existing builder with `*Cached` | `AirGapVerifier.VerifyCached` (the cleanest example) |
 | Fallback strategy | `src/PalLLM.Domain/Runtime/FallbackBehaviorEngine.cs`, add a `Try_*` method | the existing 19 strategies, e.g. `Try_NarrativeRecall` |
 | Presentation cue family | `src/PalLLM.Domain/Runtime/PresentationCuePlanner.cs`, extend the family-mapping switch | the `tactical` family case |
-| Bridge event handler | `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs` `ProcessBridgeEvent` switch | `chat_message` case |
+| Bridge event handler | `src/PalLLM.Domain/Runtime/PalLlmRuntime.Bridge.cs` `ProcessBridgeEvent` switch | `chat_message` case |
 | Bridge event producer (Lua side) | `mod/ue4ss/Mods/PalLLM/Scripts/main.lua` | the `emit_*` helpers |
 | Guarded action type | `src/PalLLM.Domain/Runtime/ActionIntentPlanner.cs` (sidecar map) + `main.lua` (executor + allowlist) | `execute_waypoint_suggest` |
 | Cooperation pattern (planner) | `src/PalLLM.Domain/Inference/DuoOrchestratorPlanner.cs` | the existing 10 patterns |

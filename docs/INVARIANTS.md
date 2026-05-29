@@ -1,6 +1,6 @@
 # Invariants - what's guaranteed to be true at runtime
 
-Last audited: `2026-05-22`
+Last audited: `2026-05-24`
 
 [`ANTI_PATTERNS.md`](ANTI_PATTERNS.md) lists what NOT to do. This
 doc lists what IS GUARANTEED - the load-bearing invariants the
@@ -115,8 +115,8 @@ trace claim -> implementation.
 13. **OpenTelemetry is genuinely opt-in.** No outbound
     network traffic from the OTel packages until
     `OTEL_EXPORTER_OTLP_ENDPOINT` is set. **Enforced:**
-    `src/PalLLM.Sidecar/Program.cs` registers the OTel
-    pipeline only when the env var is present; the
+    `src/PalLLM.Sidecar/Configuration/PalLlmObservabilityServiceCollectionExtensions.cs`
+    registers the OTel pipeline only when the env var is present; the
     air-gap verifier's default-config test confirms zero
     outbound endpoints.
 
@@ -166,7 +166,7 @@ trace claim -> implementation.
     `Build_Release` gate (the audit fails if `dotnet build`
     surfaces any warning).
 
-22. **`dotnet test` produces 1154 / 1154 green.**
+22. **`dotnet test` produces 1315 / 1315 green.**
     **Enforced:** `Tests` gate plus the
     `Drift_Test_count_docs` gate verifying the count
     matches docs.

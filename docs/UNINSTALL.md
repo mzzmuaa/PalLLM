@@ -27,7 +27,7 @@ Double-click it and:
 |---|---|
 | Mod files in `<Palworld>/Pal/Binaries/Win64/Mods/PalLLM/` | **Removed** |
 | `enabled.txt` next to the mod | **Removed** |
-| Sample personality pack at `runtime-root/Packs/chillet-pack.json` | **Removed** |
+| Sample personality pack at `runtime-root/Packs/camp-guardian-pack.json` | **Removed** |
 | `runtime-root/install-manifest.json` | **Removed** |
 | `runtime-root/session.json` (chat memory) | **Preserved** |
 | `runtime-root/Packs/` (any custom packs you added) | **Preserved** |

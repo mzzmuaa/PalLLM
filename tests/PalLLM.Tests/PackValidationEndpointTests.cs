@@ -71,7 +71,7 @@ public sealed class PackValidationEndpointTests
           "Characters": [
             {
               "Id": "chill-1",
-              "Name": "Chillet"
+              "Name": "CampGuardian"
             }
           ],
           "MemorySeeds": [

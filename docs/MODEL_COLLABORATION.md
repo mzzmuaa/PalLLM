@@ -1,6 +1,6 @@
 # Local Model Collaboration
 
-Last audited: `2026-05-22`
+Last audited: `2026-05-28`
 
 > **Quantization choice → see [`QUANTIZATION.md`](QUANTIZATION.md)** for
 > the full NVFP4 / MXFP4 / FP8 / Q4_K_M / Q8_0 matrix with community
@@ -78,11 +78,13 @@ Use it as a routing sanity check:
   behind qualification tests.
 - Treat schema-constrained output as provider/request-shape-specific. Promotion
   receipts must record schema name/digest, PalLLM route, served model, request
-  shape (`response_format`, `guided_json`, Ollama `format`, or grammar),
+  shape (`response_format`, `structured_outputs`, Ollama `format`, or grammar),
   grammar/backend id, parse/schema validation, token/p95/fallback evidence, and
   the app-side validator result.
 - Multimodal lanes should prefer local base64 media, stable media UUIDs for
-  repeated proof replays, and explicit server-side media limits/allowlists.
+  repeated proof replays, explicit server-side media limits/allowlists, and
+  endpoint-proven processor caps (`mm_processor_kwargs`) only after replay
+  shows better TTFT/VRAM without parse or fallback regressions.
 - `pal connect omni -WriteConfig` is intentionally media-first: it points
   `PalLLM:Vision` at the omni endpoint and preserves the existing text chat
   endpoint. Use `-WireInference` only as a proof-lane override after the exact
@@ -158,8 +160,8 @@ leaving them as prose. It includes:
   override configured temperature/top-p during qualification, optional
   proof-gated `--kv-cache-dtype fp8` for memory-pressure or long-context lanes,
   `--structured-outputs-config.backend xgrammar` plus separate vLLM
-  `response_format`, `guided_json`, `guided_choice`, `guided_regex`,
-  `guided_grammar`, and `structural_tag` proof shapes, `--limit-mm-per-prompt.*`,
+  `response_format` and prompt-level `structured_outputs` proof shapes
+  (`choice`, `regex`, `json`, `grammar`, `structural_tag`), `--limit-mm-per-prompt.*`,
   `--mm-processor-cache-gb`, `--mm-processor-cache-type`, `--mmproj`,
   optional `--ec-transfer-config` for qualified vLLM/LMCache encoder-cache
   experiments, optional idle-only `VLLM_SERVER_DEV_MODE=1
@@ -247,9 +249,13 @@ leaving them as prose. It includes:
   request shaping, OpenAI-compatible media `uuid` fields for repeated
   screenshots/proof replays, optional vLLM `cache_salt` forwarding through
   `PalLLM:Inference:PrefixCacheSalt`, optional proof-gated
+  `PalLLM:Inference:PromptCacheKey` / `PromptCacheRetention` forwarding for
+  hosted prompt-cache routing and retention canaries, optional proof-gated
   `PalLLM:Inference:ReasoningEffort` forwarding for reasoning-capable chat
   endpoints, optional endpoint-proven `PalLLM:Inference:Seed` forwarding for
   replay comparisons, optional endpoint-proven
+  `PalLLM:Inference:ThinkingTokenBudget` forwarding as vLLM
+  `thinking_token_budget` for reasoning-parser lanes, optional endpoint-proven
   `PalLLM:Inference:TokenBudgetField=max_completion_tokens` forwarding for
   reasoning lanes that reject `max_tokens`, optional endpoint-proven
   `PalLLM:Inference:FrequencyPenalty` forwarding for repetition-control
@@ -259,6 +265,27 @@ leaving them as prose. It includes:
   optional endpoint-proven
   `PalLLM:Inference:RequestPriority` forwarding only for vLLM priority
   schedulers, optional endpoint-proven
+  `PalLLM:Inference:ServiceTier` forwarding for compatible hosted or
+  OpenAI-compatible routing lanes, including `scale` only after the endpoint
+  proves the lane and cost posture, optional endpoint-proven
+  `PalLLM:Inference:Verbosity` forwarding for concise-output and expanded-proof
+  canaries, optional hosted-lane `PalLLM:Inference:SafetyIdentifier`
+  forwarding with only a pseudonymous hash, optional hosted-lane
+  `PalLLM:Inference:StoreCompletions` forwarding for explicit
+  retention-posture canaries, optional hosted-lane
+  `PalLLM:Inference:RequestMetadata` forwarding for bounded proof labels,
+  optional endpoint-proven
+  `PalLLM:Inference:ClientRequestIdHeader` forwarding for bounded
+  `x-client-request-id` / `x-request-id` support correlation, optional
+  endpoint-proven `PalLLM:Inference:LlamaCppCachePrompt`,
+  `LlamaCppSlotId`, and `LlamaCppCacheReuseTokens` forwarding for llama-server
+  `cache_prompt` / `id_slot` / `n_cache_reuse` proof lanes, optional
+  endpoint-proven `PalLLM:Inference:MultimodalProcessor`,
+  prompt-level `InferencePrompt.MultimodalProcessor`, and
+  `PalLLM:Vision:MultimodalProcessor` forwarding for vLLM-compatible
+  `mm_processor_kwargs` (`min_pixels`, `max_pixels`, `max_soft_tokens`,
+  `fps`) on route-owned media canaries, optional
+  endpoint-proven
   `PalLLM:Inference:ParallelToolCalls=false` forwarding for strict
   directive/action routes, optional endpoint-proven
   `PalLLM:Inference:StopSequences[]` forwarding for strict delimiter or
@@ -339,19 +366,22 @@ leaving them as prose. It includes:
   For multimodal input proof lanes, pass prompt-level
   `InferencePrompt.UserContent` only on the exact route being qualified. Use
   content-part arrays for text plus `image_url`, `video_url`, `input_audio`, or
-  `audio_url`, record accepted request shape, media byte caps, parse stability,
-  p95 latency, and fallback counters, and keep ordinary companion chat as a
-  plain string user message.
+  `audio_url`; local base64 media receives stable
+  `palllm-{image|video|audio}-sha256-*` ids when
+  `PalLLM:Inference:UseMediaCacheIds=true`. Record accepted request shape,
+  media byte caps, parse stability, p95 latency, and fallback counters, and
+  keep ordinary companion chat as a plain string user message.
   For delimiter proof, set `PalLLM:Inference:StopSequences[]` only after the
   exact endpoint accepts OpenAI-compatible `stop`; replay before/after token
   counts and inspect companion text for accidental clipping before promotion.
-  For structured-output proof, pass `InferencePrompt.ResponseFormat` only on
-  the exact route being qualified; replay with and without
-  `response_format: json_schema`, record schema name/digest, provider request
-  shape, grammar/backend id, parse success, schema-validation success, p95
-  latency, token usage, fallback counters, and keep strict JSON/tool-call lanes
-  no-spec until schema stability is proven. A `json_object`-only pass is not a
-  JSON Schema proof; include a schema-echo canary with a required object, enum,
+  For structured-output proof, pass `InferencePrompt.ResponseFormat` or
+  `InferencePrompt.StructuredOutputs` only on the exact route being qualified;
+  replay with and without `response_format: json_schema` or vLLM
+  `structured_outputs`, record schema name/digest, provider request shape,
+  grammar/backend id, parse success, schema-validation success, p95 latency,
+  token usage, fallback counters, and keep strict JSON/tool-call lanes no-spec
+  until schema stability is proven. A `json_object`-only pass is not a JSON
+  Schema proof; include a schema-echo canary with a required object, enum,
   bounded array, deliberate violation prompt, and changed-schema digest. The
   PalLLM validator remains authoritative even when the upstream server claims
   constrained decoding.
@@ -419,7 +449,10 @@ leaving them as prose. It includes:
   per-model-family capability rather than a RAM-only toggle: a same-slot
   second-turn canary should prove reuse, while changed chat templates, context
   sizes, adapters, model files, or server builds should invalidate instead of
-  reusing stale state. Schema-bearing llama.cpp receipts must distinguish
+  reusing stale state. Explicit `PalLLM:Inference:LlamaCppCachePrompt` /
+  `LlamaCppSlotId` / `LlamaCppCacheReuseTokens` request-shape canaries must be
+  distinguished from llama-server defaults, and a pinned slot should pass mixed
+  short-turn / long-proof replay before promotion. Schema-bearing llama.cpp receipts must distinguish
   `json_schema`, `json_object`, and grammar-backed requests. For Ollama lanes,
   keep ordinary companion context
   right-sized, verify `ollama ps` reports the intended `CONTEXT` and
@@ -1024,13 +1057,64 @@ system fingerprint if exposed, TP/PP layout, and output drift before trusting
 reproducibility. PalLLM preserves the latest exposed `system_fingerprint` on
 the `/api/inference/performance` lane snapshot so seed drift can be reviewed
 beside latency and token receipts. If
+`PalLLM:Asr:Seed` is configured, run the same short audio clip twice against
+the exact transcription endpoint and record accepted multipart shape, served
+ASR model id, runtime version, transcript drift, latency, and fallback counters
+before treating the ASR lane as reproducible. If
 `PalLLM:Inference:TokenBudgetField=max_completion_tokens` is configured, record
 a same-route comparison against `max_tokens` so visible/reasoning token usage,
-p95 latency, and fallback counters stay comparable. For strict directive/action routes, record a `PalLLM:Inference:ParallelToolCalls=false`
+p95 latency, and fallback counters stay comparable. If
+`PalLLM:Inference:ThinkingTokenBudget` is configured, replay the same
+reasoning route with no budget and with the configured `thinking_token_budget`
+on the exact vLLM reasoning-parser lane, then record reasoning-parser config,
+accepted request shape, visible/reasoning token usage, p95 latency, and
+fallback counters before promotion. For strict directive/action routes, record a `PalLLM:Inference:ParallelToolCalls=false`
 proof run that returns zero or one call before allowing a multi-call fan-out
 experiment. For strict delimiter routes, record a `PalLLM:Inference:StopSequences[]`
 proof run with before/after token receipts and a clipped-text review before
-using delimiters as a player-facing latency optimization. If several
+using delimiters as a player-facing latency optimization. If
+`PalLLM:Inference:ServiceTier` is configured, replay the same route with and
+without `service_tier`, using `priority` only for player-facing latency proof
+and `scale` only when the hosted lane proves lower queue/TTFT without a cost
+surprise, while `flex` stays background-only; record accepted request shape,
+queue/TTFT evidence, p95 latency, cost posture where applicable, and fallback
+counters before promotion. If `PalLLM:Inference:PromptCacheKey` or
+`PromptCacheRetention` is configured, replay the same long-prefix route with
+and without `prompt_cache_key` / `prompt_cache_retention`, and record
+cached-token receipts, p95 latency, accepted request shape, and fallback
+counters before promotion. If `PalLLM:Inference:Verbosity` is configured,
+replay the same route with and without `verbosity`, using `low` only after
+token count and explanation-quality receipts improve together, and reserving
+`high` for non-live proof or review lanes. If
+`PalLLM:Inference:SafetyIdentifier` is configured for a hosted lane, verify it
+is a stable pseudonymous hash and that raw player names, save paths, account
+ids, emails, and secrets are absent from request logs and support bundles. If
+`PalLLM:Inference:StoreCompletions` is configured, replay one hosted canary
+with `store=false`, confirm the endpoint accepts the request shape, and keep
+ordinary Palworld companion chat field-free. Do not use `store=true` for
+gameplay turns unless an operator is deliberately running an eval or
+distillation lane outside the player flow. If
+`PalLLM:Inference:RequestMetadata` is configured, replay one hosted canary
+with bounded proof labels, confirm the endpoint accepts the request shape, and
+verify the labels contain no prompt text, player identity, save paths, secrets,
+raw game state, or high-cardinality metric values. If
+`PalLLM:Inference:ClientRequestIdHeader` is configured, confirm the outgoing
+header is `x-client-request-id` or `x-request-id`, carries only a bounded
+visible-ASCII PalLLM request id, aligns with provider request-id receipts when
+returned, and never becomes a metric label. If
+`PalLLM:Inference:LlamaCppCachePrompt`, `LlamaCppSlotId`, or
+`LlamaCppCacheReuseTokens` is configured, replay the same stable-prefix route
+with and without the llama.cpp fields, add a changed-template or changed-prefix
+negative canary, and record accepted request shape, slot id, second-turn TTFT,
+cache/prompt metrics, cache RAM pressure, and fallback counters before
+promotion. If `PalLLM:Inference:MultimodalProcessor`,
+`InferencePrompt.MultimodalProcessor`, or
+`PalLLM:Vision:MultimodalProcessor` is configured, replay the same
+screenshot/video/audio route with and without `mm_processor_kwargs`, confirm
+the endpoint accepts `min_pixels`, `max_pixels`, `max_soft_tokens`, and `fps`
+only where supported, and record processor token or pixel receipts, cold/warm
+TTFT, VRAM or queue pressure, parse stability, and fallback counters before
+promotion. If several
 vLLM receipts are available, prefer concrete Prometheus families over prose:
 `vllm:prefix_cache_queries` / `vllm:prefix_cache_hits` for local prefix reuse,
 `vllm:external_prefix_cache_queries` /

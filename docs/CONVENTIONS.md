@@ -230,9 +230,13 @@ The drift gate enforces count agreement between this file and the docs.
 
 ## HTTP routes
 
-- Register in `src/PalLLM.Sidecar/Program.cs`. Do NOT create
-  controllers — the minimal-API style is deliberate for drift
-  counting.
+- Register in `src/PalLLM.Sidecar/Program.cs` or the closest focused
+  `src/PalLLM.Sidecar/RouteRegistrations/*.cs` companion. Do NOT create
+  controllers — the minimal-API style is deliberate for drift counting.
+- Register new startup infrastructure in the matching
+  `src/PalLLM.Sidecar/Configuration/*ServiceCollectionExtensions.cs`
+  file. Keep `Program.cs` as the host/middleware spine; split route
+  domains through `RouteRegistrations/*.cs` extension methods.
 - Heavy local-work lanes must use both admission control and a bounded
   endpoint timeout: `.RequireRateLimiting("chat-heavy")` /
   `"vision-heavy"` / `"tts-heavy"` plus `.WithRequestTimeout(...)` with the

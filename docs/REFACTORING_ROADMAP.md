@@ -1,6 +1,6 @@
 # PalLLM monolith-extraction roadmap
 
-Last audited: `2026-05-23`
+Last audited: `2026-05-24`
 
 This is a **plan**, not a commitment. It captures the phased
 extraction strategy for the two largest files in the repo so that
@@ -16,11 +16,36 @@ files that dominate the line-count distribution.
 
 | File | Lines | What it is |
 |---|---|---|
-| [`src/PalLLM.Domain/Runtime/PalLlmRuntime.cs`](../src/PalLLM.Domain/Runtime/PalLlmRuntime.cs) | `4,744` | Every chat turn lives here. Inference circuit, bridge ingest, outbox, snapshot, prompt building, UI-probe diagnostics, archival. |
-| [`src/PalLLM.Sidecar/Program.cs`](../src/PalLLM.Sidecar/Program.cs) | `2,105` | Every HTTP route, every DI registration, every middleware. `57` `api.Map*` calls. |
+| [`src/PalLLM.Domain/Runtime/PalLlmRuntime.cs`](../src/PalLLM.Domain/Runtime/PalLlmRuntime.cs) | `1,104` | Every chat turn lives here. Also owns TTS/ASR entry points, vision description, and session orchestration. |
+| [`src/PalLLM.Domain/Runtime/PalLlmRuntime.Helpers.cs`](../src/PalLLM.Domain/Runtime/PalLlmRuntime.Helpers.cs) | `391` | Phase 1a helper companion: endpoint timing, MIME routing, bounded directory counts, receipt sanitizing, and sorted file enumeration. |
+| [`src/PalLLM.Domain/Runtime/PalLlmRuntime.Inference.cs`](../src/PalLLM.Domain/Runtime/PalLlmRuntime.Inference.cs) | `357` | Phase 1h inference companion: performance snapshots, circuit/model metadata, warmup, live-inference residency tracking, and operation receipts. |
+| [`src/PalLLM.Domain/Runtime/PalLlmRuntime.UiProbe.cs`](../src/PalLLM.Domain/Runtime/PalLlmRuntime.UiProbe.cs) | `628` | Phase 1b UI-probe companion: bounded metadata-keyed dump parse cache, diagnostics snapshot caching, dump parsing, HUD candidate ranking, widget cloning, and local diagnostics retention. |
+| [`src/PalLLM.Domain/Runtime/PalLlmRuntime.BridgeBoot.cs`](../src/PalLLM.Domain/Runtime/PalLlmRuntime.BridgeBoot.cs) | `482` | Phase 1d bridge-boot companion: heartbeat normalization, compatibility signals, native-readiness snapshots, and HUD bind recommendations. |
+| [`src/PalLLM.Domain/Runtime/PalLlmRuntime.Bridge.cs`](../src/PalLLM.Domain/Runtime/PalLlmRuntime.Bridge.cs) | `912` | Phase 1e bridge companion: inbox drain, event processing, bridge activity snapshots, loop proof, delivery receipts, speech playback receipts, and action feedback. |
+| [`src/PalLLM.Domain/Runtime/PalLlmRuntime.Prompt.cs`](../src/PalLLM.Domain/Runtime/PalLlmRuntime.Prompt.cs) | `312` | Phase 1c prompt companion: system prompt assembly, bounded text trimming, assistant-message/status formatting, and world/lore/memory context appenders. |
+| [`src/PalLLM.Domain/Runtime/PalLlmRuntime.Snapshot.cs`](../src/PalLLM.Domain/Runtime/PalLlmRuntime.Snapshot.cs) | `489` | Phase 1g snapshot companion: health/dashboard assembly, world-state reads, vision state application, character lookup, and event-driven snapshot mutation. |
+| [`src/PalLLM.Domain/Runtime/PalLlmRuntime.Outbox.cs`](../src/PalLLM.Domain/Runtime/PalLlmRuntime.Outbox.cs) | `289` | Phase 1f outbox companion: screenshot ingest queue, outbox listing/clearing/writing, archive retention, and outbox JSON metadata. |
+| [`src/PalLLM.Sidecar/Program.cs`](../src/PalLLM.Sidecar/Program.cs) | `336` | Host builder, middleware, static-asset manifest resolution, OpenAPI/MCP mapping, and route spine. Service registration lives in `Configuration/*.cs`; static assets and `/api` route domains live in `RouteRegistrations/*.cs`. `0` inline `api.Map{Get,Post}` calls. |
+| [`src/PalLLM.Sidecar/RouteRegistrations/PalLlmStaticAssetRoutes.cs`](../src/PalLLM.Sidecar/RouteRegistrations/PalLlmStaticAssetRoutes.cs) | `125` | Post-Phase-2 static-asset companion: Field Console physical-file routes with metadata-keyed weak content-hash ETags, `If-Modified-Since` revalidation, and the packaged-EXE `MapStaticAssets` fallback. |
+| [`src/PalLLM.Sidecar/Configuration/PalLlmCoreServiceCollectionExtensions.cs`](../src/PalLLM.Sidecar/Configuration/PalLlmCoreServiceCollectionExtensions.cs) | `172` | Phase 2a core service companion: JSON options, ProblemDetails, response compression, options binding, output cache, rate limits, and request timeouts. |
+| [`src/PalLLM.Sidecar/Configuration/PalLlmInferenceServiceCollectionExtensions.cs`](../src/PalLLM.Sidecar/Configuration/PalLlmInferenceServiceCollectionExtensions.cs) | `142` | Phase 2a inference/runtime service companion: pooled HTTP clients, metrics, model planners, runtime singleton, and runtime hosted services. |
+| [`src/PalLLM.Sidecar/Configuration/PalLlmMcpServiceCollectionExtensions.cs`](../src/PalLLM.Sidecar/Configuration/PalLlmMcpServiceCollectionExtensions.cs) | `56` | Phase 2a MCP service companion: pooled upstream-MCP client, discovery worker, and Streamable HTTP MCP server registration. |
+| [`src/PalLLM.Sidecar/Configuration/PalLlmHealthAndOpenApiServiceCollectionExtensions.cs`](../src/PalLLM.Sidecar/Configuration/PalLlmHealthAndOpenApiServiceCollectionExtensions.cs) | `46` | Phase 2a health/OpenAPI service companion. |
+| [`src/PalLLM.Sidecar/Configuration/PalLlmObservabilityServiceCollectionExtensions.cs`](../src/PalLLM.Sidecar/Configuration/PalLlmObservabilityServiceCollectionExtensions.cs) | `76` | Phase 2a opt-in OpenTelemetry service companion. |
+| [`src/PalLLM.Sidecar/RouteRegistrations/PalLlmInferenceRoutes.cs`](../src/PalLLM.Sidecar/RouteRegistrations/PalLlmInferenceRoutes.cs) | `99` | Phase 2b inference-route companion: `/api/inference/*` plus `/api/mcp/upstream`. |
+| [`src/PalLLM.Sidecar/RouteRegistrations/PalLlmBridgeRoutes.cs`](../src/PalLLM.Sidecar/RouteRegistrations/PalLlmBridgeRoutes.cs) | `32` | Phase 2c bridge/outbox-route companion: `/api/bridge/drain`, `/api/bridge/outbox`, `/api/bridge/ui-probe`, and `/api/bridge/outbox/clear`. |
+| [`src/PalLLM.Sidecar/RouteRegistrations/PalLlmMediaRoutes.cs`](../src/PalLLM.Sidecar/RouteRegistrations/PalLlmMediaRoutes.cs) | `92` | Phase 2d multimodal-media route companion: `/api/vision/*`, `/api/tts/synthesize`, and `/api/audio/transcribe`. |
+| [`src/PalLLM.Sidecar/RouteRegistrations/PalLlmHealthRoutes.cs`](../src/PalLLM.Sidecar/RouteRegistrations/PalLlmHealthRoutes.cs) | `143` | Phase 2e health/manifest route companion: `/api/health`, `/api/dashboard`, `/api/features`, `/api/describe`, `/api/quickstart`, `/metrics`, `/health/live`, and `/health/ready`. |
+| [`src/PalLLM.Sidecar/RouteRegistrations/PalLlmInspectionRoutes.cs`](../src/PalLLM.Sidecar/RouteRegistrations/PalLlmInspectionRoutes.cs) | `200` | Phase 2f inspection/advisory route companion: self-healing, air-gap, roles, hardware, degradation, budgets, narration, lifetime relationships, character mood, and privacy posture. |
+| [`src/PalLLM.Sidecar/RouteRegistrations/PalLlmStateRoutes.cs`](../src/PalLLM.Sidecar/RouteRegistrations/PalLlmStateRoutes.cs) | `65` | Phase 2g state route companion: `/api/memory/recall`, `/api/relationships`, `/api/relationships/{characterId:int}`, `/api/session/save`, and `/api/session/reload`. |
+| [`src/PalLLM.Sidecar/RouteRegistrations/PalLlmContentWorldRoutes.cs`](../src/PalLLM.Sidecar/RouteRegistrations/PalLlmContentWorldRoutes.cs) | `127` | Phase 2h content/world route companion: narrative-pack listing/resolution/reload/validation, adapter logs, world-state reads, and snapshot updates. |
+| [`src/PalLLM.Sidecar/RouteRegistrations/PalLlmPromotionRoutes.cs`](../src/PalLLM.Sidecar/RouteRegistrations/PalLlmPromotionRoutes.cs) | `203` | Phase 2i promotion-loop route companion: observation recording, summaries, suggestions, editor-ready previews, and staging-only apply. |
+| [`src/PalLLM.Sidecar/RouteRegistrations/PalLlmProofReadinessRoutes.cs`](../src/PalLLM.Sidecar/RouteRegistrations/PalLlmProofReadinessRoutes.cs) | `91` | Phase 2j proof/readiness route companion: proof packets, release-readiness snapshots, and bridge-proof snapshots. |
+| [`src/PalLLM.Sidecar/RouteRegistrations/PalLlmConversationRoutes.cs`](../src/PalLLM.Sidecar/RouteRegistrations/PalLlmConversationRoutes.cs) | `358` | Phase 2k conversation-route companion: party chat, single-turn chat, SSE streaming chat, and chat-plan advisory routes. |
+| [`src/PalLLM.Sidecar/RouteRegistrations/PalLlmPlanningRoutes.cs`](../src/PalLLM.Sidecar/RouteRegistrations/PalLlmPlanningRoutes.cs) | `95` | Phase 2l deterministic planning/explanation route companion: directive planning, duo planning, disagreement checks, and why answers. |
 
-Together they are `6,849` lines, about `13%` of all non-test C# code.
-Neither file is bad — both are well-commented and the methods are
+Together they are `7,405` lines, about `15.6%` of all non-test C# code.
+None of these files is bad — they are well-commented and the methods are
 focused — but a new reader has to scroll a *lot* to find the seam
 they're looking for.
 
@@ -78,7 +103,7 @@ the lines live in — only that the *primary* file stays under its
 budget. Partial classes split the lines exactly the way the gate
 wants.
 
-## Phase 1 — `PalLlmRuntime.cs` (4,744 → ~600 lines + 7 companions)
+## Phase 1 — `PalLlmRuntime.cs` (complete: 1,452 → 1,104 lines + inference companion)
 
 The file already has clear responsibility clusters separated by
 inline comments. Each cluster becomes a `PalLlmRuntime.<Topic>.cs`
@@ -86,17 +111,28 @@ companion file.
 
 | New file | Lines (est.) | Responsibility | Source lines |
 |---|---|---|---|
-| `PalLlmRuntime.cs` (kept) | ~600 | Constructor, public ChatAsync entry points, partial method declarations, field declarations | 1-493 (header), public surface |
-| `PalLlmRuntime.Helpers.cs` | ~400 | Pure static helpers: `NormalizeEndpointingMs`, `MimeToExtension`, `DetermineSpeechPlaybackHint`, `SanitizeBridgeReceiptText`, `FirstNonEmpty`, `Format*` family, `Trim*` family | scattered `private static` |
-| `PalLlmRuntime.Inference.cs` | ~600 | Inference circuit state, warmup, model selection, `RecordLiveInferenceSuccess`, `BuildWarmupStatusMessage`, `RecordInferenceOperation` | ~614-1232 |
-| `PalLlmRuntime.Snapshot.cs` | ~400 | `UpdateSnapshot`, `ApplyWeatherToSnapshot`, `ApplyProductionToSnapshot`, `ApplyTravelToSnapshot`, `AppendWorldEvent` | ~1235-1900, ~2669-2828 |
-| `PalLlmRuntime.Outbox.cs` | ~500 | `WriteOutboxReplyAsync`, `ClearOutbox`, `PrunePendingScreenshots`, `Archive`, MIME routing | ~1920-2280 |
-| `PalLlmRuntime.Bridge.cs` | ~800 | `ProcessBridgeEvent`, `RecordBridgeActivity`, `RememberUiProbe`, `RememberChatIngress`, `RememberOutboxReply`, `RememberReplyDelivery`, `RememberSpeechPlayback`, `RememberActionFeedback`, `PromoteDiscoveredBase`, `RememberAssistantFallback` | ~2370-2900, ~4234-4280 |
-| `PalLlmRuntime.UiProbe.cs` | ~700 | `InvalidateUiProbeDiagnostics`, `PruneUiProbeDiagnosticsDirectory`, `BuildUiProbeCandidateKey`, `BuildUiProbeSearchText`, + the 3 nested classes (`UiProbeDumpDocument`, `UiProbeCandidateAccumulator`, `DirectoryActivitySnapshot`) | ~3111-3526, ~4665-4744 |
-| `PalLlmRuntime.BridgeBoot.cs` | ~400 | `RememberBridgeBoot`, `BuildCompatSummary`, `HasCompatSignal`, `TakeFirstNonBlank`, `ClampBridgeLagMs` | ~3700-4233 |
-| `PalLlmRuntime.Prompt.cs` | ~500 | `BuildSystemPrompt`, `AppendRelationshipContext`, `AppendWorldContext`, `AppendStableCharacterContext`, `AppendCharacterStateContext`, `AppendLoreContext`, `AppendMemoryContext`, `TrimToLength`, `TrimAssistantMessage`, `AppendStatusNotice`, `FormatKnownBase`, `FormatLatestProduction`, `FormatLatestTravel`, `FormatAreaRange`, `ResolveSpeakerName` | ~4267-4609 |
+| `PalLlmRuntime.cs` (kept) | 1,104 | Constructor, TTS/ASR entry points, public `ChatAsync`, memory/session entry points, vision description | primary spine |
+| `PalLlmRuntime.Helpers.cs` | 391 | **Done in Phase 1a.** Pure static helpers: `NormalizeEndpointingMs`, `MimeToExtension`, `DetermineSpeechPlaybackHint`, `SanitizeBridgeReceiptText`, `FirstNonEmpty`, bounded directory counts, and sorted file enumeration | scattered `private static` |
+| `PalLlmRuntime.Inference.cs` | 357 | **Done in Phase 1h.** Inference performance snapshots, circuit/model metadata, `WarmInferenceAsync`, `RecordLiveInferenceSuccess`, `BuildWarmupStatusMessage`, `RecordInferenceOperation` | moved in Pass 386 |
+| `PalLlmRuntime.Snapshot.cs` | 489 | **Done in Phase 1g.** `GetHealth`, `GetWorldState`, `GetDashboardSnapshot`, `UpdateSnapshot`, `ExtractWorldStateAsync`, `ResolveCharacter`, `ApplyWeatherToSnapshot`, `ApplyProductionToSnapshot`, `ApplyTravelToSnapshot`, and `AppendWorldEvent` | moved in Pass 385 |
+| `PalLlmRuntime.Outbox.cs` | 289 | **Done in Phase 1f.** `ProcessScreenshotsAsync`, `WriteOutboxReplyAsync`, `GetOutboxListings`, `ClearOutbox`, `PrunePendingScreenshots`, `Archive`, and outbox source-generated JSON metadata | moved in Pass 383 |
+| `PalLlmRuntime.Bridge.cs` | 912 | **Done in Phase 1e.** `DrainInbox`, `ProcessBridgeEvent`, `RecordBridgeActivity`, `RememberUiProbe`, `RememberChatIngress`, `RememberOutboxReply`, `RememberReplyDelivery`, `RememberSpeechPlayback`, `RememberActionFeedback`, bridge-loop proof cloning/building, `PromoteDiscoveredBase`, `RememberAssistantFallback` | moved in Pass 382 |
+| `PalLlmRuntime.UiProbe.cs` | 628 | **Done in Phase 1b + cache-hardened in Pass 399.** `GetUiProbeDiagnostics`, `BuildUiProbeSnapshot`, `InvalidateUiProbeDiagnostics`, `PruneUiProbeDiagnosticsDirectory`, bounded metadata-keyed dump parse caching, dump parsing, HUD candidate ranking, clone helpers, and the 5 nested classes (`UiProbeDumpMetadata`, `UiProbeDumpCacheEntry`, `UiProbeDumpDocument`, `UiProbeCandidateAccumulator`, `DirectoryActivitySnapshot`) | moved in Pass 378; cache-hardened in Pass 399 |
+| `PalLlmRuntime.BridgeBoot.cs` | 482 | **Done in Phase 1d.** `RememberBridgeBoot`, `NormalizeBridgeBootPayload`, `NormalizeCompatSignals`, `CloneBridgeBootPayload`, `BuildNativeReadinessSnapshot`, `BuildHudBindRecommendation`, `HasCompatSignal`, `NormalizeHudTargetList` | moved in Pass 381 |
+| `PalLlmRuntime.Prompt.cs` | 312 | **Done in Phase 1c.** `BuildSystemPrompt`, `AppendRelationshipContext`, `AppendWorldContext`, `AppendStableCharacterContext`, `AppendCharacterStateContext`, `AppendLoreContext`, `AppendMemoryContext`, `TrimToLength`, `TrimAssistantMessage`, `AppendStatusNotice`, `FormatKnownBase`, `FormatLatestProduction`, `FormatLatestTravel`, `FormatAreaRange`, `ResolveSpeakerName` | moved in Pass 380 |
 
-Total estimate: `~600 + 400 + 600 + 400 + 500 + 800 + 700 + 400 + 500 = ~4,900` lines, distributed across `9` files instead of one.
+Current state after Phase 1h:
+`PalLlmRuntime.cs` is `1,104` lines,
+`PalLlmRuntime.Helpers.cs` is `391` lines,
+`PalLlmRuntime.Inference.cs` is `357` lines,
+`PalLlmRuntime.UiProbe.cs` is `628` lines,
+`PalLlmRuntime.BridgeBoot.cs` is `482` lines,
+`PalLlmRuntime.Bridge.cs` is `912` lines,
+`PalLlmRuntime.Prompt.cs` is `312` lines,
+`PalLlmRuntime.Snapshot.cs` is `489` lines, and
+`PalLlmRuntime.Outbox.cs` is `289` lines. Phase 1 is now complete;
+further runtime reductions should be proposed as a new roadmap phase
+after the queued `Program.cs` extraction.
 
 **Verification checklist for Phase 1:**
 
@@ -114,7 +150,7 @@ Total estimate: `~600 + 400 + 600 + 400 + 500 + 800 + 700 + 400 + 500 = ~4,900` 
 - [ ] OpenAPI snapshot: unchanged (no route changes).
 - [ ] Feature catalog: unchanged (no feature changes).
 
-## Phase 2 — `Program.cs` (2,105 → ~400 lines + 7 companions)
+## Phase 2 — `Program.cs` (complete: 2,146 -> 336 lines + service and route/static companions)
 
 Program.cs is top-level-statements style — there are no methods,
 just sequential `builder.Services.AddXxx(...)` and
@@ -124,27 +160,36 @@ partial classes.
 
 | New file | Lines (est.) | Responsibility |
 |---|---|---|
-| `Program.cs` (kept) | ~400 | `WebApplication.CreateBuilder`, all `builder.Services.AddPalLlm*()` calls, all `app.UsePalLlm*()` calls, all `MapPalLlm*Routes(api)` calls, `app.Run()` |
-| `Configuration/PalLlmCoreServiceCollectionExtensions.cs` | ~300 | `AddPalLlmCore(IServiceCollection, IConfiguration)` — JSON options, problem details, response compression, options binding, validator, OutputCache |
-| `Configuration/PalLlmInferenceServiceCollectionExtensions.cs` | ~300 | `AddPalLlmInference(...)` — every `HttpClient` for inference / vision / TTS / ASR, model tier orchestrator, collaboration planners |
-| `Configuration/PalLlmObservabilityServiceCollectionExtensions.cs` | ~200 | `AddPalLlmObservability(...)` — metrics, performance tracker, health checks, OpenTelemetry |
-| `Configuration/PalLlmRateLimitServiceCollectionExtensions.cs` | ~150 | `AddPalLlmRateLimiter(...)` + `AddPalLlmRequestTimeouts(...)` |
-| `RouteRegistrations/HealthRoutes.cs` | ~150 | `MapPalLlmHealthRoutes(api)` — `/health`, `/health/live`, `/health/ready`, `/api/health`, `/api/quickstart`, `/api/describe`, `/api/features` |
-| `RouteRegistrations/ChatRoutes.cs` | ~200 | `MapPalLlmChatRoutes(api)` — `/api/chat`, `/api/chat/stream`, related |
-| `RouteRegistrations/BridgeRoutes.cs` | ~200 | `MapPalLlmBridgeRoutes(api)` — `/api/bridge/*`, `/api/outbox/*` |
-| `RouteRegistrations/ModelRoutes.cs` | ~200 | `MapPalLlmModelRoutes(api)` — `/api/inference/*`, `/api/models/*` |
-| `RouteRegistrations/ObservabilityRoutes.cs` | ~200 | `MapPalLlmObservabilityRoutes(api)` — `/api/metrics`, `/api/why/*`, `/api/release/*` |
-| `RouteRegistrations/BridgeProofRoutes.cs` | ~200 | `MapPalLlmBridgeProofRoutes(api)` — `/api/bridge/proof`, native-proof + delivery surfaces |
+| `Program.cs` (kept) | 336 | `WebApplication.CreateBuilder`, `builder.Services.AddPalLlm*()` calls, middleware, static-asset manifest resolution, OpenAPI/MCP mapping, route spine, `app.Run()` |
+| `Configuration/PalLlmCoreServiceCollectionExtensions.cs` | 172 | **Done in Phase 2a.** `AddPalLlmCore(IServiceCollection, IConfiguration, HttpSurfaceOptions)` — JSON options, problem details, response compression, options binding, validator, OutputCache, rate limiting, request timeouts |
+| `Configuration/PalLlmInferenceServiceCollectionExtensions.cs` | 142 | **Done in Phase 2a.** `AddPalLlmInference(...)` — every `HttpClient` for inference / vision / TTS / ASR, model tier orchestrator, collaboration planners, runtime singleton, hosted runtime workers |
+| `Configuration/PalLlmMcpServiceCollectionExtensions.cs` | 56 | **Done in Phase 2a.** Upstream MCP client pool, discovery worker, MCP HTTP server |
+| `Configuration/PalLlmHealthAndOpenApiServiceCollectionExtensions.cs` | 46 | **Done in Phase 2a.** Health checks + .NET 10 OpenAPI generation |
+| `Configuration/PalLlmObservabilityServiceCollectionExtensions.cs` | 76 | **Done in Phase 2a.** Opt-in OpenTelemetry traces, metrics, and logs |
+| `RouteRegistrations/PalLlmInferenceRoutes.cs` | 99 | **Done in Phase 2b.** `MapPalLlmInferenceRoutes(api, httpOptions)` — `/api/inference/performance`, `/api/inference/collaboration`, `/api/inference/collaboration/plan`, `/api/inference/warmup`, `/api/mcp/upstream` |
+| `RouteRegistrations/PalLlmBridgeRoutes.cs` | 32 | **Done in Phase 2c.** `MapPalLlmBridgeRoutes(api)` — `/api/bridge/drain`, `/api/bridge/outbox`, `/api/bridge/ui-probe`, `/api/bridge/outbox/clear` |
+| `RouteRegistrations/PalLlmMediaRoutes.cs` | 92 | **Done in Phase 2d.** `MapPalLlmVisionRoutes(api)` + `MapPalLlmAudioRoutes(api)` — `/api/vision/describe`, `/api/vision/world-state`, `/api/vision/screenshots/process`, `/api/tts/synthesize`, `/api/audio/transcribe` |
+| `RouteRegistrations/PalLlmHealthRoutes.cs` | 143 | **Done in Phase 2e.** `MapPalLlmHealthRoutes(app, api, httpOptions)` — `/api/health`, `/api/dashboard`, `/metrics`, `/health/live`, `/health/ready`, `/api/features`, `/api/describe`, `/api/quickstart` |
+| `RouteRegistrations/PalLlmInspectionRoutes.cs` | 200 | **Done in Phase 2f.** `MapPalLlmInspectionRoutes(api)` — `/api/self-healing/status`, `/api/airgap/verify`, `/api/roles`, `/api/hardware`, `/api/degradation/advisory`, `/api/budgets`, `/api/narration/cue`, `/api/relationships/lifetime`, `/api/characters/{characterId:int}/mood`, `/api/privacy/posture` |
+| `RouteRegistrations/PalLlmStateRoutes.cs` | 65 | **Done in Phase 2g.** `MapPalLlmMemoryRelationshipRoutes(api)` + `MapPalLlmSessionRoutes(api)` — `/api/memory/recall`, `/api/relationships*`, and `/api/session/*` |
+| `RouteRegistrations/PalLlmContentWorldRoutes.cs` | 127 | **Done in Phase 2h.** `MapPalLlmContentWorldRoutes(api)` — `/api/packs*`, `/api/logs`, `/api/world`, and `/api/snapshot` |
+| `RouteRegistrations/PalLlmPromotionRoutes.cs` | 203 | **Done in Phase 2i.** `MapPalLlmPromotionRoutes(api)` — `/api/promotion/record`, `/api/promotion/summary`, `/api/promotion/suggestions`, `/api/promotion/apply/preview`, and `/api/promotion/apply` |
+| `RouteRegistrations/PalLlmProofReadinessRoutes.cs` | 91 | **Done in Phase 2j.** `MapPalLlmProofPacketRoute(api)` + `MapPalLlmReleaseProofRoutes(api, httpOptions)` — `/api/proof/packet`, `/api/release/readiness`, and `/api/bridge/proof` |
+| `RouteRegistrations/PalLlmConversationRoutes.cs` | 358 | **Done in Phase 2k.** `MapPalLlmPartyChatRoute(api)` + `MapPalLlmChatTurnRoutes(api)` — `/api/chat/party`, `/api/chat`, `/api/chat/stream`, and `/api/chat/plan` |
+| `RouteRegistrations/PalLlmPlanningRoutes.cs` | 95 | **Done in Phase 2l.** `MapPalLlmPlanningRoutes(api)` + `MapPalLlmWhyRoute(api)` — `/api/directives/plan`, `/api/duo/plan`, `/api/disagreement/check`, and `/api/why` |
+| `RouteRegistrations/PalLlmStaticAssetRoutes.cs` | 125 | **Done in post-Phase-2 cleanup.** `MapPalLlmFieldConsoleStaticAssets(app, staticAssetsManifestPath)` — Field Console physical-file routes, validator revalidation, and `MapStaticAssets` fallback |
 
-**Why split routes by domain, not by HTTP method:** The audit gate
-`Drift_Api_route_count` counts `api.Map*` calls regardless of where
-they live; splitting by domain keeps related routes co-located the
-same way an operator would expect them in `docs/API.md`.
+**Why Phase 2b widened the route audit first:** the drift gates now scan both
+`Program.cs` and `RouteRegistrations/*.cs` for `api.Map*` calls. That keeps
+future route companions count-gated while allowing domain slices to move out
+of the startup spine without changing the public surface. Splitting routes by
+domain remains the target because related endpoints stay co-located the same
+way an operator would expect them in `docs/API.md`.
 
 **Verification checklist for Phase 2:**
 
-- [ ] `Drift_Api_route_count` still reports `57` total routes
-      (sum across all `RouteRegistrations/` files).
+- [ ] `Drift_Api_route_count` still reports `57` total routes across
+      `Program.cs` and `RouteRegistrations/*.cs`.
 - [ ] `Drift_OpenApi_snapshot` passes — no route ordering, no
       grouping changes that would alter the generated OpenAPI doc.
 - [ ] `Drift_Api_reference_surface` passes — `docs/API.md`'s route
@@ -180,26 +225,34 @@ same way an operator would expect them in `docs/API.md`.
 Land Phase 1 sub-passes in this order — smallest blast radius first:
 
 1. **Phase 1a:** Extract `PalLlmRuntime.Helpers.cs` (pure static
-   functions, zero state). Quickest win, lowest risk.
+   functions, zero state). **Done in Pass 375.**
 2. **Phase 1b:** Extract `PalLlmRuntime.UiProbe.cs` (includes the 3
    nested classes — moving them gets the most lines for the least
-   risk).
+   risk). **Done in Pass 378.**
 3. **Phase 1c:** Extract `PalLlmRuntime.Prompt.cs` (pure static
-   builders, no state).
-4. **Phase 1d:** Extract `PalLlmRuntime.BridgeBoot.cs`.
-5. **Phase 1e:** Extract `PalLlmRuntime.Bridge.cs`.
-6. **Phase 1f:** Extract `PalLlmRuntime.Outbox.cs`.
-7. **Phase 1g:** Extract `PalLlmRuntime.Snapshot.cs`.
-8. **Phase 1h:** Extract `PalLlmRuntime.Inference.cs` (largest, most
-   stateful — land last when the pattern is well-rehearsed).
+   builders, no state). **Done in Pass 380.**
+4. **Phase 1d:** Extract `PalLlmRuntime.BridgeBoot.cs`. **Done in Pass 381.**
+5. **Phase 1e:** Extract `PalLlmRuntime.Bridge.cs`. **Done in Pass 382.**
+6. **Phase 1f:** Extract `PalLlmRuntime.Outbox.cs`. **Done in Pass 383.**
+7. **Phase 1g:** Extract `PalLlmRuntime.Snapshot.cs`. **Done in Pass 385.**
+8. **Phase 1h:** Extract `PalLlmRuntime.Inference.cs`. **Done in Pass 386.**
 
-Each sub-pass should drop `PalLlmRuntime.cs` by `~400-800` lines and
-add one companion file of similar size. After Phase 1h, the primary
-`PalLlmRuntime.cs` is `~600` lines (constructor + chat entry +
-partial declarations).
+Phase 1 is complete. `PalLlmRuntime.cs` is now `1,104` lines with the
+largest helper clusters split into named companion files.
 
-Phase 2 is similar but coarser-grained — 4 service-collection
-extensions + 5 route-registration files. Land in that order.
+Phase 2 is similar but coarser-grained. Phase 2a extracted the
+service-collection extensions. Phase 2b widened the route-count/reference
+audit to support `RouteRegistrations/*.cs` and moved the inference/MCP-upstream
+route slice. Phase 2c moved the bridge/outbox route slice. Phase 2d moved the
+multimodal media route slice. Phase 2e moved the health/manifest route slice
+and widened operational-route counting to include route companions. Phase 2f
+moved the read-only inspection/advisory route slice. Phase 2g moved the
+memory/relationship/session state route slice. Phase 2h moved the
+content/world route slice. Phase 2i moved the promotion-loop route
+slice. Phase 2j moved the proof/readiness route slice. Phase 2k moved
+the conversation route slice. Phase 2l moved the deterministic planning /
+explanation route slice. Phase 2 is complete; further `Program.cs` work
+should be proposed as a new scoped phase rather than extending this one.
 
 ## Future work (out of scope here)
 

@@ -150,8 +150,8 @@ public sealed class RuntimeTests
     public void MemoryStore_RecallPrefersMatchingCharacter()
     {
         using var fixture = new TestFixtureContext();
-        fixture.Runtime.MemoryStore.Remember(1, "Foxparks", "user", "Foxparks likes warm campfires.", "chat");
-        fixture.Runtime.MemoryStore.Remember(2, "Lamball", "user", "Lamball enjoys soft wool bedding.", "chat");
+        fixture.Runtime.MemoryStore.Remember(1, "CampScout", "user", "CampScout likes warm campfires.", "chat");
+        fixture.Runtime.MemoryStore.Remember(2, "SpeciesAlpha", "user", "SpeciesAlpha enjoys soft wool bedding.", "chat");
 
         var matches = fixture.Runtime.RecallMemory(new MemoryRecallRequest
         {
@@ -161,7 +161,7 @@ public sealed class RuntimeTests
         });
 
         Assert.That(matches, Has.Count.EqualTo(1));
-        Assert.That(matches[0].Entry.CharacterName, Is.EqualTo("Foxparks"));
+        Assert.That(matches[0].Entry.CharacterName, Is.EqualTo("CampScout"));
     }
 
     [Test]
@@ -174,7 +174,7 @@ public sealed class RuntimeTests
             new ConversationMemoryEntry
             {
                 CharacterId = 1,
-                CharacterName = "Foxparks",
+                CharacterName = "CampScout",
                 SpeakerRole = "user",
                 Content = oversizedMemory,
                 Tags = ["chat"],
@@ -267,8 +267,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 8,
-                    DisplayName = "Chillet",
-                    Species = "Chillet",
+                    DisplayName = "CampGuardian",
+                    Species = "CampGuardian",
                     Traits = ["calm"],
                 },
             ],
@@ -347,8 +347,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 14,
-                    DisplayName = "Foxparks",
-                    Species = "Foxparks",
+                    DisplayName = "CampScout",
+                    Species = "CampScout",
                 },
             ],
         });
@@ -426,8 +426,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 11,
-                    DisplayName = "Chillet",
-                    Species = "Chillet",
+                    DisplayName = "CampGuardian",
+                    Species = "CampGuardian",
                 },
             ],
         });
@@ -487,8 +487,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 12,
-                    DisplayName = "Chillet",
-                    Species = "Chillet",
+                    DisplayName = "CampGuardian",
+                    Species = "CampGuardian",
                 },
             ],
         });
@@ -574,8 +574,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 11,
-                    DisplayName = "Chillet",
-                    Species = "Chillet",
+                    DisplayName = "CampGuardian",
+                    Species = "CampGuardian",
                     Traits = ["calm", "loyal"],
                 },
             ],
@@ -620,7 +620,7 @@ public sealed class RuntimeTests
         Assert.That(response.Presentation.Surface.PrimaryStatusTokenCount, Is.EqualTo(1));
         Assert.That(response.Presentation.Surface.PrimaryStageTokenCount, Is.EqualTo(0));
         Assert.That(response.Presentation.Surface.PrimaryAtmosphereTokenCount, Is.EqualTo(0));
-        Assert.That(response.SystemPrompt, Does.Contain("Chillet"));
+        Assert.That(response.SystemPrompt, Does.Contain("CampGuardian"));
         Assert.That(fixture.Runtime.MemoryStore.Count, Is.EqualTo(2));
     }
 
@@ -908,8 +908,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 51,
-                    DisplayName = "Foxparks",
-                    Species = "Foxparks",
+                    DisplayName = "CampScout",
+                    Species = "CampScout",
                 },
             ],
         });
@@ -1340,7 +1340,7 @@ public sealed class RuntimeTests
     public async Task ExtractWorldStateAsync_WhenModelReturnsProse_FailsGracefully()
     {
         var vision = new CannedVisionClient(() =>
-            VisionResult.Succeeded("I can see a calm meadow with a Lamball grazing peacefully."));
+            VisionResult.Succeeded("I can see a calm meadow with a SpeciesAlpha grazing peacefully."));
         using var fixture = new TestFixtureContext(visionClient: vision, visionEnabled: true);
 
         VisionWorldStateResponse response = await fixture.Runtime.ExtractWorldStateAsync(new VisionWorldStateRequest
@@ -1398,8 +1398,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 62,
-                    DisplayName = "Foxparks",
-                    Species = "Foxparks",
+                    DisplayName = "CampScout",
+                    Species = "CampScout",
                 },
             ],
         });
@@ -1792,8 +1792,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 12,
-                    DisplayName = "Foxparks",
-                    Species = "Foxparks",
+                    DisplayName = "CampScout",
+                    Species = "CampScout",
                 },
             ],
         });
@@ -1894,8 +1894,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 91,
-                    DisplayName = "Foxparks",
-                    Species = "Foxparks",
+                    DisplayName = "CampScout",
+                    Species = "CampScout",
                 },
             ],
         });
@@ -2358,7 +2358,7 @@ public sealed class RuntimeTests
     public void PrometheusExporter_RendersKnownMetricsAndHelpText()
     {
         using var fixture = new TestFixtureContext();
-        fixture.Runtime.MemoryStore.Remember(1, "Foxparks", "user", "hello there", "chat");
+        fixture.Runtime.MemoryStore.Remember(1, "CampScout", "user", "hello there", "chat");
 
         string output = PrometheusExporter.Render(
             fixture.Runtime.GetHealth(),
@@ -2415,8 +2415,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 14,
-                    DisplayName = "Foxparks",
-                    Species = "Foxparks",
+                    DisplayName = "CampScout",
+                    Species = "CampScout",
                 },
             ],
         });
@@ -2465,7 +2465,7 @@ public sealed class RuntimeTests
             IsWorldLoaded = true,
             Characters =
             [
-                new GameCharacterSnapshot { Id = 10, DisplayName = "Foxparks", Species = "Foxparks" },
+                new GameCharacterSnapshot { Id = 10, DisplayName = "CampScout", Species = "CampScout" },
             ],
         });
 
@@ -2502,8 +2502,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 12,
-                    DisplayName = "Foxparks",
-                    Species = "Foxparks",
+                    DisplayName = "CampScout",
+                    Species = "CampScout",
                 },
             ],
         });
@@ -2590,8 +2590,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 77,
-                    DisplayName = "Chillet",
-                    Species = "Chillet",
+                    DisplayName = "CampGuardian",
+                    Species = "CampGuardian",
                     IsPlayerFaction = true,
                 },
             ],
@@ -2738,8 +2738,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 44,
-                    DisplayName = "Foxparks",
-                    Species = "Foxparks",
+                    DisplayName = "CampScout",
+                    Species = "CampScout",
                 },
             ],
         });
@@ -2945,7 +2945,7 @@ public sealed class RuntimeTests
                 Session = new SessionOptions { Enabled = true, EnableAutosave = false },
             };
             var runtime = new PalLlmRuntime(options, new DisabledInferenceClient());
-            runtime.MemoryStore.Remember(1, "Foxparks", "user", "first note", "chat");
+            runtime.MemoryStore.Remember(1, "CampScout", "user", "first note", "chat");
 
             SessionPersistenceResult first = runtime.SaveSession();
             Assert.That(first.Success, Is.True);
@@ -2962,7 +2962,7 @@ public sealed class RuntimeTests
                 "Clean-session autosave must not rewrite the file.");
 
             // A new memory entry dirties the state; the next SaveIfDirty should write.
-            runtime.MemoryStore.Remember(1, "Foxparks", "user", "second note", "chat");
+            runtime.MemoryStore.Remember(1, "CampScout", "user", "second note", "chat");
             await Task.Delay(50);
             SessionPersistenceResult third = runtime.SaveSessionIfDirty();
             Assert.That(third.Success, Is.True);
@@ -3054,7 +3054,7 @@ public sealed class RuntimeTests
     public void Health_ExposesResourceFootprintAndSessionFlags()
     {
         using var fixture = new TestFixtureContext();
-        fixture.Runtime.MemoryStore.Remember(1, "Foxparks", "user", "hello", "chat");
+        fixture.Runtime.MemoryStore.Remember(1, "CampScout", "user", "hello", "chat");
 
         File.WriteAllText(Path.Combine(fixture.Options.BridgeInboxDir, "pending.json"), "{}");
 
@@ -3087,9 +3087,9 @@ public sealed class RuntimeTests
             };
             var firstRuntime = new PalLlmRuntime(options, new DisabledInferenceClient());
 
-            firstRuntime.MemoryStore.Remember(7, "Foxparks", "user", "Foxparks adores the forge.", "lore");
-            firstRuntime.MemoryStore.Remember(7, "Foxparks", "assistant", "I will stay close through the night.", "chat");
-            firstRuntime.MemoryStore.Remember(8, "Lamball", "user", "Lamball prefers wool bedding.", "lore");
+            firstRuntime.MemoryStore.Remember(7, "CampScout", "user", "CampScout adores the forge.", "lore");
+            firstRuntime.MemoryStore.Remember(7, "CampScout", "assistant", "I will stay close through the night.", "chat");
+            firstRuntime.MemoryStore.Remember(8, "SpeciesAlpha", "user", "SpeciesAlpha prefers wool bedding.", "lore");
 
             // Drive the relationship tracker through the public chat path so affinity
             // and interaction counts persist in a realistic shape.
@@ -3098,7 +3098,7 @@ public sealed class RuntimeTests
                 IsWorldLoaded = true,
                 Characters =
                 [
-                    new GameCharacterSnapshot { Id = 7, DisplayName = "Foxparks", Species = "Foxparks" },
+                    new GameCharacterSnapshot { Id = 7, DisplayName = "CampScout", Species = "CampScout" },
                 ],
             });
             firstRuntime.ChatAsync(new ChatRequest
@@ -3149,9 +3149,9 @@ public sealed class RuntimeTests
 
             // Save twice so a .bak file exists carrying the first save's state.
             var first = new PalLlmRuntime(options, new DisabledInferenceClient());
-            first.MemoryStore.Remember(1, "Foxparks", "user", "first save entry", "chat");
+            first.MemoryStore.Remember(1, "CampScout", "user", "first save entry", "chat");
             first.SaveSession();
-            first.MemoryStore.Remember(1, "Foxparks", "user", "second save entry", "chat");
+            first.MemoryStore.Remember(1, "CampScout", "user", "second save entry", "chat");
             first.SaveSession();
 
             Assert.That(File.Exists(options.SessionFilePath), Is.True);
@@ -3247,9 +3247,9 @@ public sealed class RuntimeTests
             };
 
             var first = new PalLlmRuntime(options, new DisabledInferenceClient());
-            first.MemoryStore.Remember(1, "Foxparks", "user", "first save entry", "chat");
+            first.MemoryStore.Remember(1, "CampScout", "user", "first save entry", "chat");
             first.SaveSession();
-            first.MemoryStore.Remember(1, "Foxparks", "user", "second save entry", "chat");
+            first.MemoryStore.Remember(1, "CampScout", "user", "second save entry", "chat");
             first.SaveSession();
 
             Assert.That(File.Exists(options.SessionFilePath + ".bak"), Is.True,
@@ -3393,6 +3393,26 @@ public sealed class RuntimeTests
         RuntimeHealth after = fixture.Runtime.GetHealth();
         Assert.That(after.OutboxPendingCount, Is.EqualTo(1),
             "Operational count caching must invalidate when PalLLM writes a new outbox envelope.");
+
+        using var exactFixture = new TestFixtureContext();
+        for (int i = 0; i < 1_023; i++)
+        {
+            File.WriteAllText(Path.Combine(exactFixture.Options.BridgeOutboxDir, $"pending-{i:0000}.json"), "{}");
+        }
+
+        RuntimeHealth exact = exactFixture.Runtime.GetHealth();
+        Assert.That(exact.OutboxPendingCount, Is.EqualTo(1_023),
+            "Health snapshots should stay exact below the bounded-count cap.");
+
+        using var cappedFixture = new TestFixtureContext();
+        for (int i = 0; i < 1_050; i++)
+        {
+            File.WriteAllText(Path.Combine(cappedFixture.Options.BridgeOutboxDir, $"pending-{i:0000}.json"), "{}");
+        }
+
+        RuntimeHealth capped = cappedFixture.Runtime.GetHealth();
+        Assert.That(capped.OutboxPendingCount, Is.EqualTo(1_024),
+            "Health snapshots should cap directory counting once backlog evidence is already far beyond warning thresholds.");
     }
 
     [Test]
@@ -3612,7 +3632,7 @@ public sealed class RuntimeTests
             KnownBases = [new GameBaseSnapshot { BaseId = "kindling-hollow" }],
             Characters =
             [
-                new GameCharacterSnapshot { Id = 1, DisplayName = "Chillet" },
+                new GameCharacterSnapshot { Id = 1, DisplayName = "CampGuardian" },
             ],
             NearbyHostiles = ["Syndicate Thug"],
         });
@@ -3671,7 +3691,7 @@ public sealed class RuntimeTests
         // fallback must NOT be used â€” it's a backup, not a layered
         // addition. Double-spliced context would confuse the model.
         var vision = new CannedVisionClient(() =>
-            VisionResult.Succeeded("A night-time base with one Chillet circling the gate."));
+            VisionResult.Succeeded("A night-time base with one CampGuardian circling the gate."));
         using var fixture = new TestFixtureContext(visionClient: vision, visionEnabled: true);
         fixture.Runtime.UpdateSnapshot(new GameWorldSnapshot
         {
@@ -3687,7 +3707,7 @@ public sealed class RuntimeTests
 
         Assert.That(response.SystemPrompt, Does.Contain("from vision model"));
         Assert.That(response.SystemPrompt, Does.Not.Contain("from snapshot fallback"));
-        Assert.That(response.SystemPrompt, Does.Contain("Chillet circling the gate"));
+        Assert.That(response.SystemPrompt, Does.Contain("CampGuardian circling the gate"));
     }
 
     // 8x8 red PNG (144 bytes decoded). Any non-empty base64 image works for the mocked
@@ -3704,8 +3724,8 @@ public sealed class RuntimeTests
             Author = "QA",
             Characters = new object[]
             {
-                new { Id = "foxp-1", Name = "Foxparks" },
-                new { Id = "chill-1", Name = "Chillet" },
+                new { Id = "foxp-1", Name = "CampScout" },
+                new { Id = "chill-1", Name = "CampGuardian" },
             },
             Relationships = new object[]
             {
@@ -3776,7 +3796,7 @@ public sealed class RuntimeTests
                 new
                 {
                     Id = "foxp-1",
-                    Name = "Foxparks",
+                    Name = "CampScout",
                     Backstory = "Dungeons & Dragons shorthand does not belong in shareable PalLLM pack lore.",
                 },
             },
@@ -3812,12 +3832,12 @@ public sealed class RuntimeTests
     [Test]
     public void PackValidator_ShippedSamplePack_ValidatesCleanly()
     {
-        // docs/examples/chillet-pack.json is the starter pack new players can
+        // docs/examples/camp-guardian-pack.json is the starter pack new players can
         // drop into their runtime Packs folder to see authored lore work. If it
         // ever drifts into invalid JSON or breaks the schema, the onboarding
         // experience silently stops working. Lock it down as a regression.
         string repoRoot = FindRepoRoot();
-        string samplePath = Path.Combine(repoRoot, "docs", "examples", "chillet-pack.json");
+        string samplePath = Path.Combine(repoRoot, "docs", "examples", "camp-guardian-pack.json");
         Assert.That(File.Exists(samplePath), Is.True, $"Shipped sample pack missing at {samplePath}");
 
         string json = File.ReadAllText(samplePath);
@@ -3825,7 +3845,7 @@ public sealed class RuntimeTests
 
         string detail = string.Join("; ", result.Errors.Select(e => $"{e.Path}: {e.Message}"));
         Assert.That(result.IsValid, Is.True,
-            $"Shipped chillet-pack.json must validate cleanly. Errors: {detail}");
+            $"Shipped camp-guardian-pack.json must validate cleanly. Errors: {detail}");
         Assert.That(result.CharacterCount, Is.GreaterThan(0),
             "Sample pack must have at least one character so new players see authored lore immediately.");
     }
@@ -3858,8 +3878,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 300,
-                    DisplayName = "Chillet",
-                    Species = "Chillet",
+                    DisplayName = "CampGuardian",
+                    Species = "CampGuardian",
                 },
             ],
         });
@@ -3884,7 +3904,7 @@ public sealed class RuntimeTests
 
         JsonElement payload = root.GetProperty("Payload");
         Assert.That(payload.GetProperty("CharacterId").GetInt32(), Is.EqualTo(300));
-        Assert.That(payload.GetProperty("CharacterName").GetString(), Is.EqualTo("Chillet"));
+        Assert.That(payload.GetProperty("CharacterName").GetString(), Is.EqualTo("CampGuardian"));
         Assert.That(payload.GetProperty("AssistantMessage").GetString(), Is.EqualTo(response.AssistantMessage));
         Assert.That(payload.GetProperty("ResponsePath").GetString(), Is.EqualTo(response.ResponsePath));
         Assert.That(payload.TryGetProperty("Presentation", out _), Is.True,
@@ -4351,8 +4371,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 88,
-                    DisplayName = "Foxparks",
-                    Species = "Foxparks",
+                    DisplayName = "CampScout",
+                    Species = "CampScout",
                 },
             ],
         });
@@ -4506,9 +4526,8 @@ public sealed class RuntimeTests
         fixture.Options.Http.LocalArtifactMaxBytes = 1024;
         fixture.Options.EnsureDirectories();
 
-        File.WriteAllText(
-            Path.Combine(fixture.Options.BridgeDiagnosticsDir, "palllm-ui-probe-001.json"),
-            JsonSerializer.Serialize(new
+        string firstDumpPath = Path.Combine(fixture.Options.BridgeDiagnosticsDir, "palllm-ui-probe-001.json");
+        string firstDumpJson = JsonSerializer.Serialize(new
             {
                 GeneratedAtUtc = new DateTimeOffset(2026, 4, 18, 1, 0, 0, TimeSpan.Zero),
                 Reason = "auto_widget_sample",
@@ -4536,7 +4555,9 @@ public sealed class RuntimeTests
                         LastLifecycle = "construct",
                     },
                 },
-            }));
+            });
+        File.WriteAllText(firstDumpPath, firstDumpJson);
+        DateTime firstDumpLastWriteUtc = File.GetLastWriteTimeUtc(firstDumpPath);
 
         File.WriteAllText(
             Path.Combine(fixture.Options.BridgeDiagnosticsDir, "palllm-ui-probe-002.json"),
@@ -4613,6 +4634,32 @@ public sealed class RuntimeTests
         Assert.That(
             diagnostics.Candidates[0].Rationale.Any(reason => reason.Contains("HUD", StringComparison.OrdinalIgnoreCase)),
             Is.True);
+
+        File.WriteAllText(firstDumpPath, "{" + new string('x', firstDumpJson.Length - 1));
+        File.SetLastWriteTimeUtc(firstDumpPath, firstDumpLastWriteUtc);
+        File.WriteAllText(
+            Path.Combine(fixture.Options.BridgeInboxDir, "ui-probe-cache-invalidate.json"),
+            JsonSerializer.Serialize(new
+            {
+                EventType = "ui_probe",
+                Source = "ue4ss",
+                TimestampUtc = DateTimeOffset.UtcNow,
+                Payload = new
+                {
+                    Reason = "manual_keybind",
+                    Summary = "cache invalidation",
+                    ObservedWidgetCount = 0,
+                    ActiveWidgetCount = 0,
+                    Widgets = Array.Empty<object>(),
+                },
+            }));
+        fixture.Runtime.DrainInbox();
+
+        UiProbeDiagnosticsSnapshot cachedDiagnostics = fixture.Runtime.GetUiProbeDiagnostics(candidateLimit: 3);
+
+        Assert.That(cachedDiagnostics.DumpCount, Is.EqualTo(2));
+        Assert.That(cachedDiagnostics.CandidateCount, Is.EqualTo(3));
+        Assert.That(cachedDiagnostics.Candidates[0].DisplayName, Is.EqualTo("WBP_HudRoot"));
     }
 
     [Test]
@@ -4776,13 +4823,13 @@ public sealed class RuntimeTests
         {
             fixture.Runtime.MemoryStore.Remember(
                 10,
-                "Chillet",
+                "CampGuardian",
                 "assistant",
                 narratives[i],
                 i % 2 == 0 ? "combat_start" : "base_discovered");
         }
 
-        ConversationMemoryEntry? reflection = fixture.Runtime.Reflect(10, "Chillet");
+        ConversationMemoryEntry? reflection = fixture.Runtime.Reflect(10, "CampGuardian");
 
         Assert.That(reflection, Is.Not.Null, "Expected a reflection entry once importance crosses the threshold.");
         Assert.That(reflection!.Tags, Has.Some.EqualTo("reflection").IgnoreCase);
@@ -4803,8 +4850,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 200,
-                    DisplayName = "Chillet",
-                    Species = "Chillet",
+                    DisplayName = "CampGuardian",
+                    Species = "CampGuardian",
                 },
             ],
         });
@@ -4872,10 +4919,10 @@ public sealed class RuntimeTests
     public void Reflect_WhenImportanceIsLow_ReturnsNull()
     {
         using var fixture = new TestFixtureContext();
-        fixture.Runtime.MemoryStore.Remember(10, "Chillet", "assistant", "Everyone is fine.", "chat");
-        fixture.Runtime.MemoryStore.Remember(10, "Chillet", "assistant", "Quiet afternoon.", "chat");
+        fixture.Runtime.MemoryStore.Remember(10, "CampGuardian", "assistant", "Everyone is fine.", "chat");
+        fixture.Runtime.MemoryStore.Remember(10, "CampGuardian", "assistant", "Quiet afternoon.", "chat");
 
-        ConversationMemoryEntry? reflection = fixture.Runtime.Reflect(10, "Chillet");
+        ConversationMemoryEntry? reflection = fixture.Runtime.Reflect(10, "CampGuardian");
 
         Assert.That(reflection, Is.Null, "Reflection must not fire on trivial memory streams.");
     }
@@ -4896,8 +4943,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 91,
-                    DisplayName = "Foxparks",
-                    Species = "Foxparks",
+                    DisplayName = "CampScout",
+                    Species = "CampScout",
                 },
             ],
         });
@@ -5038,8 +5085,8 @@ public sealed class RuntimeTests
                 new GameCharacterSnapshot
                 {
                     Id = 77,
-                    DisplayName = "Chillet",
-                    Species = "Chillet",
+                    DisplayName = "CampGuardian",
+                    Species = "CampGuardian",
                 },
             ],
         });
@@ -5119,7 +5166,7 @@ public sealed class RuntimeTests
                 {
                     Id = 77,
                     DisplayName = "Frostbite",
-                    Species = "Chillet",
+                    Species = "CampGuardian",
                     IsPlayerFaction = true,
                 },
             ],
@@ -5153,8 +5200,8 @@ public sealed class RuntimeTests
             [
                 new NarrativeCharacterProfile
                 {
-                    Id = "foxparks",
-                    Name = "Foxparks",
+                    Id = "camp-scout",
+                    Name = "CampScout",
                     Aliases = ["Sparky"],
                     Role = "Forge helper",
                     Personality = "Bright and eager",
@@ -5191,14 +5238,14 @@ public sealed class RuntimeTests
         Assert.That(packs[0].FilePath, Does.Not.Contain(fixture.Options.PackDir),
             "Narrative pack listings should not leak the operator's absolute pack root.");
         Assert.That(lore, Is.Not.Null);
-        Assert.That(lore!.Name, Is.EqualTo("Foxparks"));
+        Assert.That(lore!.Name, Is.EqualTo("CampScout"));
     }
 
     [Test]
     public void SaveSession_WritesCompactMemoryPayloadWithoutEmbeddings()
     {
         using var fixture = new TestFixtureContext();
-        fixture.Runtime.MemoryStore.Remember(1, "Foxparks", "user", "We should rebuild the forge.", "chat", "camp");
+        fixture.Runtime.MemoryStore.Remember(1, "CampScout", "user", "We should rebuild the forge.", "chat", "camp");
 
         SessionPersistenceResult result = fixture.Runtime.SaveSession();
         string json = File.ReadAllText(fixture.Options.SessionFilePath);

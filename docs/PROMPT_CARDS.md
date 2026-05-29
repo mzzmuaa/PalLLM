@@ -315,7 +315,7 @@ unlocked when:
 
 1. **A live LLM endpoint** is wired (see `pal models` for the
    recommendation per your hardware) — same shape, richer voice.
-2. **Personality packs** are loaded — Chillet's calm voice,
+2. **Personality packs** are loaded — a guardian's calm voice,
    anxious-crafter's worry, stoic-veteran's drawl. Same 19
    strategies wear different hats.
 3. **Memory accumulates** — by week 2, the nemesis-counterplay

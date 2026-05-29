@@ -136,7 +136,8 @@ and `pal explain` reads them.
 
 The minimum file count we ship with cards is the load-bearing few:
 
-- `src/PalLLM.Sidecar/Program.cs` - the route registration site
+- `src/PalLLM.Sidecar/Program.cs` +
+  `src/PalLLM.Sidecar/RouteRegistrations/*.cs` - route registration sites
 - `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs` - feature
   catalog
 - `src/PalLLM.Domain/Runtime/FallbackBehaviorEngine.cs` - fallback

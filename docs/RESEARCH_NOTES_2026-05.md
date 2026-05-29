@@ -1,6 +1,6 @@
 # Research notes — 2026-05 model implementation pass
 
-Last audited: `2026-05-23`
+Last audited: `2026-05-28`
 
 This doc captures the implementation-grade research that drove
 Pass 112's multimodal recipes + the 2026 Blackwell defaults.
@@ -8,12 +8,632 @@ Citations preserved here so a future contributor (human or
 agent) can verify each claim against upstream and bump versions
 without redoing the survey.
 
-> **Honest scope note.** This file is a snapshot of *what was
-> true on 2026-05-22*. Bug-fix references are pinned to vLLM
-> versions current that day. When a future pass picks this up,
-> some pitfalls will already be fixed upstream. The doc shape
-> is meant to be re-runnable: replace the version pins, re-cite,
-> and the rest of the structure stays.
+> **Honest scope note.** This file started as a snapshot of *what was
+> true on 2026-05-22* and now carries dated refresh sections above that
+> base survey. Bug-fix references are pinned to the serving versions
+> current on the refresh date. When a future pass picks this up, some
+> pitfalls will already be fixed upstream. The doc shape is meant to be
+> re-runnable: replace the version pins, re-cite, and the rest of the
+> structure stays.
+
+## 0.99j. 2026-05-28 refresh: ASR seeds stay replay-only
+
+Current vLLM OpenAI-compatible transcription docs list `seed` among the
+multipart sampling parameters accepted by `/v1/audio/transcriptions`. That
+makes it useful for PalLLM voice-proof replays: the same short clip can be
+sent twice to the same local ASR endpoint and compared for transcript drift,
+latency, served model id, and fallback behavior. It is not a general
+determinism guarantee because changed model weights, tokenizer/audio frontend,
+runtime version, replica layout, and endpoint defaults can still change the
+result.
+
+Implementation impact: Pass 417 adds optional `PalLLM:Asr:Seed`.
+`HttpAudioTranscriptionClient` forwards it as multipart `seed` only when the
+operator explicitly configures it; normal ASR calls and strict
+OpenAI-compatible transcription endpoints remain field-free by default. The
+public `AudioTranscriptionRequest` shape is unchanged, so per-request audio
+payloads still carry only audio bytes plus optional language/prompt hints.
+
+Focused sibling scan impact: active sibling workspaces reinforced the generic
+pattern of voice-lane replay receipts and deterministic prompt/audio seeds, but
+PalLLM lifted no sibling code, names, prompts, assets, branding, product
+identity, or unrelated IP.
+
+Primary source:
+
+- vLLM OpenAI-compatible server transcription parameters:
+  https://docs.vllm.ai/en/stable/serving/openai_compatible_server/
+
+## 0.99i. 2026-05-25 refresh: vLLM thinking budgets stay proof-lane scoped
+
+Current vLLM reasoning-output guidance documents request-level
+`thinking_token_budget` for models served with reasoning parsers. The budget
+caps reasoning tokens before the model is forced toward its configured
+reasoning end marker; leaving the field unset means the endpoint applies no
+extra thinking cap beyond normal generation limits. The SamplingParams API
+reference lists the same field as the maximum token count for thinking
+operations. For PalLLM, that makes the field useful as a latency canary for
+Qwen-style reasoning lanes, but not a default: strict local endpoints can
+reject it, and too-small budgets can weaken the visible answer.
+
+Implementation impact: Pass 416 adds optional
+`PalLLM:Inference:ThinkingTokenBudget` plus prompt-level
+`InferencePrompt.ThinkingTokenBudget`. `HttpJsonInferenceClient` serializes
+`thinking_token_budget` only when a positive budget is explicitly configured or
+supplied by a route-owned prompt; normal companion chat remains field-free.
+Startup validation rejects zero and negative values so operators use
+`EnableThinking=false` for fast non-thinking turns instead of sending an
+ambiguous zero-budget request. Promotion proof now requires reasoning-parser
+config, accepted request shape, visible/reasoning token usage, p95 latency, and
+fallback counters before a budget is trusted.
+
+Focused sibling scan impact: active sibling workspaces reinforced the generic
+rule that reasoning routes need real budget proof, not just an
+`enable_thinking` or parser label. PalLLM lifted no sibling code, names,
+prompts, assets, branding, product identity, or unrelated IP.
+
+Primary sources:
+
+- vLLM reasoning outputs and thinking budget control:
+  https://docs.vllm.ai/en/latest/features/reasoning_outputs/
+- vLLM SamplingParams API reference:
+  https://docs.vllm.ai/en/latest/api/vllm/sampling_params/
+
+## 0.99h. 2026-05-25 refresh: ASR language/prompt defaults stay opt-in
+
+Current OpenAI transcription reference keeps `language` and `prompt` as
+optional multipart form fields. The `language` hint uses ISO-639-1 style
+values such as `en` and is documented as an accuracy/latency helper, while
+the `prompt` hint is contextual text that should match the audio language.
+Current speech-to-text guidance also frames prompting as useful for
+recognizing uncommon words, preserving segment context, and nudging
+punctuation/style. Current vLLM OpenAI-compatible serving documentation lists
+`/v1/audio/transcriptions` as an ASR-only supported API, so the PalLLM side
+should keep ASR hints scoped to proven ASR endpoints rather than the ordinary
+chat lane.
+
+Implementation impact: Pass 415 adds optional `PalLLM:Asr:Language` and
+`PalLLM:Asr:Prompt` defaults. `AudioTranscriptionClient` now uses
+request-level `Language` / `Prompt` when present and otherwise falls back to
+the configured defaults; both remain omitted when blank. Startup validation
+keeps the language hint to two ASCII letters and caps the prompt at `2048`
+characters so it stays a short pronunciation/command vocabulary nudge, not a
+player identity, save path, secret, raw transcript, or durable prompt store.
+The docs now make clear that proof bundles retain ASR receipts but never store
+prompt hints, token text, raw audio, verbose JSON, or transcript content.
+
+Focused sibling scan impact: active sibling workspaces reinforced the generic
+pattern of push-to-talk / client-VAD consent gates and short ASR vocabulary
+hints. PalLLM lifted no sibling code, names, prompts, assets, branding,
+product identity, or unrelated IP.
+
+Primary sources:
+
+- OpenAI create transcription API reference:
+  https://developers.openai.com/api/reference/resources/audio/subresources/transcriptions/methods/create
+- OpenAI speech-to-text prompting guidance:
+  https://developers.openai.com/api/docs/guides/speech-to-text
+- vLLM OpenAI-compatible server supported APIs:
+  https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server/
+- ASP.NET Core options validation and `ValidateOnStart`:
+  https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/options?view=aspnetcore-10.0
+
+## 0.99g. 2026-05-25 refresh: vLLM structured_outputs stays prompt-level
+
+Current vLLM stable structured-output guidance says the older `guided_*`
+request fields were removed and should be expressed through
+`structured_outputs` (`choice`, `regex`, `json`, `grammar`,
+`structural_tag`, etc.) or through portable OpenAI-compatible
+`response_format` where that is enough. The OpenAI-compatible server docs also
+show vLLM extra parameters being merged directly into the JSON payload when a
+client is not using an `extra_body` wrapper. For PalLLM, the safe shape is a
+route-owned prompt hook, not a global config knob: ordinary companion chat must
+keep omitting endpoint-specific fields, while proof callers can qualify one
+exact vLLM route/model/backend shape at a time.
+
+Implementation impact: Pass 414 adds prompt-level
+`InferencePrompt.StructuredOutputs`. `HttpJsonInferenceClient` serializes it
+as `structured_outputs` only when a caller supplies it, alongside the existing
+portable `InferencePrompt.ResponseFormat` hook. The default request-shape test
+now pins that normal companion chat omits `structured_outputs`, and the
+structured-output transport test pins raw JSON forwarding. Model-collaboration,
+TUNING, OPERATIONS, API, ARCHITECTURE, and feature-catalog docs now frame this
+as a vLLM-specific proof lane with accepted request shape, backend id,
+schema/constraint digest, parse/schema validation, token, latency, and
+fallback receipts before promotion.
+
+Focused sibling scan impact: active sibling workspaces reinforced the generic
+pattern of pairing schema digest, route identity, and runtime request shape in
+structured-output receipts. PalLLM lifted no sibling code, names, prompts,
+assets, branding, product identity, or unrelated IP.
+
+Primary sources:
+
+- vLLM v0.21.0 structured outputs:
+  https://docs.vllm.ai/en/v0.21.0/features/structured_outputs/
+- vLLM OpenAI-compatible server extra-parameter guidance:
+  https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server/
+
+## 0.99f. 2026-05-25 refresh: multimodal processor caps stay proof-only
+
+Current vLLM multimodal serving guidance supports forwarding
+`mm_processor_kwargs` through OpenAI-compatible requests for models whose
+processors expose image/video controls. That makes route-level image/video
+caps useful for PalLLM screenshot and media canaries: Qwen-style processors can
+bound `min_pixels` / `max_pixels`, Gemma-style processors can bound
+`max_soft_tokens`, and video lanes can carry `fps`. The field is not a broad
+OpenAI compatibility guarantee, so strict endpoints must keep it omitted until
+the exact endpoint/model has accepted the request shape.
+
+Implementation impact: Pass 413 adds omitted-by-default
+`PalLLM:Inference:MultimodalProcessor`, prompt-level
+`InferencePrompt.MultimodalProcessor`, and
+`PalLLM:Vision:MultimodalProcessor`. `HttpJsonInferenceClient` serializes
+`mm_processor_kwargs` only for route-owned multimodal `UserContent` canaries,
+and `HttpVisionClient` serializes it only for configured vision requests.
+Startup validation bounds pixel values and `fps`, and accepts only the
+soft-token budgets already used by the model-collaboration guidance: 70, 140,
+280, 560, or 1120. Ordinary text chat remains field-free.
+
+Focused sibling scan impact: active sibling workspaces reinforced the generic
+pattern of processor caps plus cold/warm media proof for multimodal lanes.
+PalLLM lifted no sibling code, names, prompts, assets, branding, product
+identity, or unrelated IP.
+
+Primary sources:
+
+- vLLM multimodal inputs and processor kwargs:
+  https://docs.vllm.ai/en/latest/features/multimodal_inputs/
+- vLLM OpenAI-compatible server extra-parameter guidance:
+  https://docs.vllm.ai/en/stable/serving/openai_compatible_server.html
+
+## 0.99e. 2026-05-25 refresh: hosted metadata labels stay bounded
+
+Current Chat Completions request docs expose optional `metadata` as a bounded
+map: up to 16 key/value pairs, 64-character keys, and 512-character values.
+That makes it useful for hosted proof labels and stored-completion filtering,
+but it is not a local-runtime default. Strict local endpoints can reject the
+field, and careless labels can leak identity or high-cardinality data.
+
+Implementation impact: Pass 412 adds omitted-by-default
+`PalLLM:Inference:RequestMetadata` plus prompt-level
+`InferencePrompt.RequestMetadata`. `HttpJsonInferenceClient` now serializes
+`metadata` only when explicitly configured or supplied by a route-owned
+canary. Startup validation enforces the 16-entry / 64-key / 512-value bounds,
+and prompt-level labels are trimmed, bounded, and merged over configured labels
+before serialization. Docs require only low-cardinality proof labels such as
+route family, build channel, or canary id; prompt text, player identity, save
+paths, secrets, raw game state, and metric-label values remain forbidden.
+
+Focused sibling scan impact: active sibling workspaces reinforced bounded
+request metadata and request-id correlation as proof receipts, not prompts or
+public assets. PalLLM lifted no sibling code, names, prompts, assets, branding,
+product identity, or unrelated IP.
+
+Primary sources:
+
+- OpenAI Chat Completions reference:
+  https://developers.openai.com/api/reference/resources/chat
+- vLLM OpenAI-compatible server extra-parameter guidance:
+  https://docs.vllm.ai/en/v0.21.0/serving/openai_compatible_server/
+
+## 0.99d. 2026-05-25 refresh: llama.cpp prompt-cache hints stay explicit
+
+Current llama.cpp server docs expose OpenAI-compatible chat completions while
+also carrying llama-server-specific prompt-cache and slot controls such as
+`cache_prompt`, slot endpoints, `id_slot`, `n_cache_reuse`, and
+`--slot-prompt-similarity`. Those are useful low-latency proof hooks for a
+stable PalLLM system prompt, but they are not portable OpenAI fields. Strict
+non-llama endpoints can reject them, and cache reuse must be tied to the exact
+model, tokenizer, chat template, adapter, context size, server build, and slot
+state.
+
+Implementation impact: Pass 411 adds omitted-by-default
+`PalLLM:Inference:LlamaCppCachePrompt`, `LlamaCppSlotId`, and
+`LlamaCppCacheReuseTokens`, plus prompt-level overrides. `HttpJsonInferenceClient`
+now serializes `cache_prompt`, `id_slot`, and `n_cache_reuse` only when
+explicitly configured or supplied by a route-owned canary. Startup validation
+rejects slot ids below `-1` and cache-reuse floors below `0`; normal companion
+chat stays field-free. Promotion proof requires accepted request shape,
+same-prefix and changed-prefix replay, slot id, cache metrics, cache RAM
+pressure, second-turn TTFT, and fallback counters.
+
+Focused sibling scan impact: active sibling workspaces reinforced the generic
+pattern of prompt-cache reuse counters, explicit off/on request shapes, and
+warm-slot replay proof. PalLLM lifted no sibling code, names, prompts, assets,
+branding, product identity, or unrelated IP.
+
+Primary sources:
+
+- llama.cpp server README:
+  https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
+- vLLM OpenAI-compatible server extra-parameter guidance:
+  https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server/
+
+## 0.99c. 2026-05-25 refresh: outbound request ids stay opt-in
+
+Current OpenAI API debugging guidance recommends retaining provider request
+ids and supports an operator-supplied `X-Client-Request-Id` header for
+production support correlation. Current vLLM OpenAI-compatible serving docs
+also expose request-id headers behind the server-side
+`--enable-request-id-headers` flag. The portable PalLLM stance is therefore a
+header canary, not a gameplay default: strict local endpoints should stay
+field/header-minimal unless an operator proves support.
+
+Implementation impact: Pass 410 adds
+`PalLLM:Inference:ClientRequestIdHeader`, allowlisted to
+`x-client-request-id` or `x-request-id`. When configured, normal chat turns
+forward the existing PalLLM chat `RequestId` as a bounded visible-ASCII header
+value; otherwise no request-correlation header is sent. Existing inference
+request-shape tests now prove the default omission and both supported header
+names without changing the total test count. Docs require that request ids
+never contain prompts, save paths, player identity, secrets, or metric labels.
+
+Primary sources:
+
+- OpenAI API debugging and `X-Client-Request-Id` guidance:
+  https://developers.openai.com/api/reference/overview
+- vLLM OpenAI-compatible server request-id header guidance:
+  https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server/
+
+## 0.99b. 2026-05-25 refresh: hosted store canaries stay explicit
+
+Current Chat Completions request docs expose an optional `store` switch for
+provider-side retention/eval workflows. That is useful as a hosted-lane proof
+receipt, but it is not a local-first gameplay default: strict local endpoints
+can reject the extra field, and `store=true` is the opposite of PalLLM's normal
+privacy posture.
+
+Implementation impact: Pass 409 adds omitted-by-default
+`PalLLM:Inference:StoreCompletions` plus a prompt-level override. The inference
+client serializes `store` only when explicitly configured, existing request
+shape tests prove ordinary companion chat stays field-free, and operator docs
+describe the safe canary as `store=false` on an endpoint that has already
+proven support. Public/support bundles still must not retain prompt or
+completion text from that canary.
+
+Primary sources:
+
+- OpenAI Chat Completions reference:
+  https://developers.openai.com/api/reference/resources/chat
+- Ollama OpenAI compatibility reference:
+  https://docs.ollama.com/api/openai-compatibility
+- vLLM OpenAI-compatible server / structured-output guidance:
+  https://docs.vllm.ai/en/v0.21.0/features/structured_outputs/
+
+## 0.99a. 2026-05-24 refresh: verbosity and safety-id canaries stay hosted-only
+
+Current Chat Completions request docs expose optional `verbosity` values and a
+`safety_identifier` request field. These are useful only after the exact hosted
+or compatible endpoint proves support: `verbosity=low` can reduce generated
+tokens for terse player/proof turns, while `safety_identifier` gives hosted
+providers a pseudonymous safety-correlation signal without sending player
+identity.
+
+Implementation impact: Pass 407 adds omitted-by-default
+`PalLLM:Inference:Verbosity` and `PalLLM:Inference:SafetyIdentifier`, plus
+prompt-level overrides for route-owned canaries. Startup validation allowlists
+`low`, `medium`, and `high`, caps safety ids at 128 characters, and the runtime
+suppresses blank or oversized request identifiers before serialization. The
+docs require a stable non-secret hash and explicitly forbid player names, save
+paths, account ids, emails, secrets, or raw save contents.
+
+Primary sources:
+
+- OpenAI Chat Completions reference:
+  https://developers.openai.com/api/reference/resources/chat
+- vLLM OpenAI-compatible server reference:
+  https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
+
+## 0.99. 2026-05-24 refresh: hosted prompt-cache canaries stay opt-in
+
+Current OpenAI prompt-caching guidance says prompt cache hits need exact
+prefix matches, that `prompt_cache_key` can influence cache routing for common
+prefixes, that `prompt_cache_retention` can be set on Chat Completions, and
+that allowed retention values are `in_memory` and `24h`. The same guide says
+cached-token counts are exposed through `usage.prompt_tokens_details`, which
+PalLLM already parses into token receipts.
+
+Implementation impact: Pass 406 adds `PalLLM:Inference:PromptCacheKey` and
+`PalLLM:Inference:PromptCacheRetention` plus prompt-level overrides. Both are
+omitted by default, validated at startup, normalized before serialization, and
+documented as endpoint-proven cache-routing canaries. This keeps strict local
+servers field-free while giving hosted or compatible proof/docs lanes a way to
+measure accepted request shape, cached-token receipts, p95 latency, and fallback
+counters before promotion.
+
+The same refresh confirmed that current Chat Completions service tiers include
+`scale`; Pass 406 extends the existing `ServiceTier` allowlist without changing
+the default omitted request shape.
+
+Primary sources:
+
+- OpenAI prompt caching guide:
+  https://developers.openai.com/api/docs/guides/prompt-caching
+- OpenAI Chat Completions reference:
+  https://developers.openai.com/api/reference/resources/chat
+- vLLM OpenAI-compatible server reference:
+  https://docs.vllm.ai/en/v0.12.0/serving/openai_compatible_server/
+- llama.cpp speculative decoding reference:
+  https://github.com/ggml-org/llama.cpp/blob/master/docs/speculative.md
+
+## 0.98. 2026-05-24 refresh: service-tier hints stay proof-lane scoped
+
+Current Chat Completions documentation exposes `service_tier` as an
+OpenAI-compatible request hint with `auto`, `default`, `flex`, `priority`, and
+`scale` modes; vLLM multimodal and llama.cpp speculative guidance still
+support PalLLM's conservative rule that latency features should be promoted
+only after route-local evidence. For a local-first Palworld companion, this
+does not justify sending hosted-service fields on ordinary chat. It does give
+operators a controlled proof hook for split routing: priority for the exact
+player-facing lane that has measured lower queue/TTFT, flex for background
+proof/docs work that can wait, and no field at all for strict local endpoints.
+
+Implementation impact: Pass 405 adds `PalLLM:Inference:ServiceTier` plus
+prompt-level `InferencePrompt.ServiceTier`. The value is validated against the
+known allowlist, normalized to lowercase, and serialized as `service_tier`
+only when explicitly configured or supplied by a route-specific canary. Normal
+companion chat still omits the field by default, preserving endpoint
+portability and the deterministic fallback path. Promotion proof now requires
+accepted request shape, queue/TTFT evidence, p95 latency, cost posture where
+applicable, and fallback counters before the hint is trusted.
+
+Focused sibling scan impact: active sibling workspaces reinforced the same
+generic pattern as recent passes: keep foreground and background model lanes
+separately evidenced, and do not let hosted-routing hints become a default for
+local gameplay. PalLLM lifted no sibling code, prompts, names, branding,
+product identity, or unrelated IP.
+
+Primary sources:
+
+- OpenAI Chat Completions `service_tier`:
+  <https://platform.openai.com/docs/api-reference/chat/create-chat-completion>
+- OpenAI Priority processing:
+  <https://platform.openai.com/docs/guides/priority-processing>
+- OpenAI Flex processing:
+  <https://platform.openai.com/docs/guides/flex-processing?api-mode=chat>
+- vLLM multimodal cached inputs:
+  <https://docs.vllm.ai/en/v0.15.0/features/multimodal_inputs/>
+- llama.cpp speculative decoding:
+  <https://github.com/ggml-org/llama.cpp/blob/master/docs/speculative.md>
+
+## 0.97. 2026-05-24 refresh: physical dashboard assets should honor both validators
+
+Current ASP.NET Core output-cache guidance documents two cheap
+revalidation paths for unchanged GET responses: `ETag`/`If-None-Match`
+and `Last-Modified`/`If-Modified-Since`. The source-generation guidance
+from the previous pass still applies to JSON fingerprint payloads, while
+model-serving research continues to point PalLLM toward stable
+content-addressed IDs and proof lanes for expensive multimodal work:
+vLLM accepts stable multimodal media UUIDs for cached inputs, llama.cpp
+prints speculative decoding statistics, Ollama vision requests carry
+base64 images in an `images` array, and vLLM-Omni documents the current
+Qwen3-Omni realtime audio caveat.
+
+Implementation impact: Pass 404 keeps PalLLM's static dashboard fallback
+dependency-light but closes the second validator path. The manually mapped
+Field Console physical-file routes now return `304 Not Modified` when a
+client sends a matching `If-Modified-Since` date and no `If-None-Match`
+header is present. The route normalizes `Last-Modified` values to whole
+HTTP-date seconds before comparing so browser revalidation does not miss
+on filesystem sub-second ticks. Public route counts, OpenAPI, MCP,
+feature count, fallback strategies, and test count stay unchanged.
+
+Focused sibling scan impact: active sibling workspaces reinforced the
+generic pattern of browser-cache validator parity and machine-readable
+proof evidence. PalLLM lifted no sibling code, prompts, names, branding,
+product identity, or unrelated IP.
+
+Primary sources:
+
+- ASP.NET Core output caching and revalidation:
+  <https://learn.microsoft.com/en-us/aspnet/core/performance/caching/output?view=aspnetcore-10.0>
+- System.Text.Json source generation:
+  <https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/source-generation>
+- vLLM multimodal cached inputs:
+  <https://docs.vllm.ai/en/v0.15.0/features/multimodal_inputs/>
+- llama.cpp speculative decoding:
+  <https://github.com/ggml-org/llama.cpp/blob/master/docs/speculative.md>
+- Ollama vision payload shape:
+  <https://docs.ollama.com/capabilities/vision>
+- vLLM-Omni Qwen3-Omni realtime serving note:
+  <https://docs.vllm.ai/projects/vllm-omni/en/stable/user_guide/examples/online_serving/qwen3_omni/>
+
+## 0.96. 2026-05-24 refresh: conditional-cache fingerprints should stay source-generated
+
+Current System.Text.Json guidance says source generation is the preferred path
+when a runtime wants lower first-use metadata cost, smaller private memory, and
+trim/AOT friendliness. The documented source-generation usage pattern is to
+call serializer overloads that take the generated `JsonTypeInfo<T>` (or the
+generated context) instead of falling back to options-only reflection metadata.
+ASP.NET Core output-cache guidance still centers `ETag` plus
+`If-None-Match` as the standard cheap-revalidation path for unchanged GET
+responses.
+
+Implementation impact: Pass 403 tightens PalLLM's conditional-cache helper.
+`ConditionalHttp.CreateStrongEtag` now requires a generated `JsonTypeInfo<T>`,
+and every dashboard/proof/readiness/manifest call site passes the exact
+`PalLlmJsonSerializerContext.Default.*` metadata for its fingerprint payload.
+The HTTP contract is unchanged: the same deliberate read-mostly endpoints still
+emit strong ETags and return `304 Not Modified` on matching revalidation. The
+change only removes the reflection-capable ETag serialization path from a
+read-heavy sidecar helper and keeps route counts, OpenAPI, MCP, feature count,
+fallback strategies, and test count unchanged.
+
+Focused sibling scan impact: active sibling workspaces reinforced the generic
+pattern of validator-first dashboard polling and cache-proof receipts that
+record whether isolation is present without retaining raw cache secrets.
+PalLLM lifted no sibling code, prompts, names, branding, product identity, or
+unrelated IP.
+
+Primary sources:
+
+- System.Text.Json source generation:
+  <https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/source-generation>
+- System.Text.Json reflection vs source generation:
+  <https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/reflection-vs-source-generation>
+- ASP.NET Core output caching and revalidation:
+  <https://learn.microsoft.com/en-us/aspnet/core/performance/caching/output?view=aspnetcore-10.0>
+
+## 0.95. 2026-05-24 refresh: packaged dashboard assets need validator parity
+
+Current ASP.NET Core static-file guidance treats endpoint-routed static assets
+as first-class endpoints with build-time compression, SHA-256 fingerprinting,
+`ETag`, `Last-Modified`, and content-type headers. The same guidance also
+documents that physical/static-file fallback paths can be useful outside the
+normal static-web-assets manifest, but they should preserve cache validators so
+browsers avoid re-downloading unchanged CSS/JS. Request-timeout, rate-limiter,
+and output-cache guidance still points in the same direction for the sidecar:
+use endpoint-specific policies and cheap validators rather than broad
+middleware that hides current runtime state.
+
+Implementation impact: Pass 402 extracts the Field Console physical-file
+routes into `PalLlmStaticAssetRoutes` and adds a tiny metadata-keyed SHA-256
+fingerprint cache. The packaged-EXE fallback for `/`, `/app.js`,
+`/styles.css`, `/welcome.html`, `/favicon.svg`, and
+`/manifest.webmanifest` now emits weak content-hash `ETag`s,
+`Last-Modified`, and `Cache-Control: public, no-cache, must-revalidate`, and
+returns `304 Not Modified` when the browser sends a matching
+`If-None-Match`. The cache key includes path, byte length, and UTC write ticks,
+so edited assets rehash while stable packaged assets avoid repeated disk
+hashing. Public route counts, OpenAPI, MCP, feature count, fallback strategies,
+and test count stay unchanged.
+
+Focused sibling scan impact: active sibling workspaces reinforced the generic
+ETag/content-fingerprint pattern for low-latency dashboards and proof surfaces.
+PalLLM lifted no sibling code, prompts, names, branding, product identity, or
+unrelated IP.
+
+Primary sources:
+
+- ASP.NET Core static files and `MapStaticAssets`:
+  <https://learn.microsoft.com/en-us/aspnet/core/fundamentals/static-files?view=aspnetcore-10.0>
+- ASP.NET Core request timeouts:
+  <https://learn.microsoft.com/en-us/aspnet/core/performance/timeouts?view=aspnetcore-10.0>
+- ASP.NET Core rate limiting:
+  <https://learn.microsoft.com/en-us/aspnet/core/performance/rate-limit?view=aspnetcore-10.0>
+- ASP.NET Core output caching:
+  <https://learn.microsoft.com/en-us/aspnet/core/performance/caching/output?view=aspnetcore-10.0>
+
+## 0.94. 2026-05-24 refresh: route-owned multimodal canaries should reuse stable local media IDs
+
+Current vLLM multimodal serving docs show the OpenAI-compatible chat payload
+accepting optional `uuid` fields on `image_url`, `video_url`, `input_audio`,
+`audio_url`, and embedding content parts. The same docs distinguish media-cache
+UUIDs from prefix/KV cache: callers still send media bytes for cold requests,
+then only consider UUID-only replay after the same server process has a proven
+cache hit. They also call out default HTTP fetch timeouts for remote video and
+audio URLs, reinforcing PalLLM's local-byte default and remote-media proof gate.
+
+Implementation impact: Pass 401 extends the Pass 400 vision-cache work to
+route-owned multimodal inference canaries. `HttpJsonInferenceClient` now clones
+prompt-level `InferencePrompt.UserContent` arrays and, when
+`PalLLM:Inference:UseMediaCacheIds=true` (default), adds stable
+`palllm-{image|video|audio}-sha256-*` IDs to local base64 `image_url`,
+`video_url`, `audio_url`, and `input_audio` content parts that do not already
+carry a UUID. Ordinary companion chat still sends the user message as a string;
+strict endpoints can set `PalLLM:Inference:UseMediaCacheIds=false` and receive
+the caller-owned content-part array without injected fields. The dedicated
+vision client now uses the same hash helper, preserving the existing
+`palllm-image-sha256-*` request shape and opt-out.
+
+Focused sibling scan impact: active sibling workspaces reinforced the same
+generic rule as recent passes: media-heavy proof lanes need content-addressed
+local evidence, opt-out controls for strict endpoints, and promotion proof
+separate from ordinary text chat. PalLLM lifted no sibling code, prompts,
+names, branding, product identity, or unrelated IP.
+
+Primary sources:
+
+- vLLM multimodal inputs and OpenAI-compatible media UUIDs:
+  <https://docs.vllm.ai/en/v0.17.0/features/multimodal_inputs/>
+- ASP.NET Core output caching:
+  <https://learn.microsoft.com/en-us/aspnet/core/performance/caching/output?view=aspnetcore-10.0>
+
+## 0.93. 2026-05-24 refresh: repeated vision media should carry stable cache IDs
+
+Current local-model serving guidance keeps converging on explicit, bounded
+media identities rather than implicit global caches. vLLM's multimodal docs
+show optional `uuid` fields on image, video, audio, and embedding content parts
+and document a cached-input mode where callers can later reference the UUID
+without resending media. Ollama's current vision docs continue to use base64
+image payloads for REST calls, which matches PalLLM's local-byte default and
+keeps remote media fetching out of the normal player path. ASP.NET Core's
+request-timeout and output-cache docs also reinforce the same production rule:
+heavy lanes need explicit policy, bounded behavior, and opt-out controls.
+
+Implementation impact: Pass 400 adds stable content-hash media IDs to the
+vision client. When `PalLLM:Vision:UseMediaCacheIds=true` (default),
+`HttpVisionClient` tags the outgoing `image_url` content part with
+`uuid: palllm-image-sha256-<digest>`. This does not skip image payloads or
+change route behavior; it gives vLLM-compatible endpoints a deterministic
+cache key for repeated screenshots while preserving a strict-endpoint opt-out.
+Existing image byte caps, response byte caps, structured-output behavior, and
+deterministic snapshot fallback are unchanged.
+
+Focused sibling scan impact: the useful transferable idea remains generic:
+media-heavy proof loops should use stable local evidence IDs and bounded
+caches. PalLLM lifted no sibling code, prompts, names, branding, product
+identity, or unrelated IP.
+
+Primary sources:
+
+- vLLM multimodal inputs and cached media:
+  <https://docs.vllm.ai/en/latest/features/multimodal_inputs/>
+- Ollama vision API:
+  <https://docs.ollama.com/capabilities/vision>
+- ASP.NET Core request timeouts:
+  <https://learn.microsoft.com/en-us/aspnet/core/performance/timeouts?view=aspnetcore-10.0>
+- ASP.NET Core output caching:
+  <https://learn.microsoft.com/en-us/aspnet/core/performance/caching/output?view=aspnetcore-10.0>
+
+## 0.92. 2026-05-24 refresh: local proof caches should be metadata-keyed and bounded
+
+Current platform and model-serving docs reinforce the same low-latency rule at
+two levels. ASP.NET Core's in-memory-cache guidance says cached values must
+have a fallback path, growth limits, and expirations because the runtime does
+not trim application caches automatically under memory pressure. vLLM's
+multimodal guidance similarly treats media reuse as explicit, bounded, and
+identity-keyed: cached inputs are keyed by supplied UUIDs, and server media
+loading should restrict domains or local paths before using higher-throughput
+media lanes. Gemma 4's current MTP guidance and vLLM's MTP docs also make the
+same promotion point for latency features: measure and prove the exact route,
+model, and assistant/checkpoint pairing rather than enabling a broad family
+default. Qwen3-Omni and vLLM-Omni remain useful for audio/video experiments,
+but their realtime/video paths are explicit proof lanes, not a reason to make
+the ordinary PalLLM proof path heavier.
+
+Implementation impact: Pass 399 closes the local `ui_probe` diagnostics rebuild
+debt. `PalLlmRuntime.UiProbe.cs` now keeps a small in-process parse cache for
+diagnostic dump JSON, keyed by file path, byte length, and UTC write ticks.
+Snapshot polling still enumerates the retained diagnostic directory and still
+falls back to the bounded JSON reader when metadata changes, but stable widget
+dumps are not reparsed on every proof/readiness rebuild. The cache is capped
+independently from disk retention and is cleared when files leave the retained
+set. Existing route count, MCP surface, feature catalog, fallback strategies,
+and test count stay unchanged.
+
+Focused sibling scan impact: active external sibling workspaces reinforced the
+generic pattern of local proof caches, machine-readable evidence, and
+route-specific model promotion. PalLLM lifted no sibling code, prompts, names,
+branding, product identity, or unrelated IP.
+
+Primary sources:
+
+- ASP.NET Core in-memory caching:
+  <https://learn.microsoft.com/en-us/aspnet/core/performance/caching/memory?view=aspnetcore-10.0>
+- vLLM multimodal inputs and cached media:
+  <https://docs.vllm.ai/en/v0.17.0/features/multimodal_inputs/>
+- vLLM media connector controls:
+  <https://docs.vllm.ai/en/latest/api/vllm/multimodal/media/>
+- Google Gemma 4 MTP:
+  <https://blog.google/innovation-and-ai/technology/developers-tools/multi-token-prediction-gemma-4/>
+- vLLM Gemma 4 MTP:
+  <https://docs.vllm.ai/en/latest/features/speculative_decoding/mtp/>
+- Qwen3-Omni:
+  <https://github.com/QwenLM/Qwen3-Omni>
+- vLLM-Omni streaming video:
+  <https://docs.vllm.ai/projects/vllm-omni/en/latest/serving/video_stream_api/>
 
 ## 0.91. 2026-05-23 refresh: diagnosis codes should carry remediation
 
@@ -248,12 +868,12 @@ Primary sources:
 Current local-serving docs agree on the useful direction: constrained decoding
 can make strict JSON and tool-heavy routes much more reliable. They do not
 agree on one portable request shape. vLLM supports OpenAI-compatible
-`response_format` plus endpoint-specific guided parameters such as
-`guided_json`, `guided_choice`, `guided_regex`, `guided_grammar`, and
-`structural_tag`; SGLang supports JSON schema, regular expression, and EBNF via
-grammar backends such as XGrammar; Ollama exposes native `format` schemas and
-OpenAI-compatible `response_format`; llama.cpp server converts a subset of JSON
-Schema through `response_format` / grammar paths; `transformers serve` exposes
+`response_format` plus endpoint-specific `structured_outputs` shapes such as
+`choice`, `regex`, `json`, `grammar`, and `structural_tag`; SGLang supports
+JSON schema, regular expression, and EBNF via grammar backends such as
+XGrammar; Ollama exposes native `format` schemas and OpenAI-compatible
+`response_format`; llama.cpp server converts a subset of JSON Schema through
+`response_format` / grammar paths; `transformers serve` exposes
 OpenAI-compatible tool calling for tokenizer-supported models. The PalLLM rule
 is therefore "schema proof is route/model/provider/request-shape proof", not
 "OpenAI-compatible means schema-compatible."
@@ -261,9 +881,10 @@ is therefore "schema proof is route/model/provider/request-shape proof", not
 Implementation impact: Pass 327 hardens `ModelCollaborationPlanner` only. Model
 serving profiles now ask schema-bearing lanes to record schema name, canonical
 schema digest, PalLLM route class, served model id, provider request shape
-(`response_format`, `guided_json`, Ollama `format`, or grammar), grammar/backend
-id, parse result, schema-validation result, token usage, p95 latency, and
-fallback counters. They also add a schema-echo portability canary: required
+(`response_format`, `structured_outputs`, Ollama `format`, or grammar),
+grammar/backend id, parse result, schema-validation result, token usage, p95
+latency, and fallback counters. They also add a schema-echo portability canary:
+required
 object, enum, bounded array, deliberate violation prompt, and changed-schema
 digest. App-side validation remains the authority even when the upstream server
 claims constrained decoding. No route count, MCP tool count, feature-catalog
@@ -3339,7 +3960,7 @@ The modern shape — `type: "image_url"` everywhere; `type: "image"` is legacy Q
 Gotchas:
 
 - **Order matters.** Both Gemma 4 and Qwen3-VL bind images to nearby text via positional encoding; interleave correctly.
-- **Gemma 4 vision token budget is per-request configurable**: `{70, 140, 280 (default), 560, 1120}` tokens per image — pass via `extra_body.mm_processor_kwargs.max_image_tokens`. (Gemma 3 was fixed at 256 tokens / 896×896.)
+- **Gemma 4 vision token budget is per-request configurable**: `{70, 140, 280 (default), 560, 1120}` tokens per image — pass via `extra_body.mm_processor_kwargs.max_soft_tokens`. (Gemma 3 was fixed at 256 tokens / 896×896.)
 - **Qwen3-VL** uses dynamic resolution; cap with `min_pixels` / `max_pixels` in `mm_processor_kwargs` to keep KV cache under control. Default cap ≈ 16k tokens per image at full resolution.
 - **Base64 vs URL.** URL is faster (server fetches once, can prefix-cache) but only when vLLM has network egress. Base64 inflates payload ~33% but always works. Keep both code paths.
 - **Multi-image limit.** Qwen3-VL supports tens of images per turn; Gemma 4 31B documented at 32+ but degrades after ~16 in a single turn.

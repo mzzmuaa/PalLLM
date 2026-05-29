@@ -1,6 +1,6 @@
 # Hot path — performance budgets
 
-Last audited: `2026-05-22`
+Last audited: `2026-05-24`
 
 PalLLM is a real-time companion runtime: a player asks a question,
 the companion replies. Anything that delays a reply is noticed. This
@@ -83,14 +83,14 @@ the same companion while keeping fast reactive lanes compact.
 
 | Method | File | Cold | Warm | Notes |
 |---|---|---|---|---|
-| `PalLlmRuntime.GetWorldSnapshot` | `PalLlmRuntime.cs` | < 50 ms | < 20 ms | Snapshot of current bridge state |
+| `PalLlmRuntime.GetWorldSnapshot` | `PalLlmRuntime.Snapshot.cs` | < 50 ms | < 20 ms | Snapshot of current bridge state |
 | `BridgeProofBuilder.Build` | `BridgeProofBuilder.cs` | < 100 ms | < 30 ms | Serializes recent bridge events |
 
 ## Health / posture
 
 | Method | File | Cold | Warm | Notes |
 |---|---|---|---|---|
-| `PalLlmRuntime.GetHealth` | `PalLlmRuntime.cs` | < 20 ms | < 5 ms | Assembles `RuntimeHealth` |
+| `PalLlmRuntime.GetHealth` | `PalLlmRuntime.Snapshot.cs` | < 20 ms | < 5 ms | Assembles `RuntimeHealth` |
 | `OperatorHealthScorer.Score` | `OperatorHealthScorer.cs` | < 1 ms | < 1 ms | Pure arithmetic |
 | `HardwareProfiler.CaptureCached` | `HardwareProfiler.cs` | < 20 ms | < 1 ms | TTL 5 min; cold path uses OS-backed RAM + bounded GPU probes |
 | `PrivacyPostureBuilder.CaptureCached` | `PrivacyPostureBuilder.cs` | < 5 ms | < 1 ms | TTL 30 s |
@@ -103,12 +103,20 @@ warm path is fast enough that polling once per second from the
 dashboard is fine. Their cold path is bounded by OS calls (CPU
 count, RAM probe, GPU marker file probe).
 
+`PalLlmRuntime.GetHealth` also treats bridge-directory backlog counts
+as bounded evidence: `InboxPendingCount`, `ArchiveFileCount`,
+`FailedFileCount`, `OutboxPendingCount`, and `ScreenshotPendingCount`
+are exact up to `1024` files per snapshot and cap at `1024` after
+that. Every warning threshold is far below the cap, so the operator
+signal stays intact while health polling avoids unbounded directory
+walks on runaway backlogs.
+
 ## Bridge
 
 | Method | File | Cold | Warm | Notes |
 |---|---|---|---|---|
 | `BridgeInboxWorker.ExecuteAsync` (per envelope) | `BridgeInboxWorker.cs` | < 100 ms | < 50 ms | Single envelope process |
-| `PalLlmRuntime.WriteOutboxAsync` | `PalLlmRuntime.cs` | < 20 ms | < 10 ms | Per envelope written |
+| `PalLlmRuntime.WriteOutboxReplyAsync` | `PalLlmRuntime.Outbox.cs` | < 20 ms | < 10 ms | Per envelope written |
 | `DirectoryRetention.Enforce` | `DirectoryRetention.cs` | < 30 ms | < 10 ms | Lazy per-directory sweep; age delete + bounded newest-file queue |
 
 Bridge polls run on a 1-second cadence by default
@@ -136,7 +144,9 @@ HTTP timeout configuration, not by PalLLM code. The relevant knobs:
 | Setting | Default | Bound |
 |---|---|---|
 | `Inference:TimeoutSeconds` | 60 | Hard upper bound on a chat turn that reaches inference |
+| `Inference:UseMediaCacheIds` | true | Adds stable `uuid` fields to route-owned local image/video/audio `UserContent` proof parts without changing ordinary text chat |
 | `Vision:TimeoutSeconds` | 30 | Hard upper bound on `/api/vision/describe` |
+| `Vision:UseMediaCacheIds` | true | Adds a stable `uuid` to repeated screenshot payloads without extra model work |
 | `Tts:TimeoutSeconds` | 30 | Hard upper bound on `/api/tts/synthesize` |
 
 The runtime budget *around* these calls (assembly, response
@@ -213,7 +223,10 @@ Sidecar-only operator surfaces should follow the same direction even when the
 broader sidecar still keeps its deliberate fallback resolver. Health probe data,
 chat SSE progress frames, MCP status payloads, self-healing pending markers, and
 tiny command responses should use named DTOs plus source-generated metadata
-instead of `object` dictionaries or anonymous payloads.
+instead of `object` dictionaries or anonymous payloads. Conditional-cache ETag
+fingerprints for dashboard/proof/readiness/manifest surfaces also use generated
+`JsonTypeInfo<T>` metadata so revalidation hashing does not reopen the
+reflection-capable options path.
 
 ## How to verify
 

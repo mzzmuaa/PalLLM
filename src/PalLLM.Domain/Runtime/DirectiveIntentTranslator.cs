@@ -4,7 +4,7 @@ namespace PalLLM.Domain.Runtime;
 
 /// <summary>
 /// Pass 31 / C3 — deterministic translator that converts a natural-
-/// language player chat (e.g. "hey Lamball, stop mining and help me
+/// language player chat (e.g. "hey helper, stop mining and help me
 /// fight") into an ordered <see cref="PalDirective"/> array the UE4SS
 /// mod can forward to the native pal-AI controller.
 ///

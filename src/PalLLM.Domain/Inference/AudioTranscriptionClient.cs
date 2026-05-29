@@ -96,13 +96,13 @@ public sealed class HttpAudioTranscriptionClient : IAudioTranscriptionClient
             form.Add(new StringContent(model, Encoding.UTF8), "model");
         }
 
-        string? language = NormalizeOptional(request.Language);
+        string? language = NormalizeOptional(request.Language) ?? NormalizeOptional(asr.Language);
         if (language is not null)
         {
             form.Add(new StringContent(language, Encoding.UTF8), "language");
         }
 
-        string? prompt = NormalizeOptional(request.Prompt);
+        string? prompt = NormalizeOptional(request.Prompt) ?? NormalizeOptional(asr.Prompt);
         if (prompt is not null)
         {
             form.Add(new StringContent(prompt, Encoding.UTF8), "prompt");
@@ -119,6 +119,11 @@ public sealed class HttpAudioTranscriptionClient : IAudioTranscriptionClient
             form.Add(
                 new StringContent(temperature.ToString(CultureInfo.InvariantCulture), Encoding.UTF8),
                 "temperature");
+        }
+
+        if (asr.Seed is { } seed)
+        {
+            form.Add(new StringContent(seed.ToString(CultureInfo.InvariantCulture), Encoding.UTF8), "seed");
         }
 
         string responseFormat = AsrResponseFormats.Normalize(asr.ResponseFormat);

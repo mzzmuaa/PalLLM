@@ -169,7 +169,8 @@ unless you genuinely need per-key TTL + eviction policy.
 
 **Code is truth. Docs echo.**
 
-- Route count -> `src/PalLLM.Sidecar/Program.cs` (count of `api.Map*`)
+- Route count -> `src/PalLLM.Sidecar/Program.cs` +
+  `src/PalLLM.Sidecar/RouteRegistrations/*.cs` (count of `api.Map*`)
 - Feature count -> `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs` (count of `Id = "..."`)
 - Test count -> `tests/PalLLM.Tests/*.cs` (count of `[Test]`)
 - MCP tool count -> `src/PalLLM.Sidecar/Mcp/PalLlmMcpTools.cs` (count of `[McpServerTool`)

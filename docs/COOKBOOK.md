@@ -1,6 +1,6 @@
 # Cookbook - recipes for common changes
 
-Last audited: `2026-05-22`
+Last audited: `2026-05-24`
 
 Step-by-step recipes for the changes you'll most often want to
 make to PalLLM. Each recipe names the exact files, the exact
@@ -34,7 +34,7 @@ Before any recipe:
 
 ```powershell
 pwsh ./pal.ps1 fast-audit   # confirm 16 / 16 gates green
-pwsh ./pal.ps1 test         # confirm 1154 / 1154 tests
+pwsh ./pal.ps1 test         # confirm 1315 / 1315 tests
 ```
 
 If either is red, fix that *first*. Don't layer changes on a red
@@ -47,9 +47,11 @@ posture document.
 
 **Files to touch**:
 
-1. `src/PalLLM.Sidecar/Program.cs` - register the route.
-   - Find the `// Inspection` (or relevant subsystem) block and
-     add `api.MapGet("/example/posture", ...)`.
+1. `src/PalLLM.Sidecar/Program.cs` or the closest
+   `src/PalLLM.Sidecar/RouteRegistrations/*.cs` companion - register the
+   route.
+   - Find the relevant subsystem block and add
+     `api.MapGet("/example/posture", ...)`.
    - Use `IResult` return type and `TypedResults.Ok(...)`.
    - Decorate with `.WithName("GetExamplePosture")`,
      `.WithTags(...)`, `.WithSummary(...)`.
@@ -73,10 +75,17 @@ posture document.
    a `FeatureDescriptor` entry so the dashboard surfaces it.
 10. `docs/CODE_MAP.md` - add a row under the relevant subsystem.
 
+Service registration for new infrastructure belongs in the matching
+`src/PalLLM.Sidecar/Configuration/*ServiceCollectionExtensions.cs`
+file; route registration belongs in `Program.cs` for still-inline
+domains or a focused `RouteRegistrations/*.cs` companion when a domain
+has already been split.
+
 **Drift gates that will fire if you skip a step**:
 
 - `Drift_Api_route_count` - counts in README / ROADMAP /
-  ARCHITECTURE / API.md disagree with `Program.cs`
+  ARCHITECTURE / API.md disagree with `Program.cs` +
+  `RouteRegistrations/*.cs`
 - `Drift_OpenApi_snapshot` - the committed snapshot is stale
 - `Drift_Feature_catalog_count` - feature count drifted
 
@@ -226,7 +235,7 @@ Goal: add a new event the Lua bridge can write to
 
 **Files to touch**:
 
-1. `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs` -
+1. `src/PalLLM.Domain/Runtime/PalLlmRuntime.Bridge.cs` -
    `ProcessBridgeEvent` (or its dispatch table) handles
    the new type. Add a case.
 2. `mod/ue4ss/Mods/PalLLM/Scripts/main.lua` - add a producer

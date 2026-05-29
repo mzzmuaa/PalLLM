@@ -119,8 +119,8 @@ $scenarios = @(
             Characters = @(
                 @{
                     Id = 9101
-                    DisplayName = "Foxparks"
-                    Species = "Foxparks"
+                    DisplayName = "CampScout"
+                    Species = "CampScout"
                 }
             )
         }

@@ -121,7 +121,8 @@ has explicit persistence seams so transfer is mechanical.
 
 1. Create `src/PalLLM.Domain/<Area>/XxxAdvisor.cs` with the pattern
    from `CONVENTIONS.md` § 1.
-2. Add the HTTP route to `src/PalLLM.Sidecar/Program.cs`.
+2. Add the HTTP route to `src/PalLLM.Sidecar/Program.cs` or the closest
+   `src/PalLLM.Sidecar/RouteRegistrations/*.cs` companion.
 3. Add the MCP tool to `src/PalLLM.Sidecar/Mcp/PalLlmMcpTools.cs`.
 4. Add a `FeatureDescriptor` entry to
    `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs`.

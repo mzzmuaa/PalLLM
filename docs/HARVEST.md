@@ -1,6 +1,6 @@
 # PalLLM Harvest Guide
 
-Last audited: `2026-05-21`
+Last audited: `2026-05-24`
 
 How to lift individual capabilities out of PalLLM into your own
 project. The codebase is deliberately structured so most of the
@@ -191,11 +191,18 @@ detector + proof-packet-emitting stack in ~20 files.
 
 ## What NOT to harvest
 
-- **`PalLlmRuntime.cs`** — ~4,744 lines of orchestration glue.
+- **`PalLlmRuntime.cs`** — ~1104 lines of orchestration glue, with
+  helper, inference, UI-probe diagnostics, prompt-rendering,
+  bridge-boot native-readiness, bridge activity/proof, snapshot, and
+  outbox code already split into companion partials.
   It composes every other piece; you don't want to copy it, you want
   to write your own orchestrator that calls the same underlying
   pieces.
-- **`Program.cs`** — ~2,037 lines of route registration. Same reason.
+- **`Program.cs` + `RouteRegistrations/*.cs`** — app-specific host,
+  middleware, static-asset handling, route-local helpers, and HTTP route
+  registration. Service registration is split into
+  `src/PalLLM.Sidecar/Configuration/*.cs`, but the sidecar host remains
+  app-specific.
 - **`PalLlmFeatureCatalog.cs`** — the list is project-specific.
 - **`BridgeGameAdapter.cs`** — Palworld-specific.
 - **`mod/ue4ss/Mods/PalLLM/`** — UE4SS + Palworld target.

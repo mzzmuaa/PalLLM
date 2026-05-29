@@ -214,7 +214,7 @@ internal static class ReleaseReadinessBuilder
         {
             Id = "openapi-snapshot",
             Path = "docs/openapi/palllm-sidecar-v1.json",
-            Purpose = "Committed build-time OpenAPI snapshot for drift gates and SDK generation.",
+            Purpose = "Committed live-endpoint OpenAPI snapshot for drift gates and SDK generation.",
         },
         new()
         {

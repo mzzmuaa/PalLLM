@@ -72,7 +72,7 @@
     "apiRoutes": {
       "type": "integer",
       "minimum": 0,
-      "description": "/api/* route count. Cross-checked by Drift_Api_route_count against api.Map* calls in Program.cs."
+      "description": "/api/* route count. Cross-checked by Drift_Api_route_count against api.Map* calls in Program.cs and RouteRegistrations/*.cs."
     },
     "operationalRoutes": {
       "type": "integer",

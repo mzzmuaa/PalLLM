@@ -1,6 +1,6 @@
 # Events — bridge events, traces, metrics
 
-Last audited: `2026-05-20`
+Last audited: `2026-05-24`
 
 Single-stop reference for every observable event PalLLM produces or
 consumes. Three categories:
@@ -82,7 +82,7 @@ when `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
 | Span | Started in | Tags |
 |---|---|---|
 | `Bridge.Drain` | `BridgeInboxWorker.ExecuteAsync` (per tick) | `events.read`, `events.processed`, `events.failed` |
-| `Bridge.Outbox.Write` | `PalLlmRuntime.WriteOutboxAsync` | `envelope.kind`, `bytes` |
+| `Bridge.Outbox.Write` | `PalLlmRuntime.WriteOutboxReplyAsync` | `envelope.kind`, `bytes` |
 
 ### Memory
 

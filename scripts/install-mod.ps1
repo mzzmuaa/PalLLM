@@ -132,11 +132,11 @@ $samplePackInstalled = $false
 $samplePackDestination = $null
 if (-not $SkipSamplePack.IsPresent) {
     $repoRoot = Get-PalLlmRepoRoot
-    $samplePackSource = Join-Path $repoRoot "docs\examples\chillet-pack.json"
+    $samplePackSource = Join-Path $repoRoot "docs\examples\camp-guardian-pack.json"
     if (Test-Path -LiteralPath $samplePackSource) {
         $runtimeRoot = Get-PalLlmRuntimeRoot
         $packsDir = Join-Path $runtimeRoot "Packs"
-        $samplePackDestination = Join-Path $packsDir "chillet-pack.json"
+        $samplePackDestination = Join-Path $packsDir "camp-guardian-pack.json"
         if (-not (Test-Path -LiteralPath $samplePackDestination)) {
             if ($PSCmdlet.ShouldProcess($samplePackDestination, "Install PalLLM sample pack")) {
                 New-Item -ItemType Directory -Path $packsDir -Force | Out-Null

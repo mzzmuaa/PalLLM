@@ -106,15 +106,15 @@ public class MoodWeatherAdvisorTests
 
         MoodWeather mood = MoodWeatherAdvisor.Forecast(rel, snapshot: null);
 
-        Assert.That(mood.CharacterName, Is.EqualTo("Lamball"));
-        Assert.That(mood.Summary, Does.Contain("Lamball"));
+        Assert.That(mood.CharacterName, Is.EqualTo("SpeciesAlpha"));
+        Assert.That(mood.Summary, Does.Contain("SpeciesAlpha"));
     }
 
     private static CharacterRelationship BuildRel(int affinity, RelationshipMood mood, InteractionTone tone)
         => new()
         {
             CharacterId = 42,
-            CharacterName = "Lamball",
+            CharacterName = "SpeciesAlpha",
             Affinity = affinity,
             Mood = mood,
             LastTone = tone,

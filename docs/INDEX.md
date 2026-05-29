@@ -1,6 +1,6 @@
 # PalLLM Documentation Index
 
-Last audited: `2026-05-23`
+Last audited: `2026-05-24`
 
 Docs are organised by the [Diataxis](https://diataxis.fr/) framework: the
 right doc depends on what you're trying to do right now, not who you are.
@@ -206,7 +206,7 @@ right doc depends on what you're trying to do right now, not who you are.
 - [`FALLBACK_AI_RESEARCH.md`](FALLBACK_AI_RESEARCH.md) - the published game-AI ideas behind the 19 deterministic strategies.
 - [`CORE_LIBRARY.md`](CORE_LIBRARY.md) - the portable adapter surface (inlined in one self-contained file) and how other runtimes can re-harvest it.
 - [`ROADMAP.md`](ROADMAP.md) - phased delivery plan, current audited status, next build order.
-- [`REFACTORING_ROADMAP.md`](REFACTORING_ROADMAP.md) - phased monolith-extraction plan for `PalLlmRuntime.cs` (4,744 lines) and `Program.cs` (2,105 lines). Uses C# `partial class` companions so the public surface, DI registrations, and tests don't move while the internal layout improves. Read this before proposing "should we split the runtime?" - the plan is already written and phased.
+- [`REFACTORING_ROADMAP.md`](REFACTORING_ROADMAP.md) - phased monolith-extraction plan for `PalLlmRuntime.cs` (now 1,104 lines after Phase 1h) and `Program.cs` (now 336 lines after service-registration extraction plus route/static companions). Uses C# `partial class` companions for runtime code and service/route extension files for sidecar startup so the public surface and tests stay stable while the internal layout improves. Read this before proposing "should we split the runtime?" - the plan is already written and phased.
 - [`COMPANION_INTELLIGENCE.md`](COMPANION_INTELLIGENCE.md) - post-foundation PalLLM-specific "pseudo AGI" ideas adapted from the sibling external prompt-pack research without breaking PalLLM's scope guardrails.
 
 ## Audience shortcuts
@@ -228,7 +228,7 @@ right doc depends on what you're trying to do right now, not who you are.
 A few things are intentionally single-sourced and should not diverge across docs:
 
 - **Live test count**: `dotnet test PalLLM.sln` at audit time. Each doc records the number it was audited against; if you find drift, the code is the source of truth.
-- **Route count**: `src/PalLLM.Sidecar/Program.cs`. The README reports `/api` routes; `API.md` and `ROADMAP.md` also pin the operational routes (`/`, `/metrics`, `/health/*`, `/openapi/*`) plus the separate `/mcp` protocol route.
+- **Route count**: `src/PalLLM.Sidecar/Program.cs` plus `src/PalLLM.Sidecar/RouteRegistrations/*.cs`. The README reports `/api` routes; `API.md` and `ROADMAP.md` also pin the operational routes (`/`, `/metrics`, `/health/*`, `/openapi/*`) plus the separate `/mcp` protocol route.
 - **Feature catalog entries**: `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs` and the runtime `GET /api/features` endpoint. The README and catalog should match.
 - **Machine-readable release posture**: `src/PalLLM.Sidecar/ReleaseReadinessBuilder.cs` and `GET /api/release/readiness` own the automation-facing release snapshot. `README.md` and `docs/RELEASE.md` should agree with it.
 - **Machine-readable bridge proof**: `src/PalLLM.Sidecar/BridgeProofBuilder.cs` and `GET /api/bridge/proof` own the native-readiness and loop-proof snapshot. `README.md`, `docs/API.md`, and `docs/OPERATIONS.md` should agree with it.

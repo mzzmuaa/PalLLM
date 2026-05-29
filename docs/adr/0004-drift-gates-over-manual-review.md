@@ -26,12 +26,13 @@ be checked mechanically gets a **drift gate** in
 `scripts/run_full_audit.ps1`. The current set of 16 gates runs:
 
 1. `Build_Release` - `dotnet build` succeeds with zero warnings
-2. `Tests` - `dotnet test` passes (1154 / 1154 currently)
+2. `Tests` - `dotnet test` passes (1315 / 1315 currently)
 3. `Drift_Mojibake` - no UTF-8 corruption in tracked files
-4. `Drift_Api_route_count` - `api.Map*` calls in `Program.cs` agree
-   with route counts in README, ROADMAP, ARCHITECTURE, API
+4. `Drift_Api_route_count` - `api.Map*` calls in `Program.cs` plus
+   `RouteRegistrations/*.cs` agree with route counts in README, ROADMAP,
+   ARCHITECTURE, API
 5. `Drift_Api_reference_surface` - the `docs/API.md` route list
-   matches the Program.cs registrations one-to-one
+   matches the live registrations one-to-one
 6. `Drift_OpenApi_snapshot` - the committed
    `docs/openapi/palllm-sidecar-v1.json` matches the live route
    surface

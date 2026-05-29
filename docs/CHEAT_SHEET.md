@@ -1,6 +1,6 @@
 # PalLLM cheat sheet - one page
 
-Last audited: `2026-05-23`
+Last audited: `2026-05-24`
 
 The TL;DR-of-TL;DRs. Everything you need to operate the repo
 fits on one screen. For the full doc tour, see
@@ -56,12 +56,22 @@ DeepSeek), and launches `llama-server`. Deep-dive:
 | `pal.ps1` | Verb-driven task runner (this cheat sheet's commands) |
 | `Directory.Build.props` | Repo-wide MSBuild settings (NoWarn, etc.) |
 | `src/PalLLM.Domain/Configuration/PalLlmOptions.cs` | Every config knob with default + XML doc |
-| `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs` | The ~4744-line monolith - every chat turn lives here |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs` | The ~1104-line runtime spine - every chat turn lives here |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Helpers.cs` | Extracted pure helper partial for MIME routing, receipt text, bounded directory counts, and file enumeration |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Inference.cs` | Extracted inference partial for warmup, circuit/model metadata, and operation receipts |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.UiProbe.cs` | Extracted `ui_probe` diagnostics partial for dump parsing and HUD candidate ranking |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.BridgeBoot.cs` | Extracted bridge-boot partial for compatibility signals and native-readiness guidance |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Bridge.cs` | Extracted bridge-drain/activity partial for inbox events, loop proof, delivery, speech, and action receipts |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Prompt.cs` | Extracted prompt-rendering partial for system prompt assembly and bounded message formatting |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Snapshot.cs` | Extracted snapshot partial for health/dashboard assembly, vision state application, and world mutation |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Outbox.cs` | Extracted outbox/archive partial for screenshot ingest, outbox files, and retention |
 | `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs` | Registers every feature for `/api/features` and the dashboard |
 | `src/PalLLM.Domain/Runtime/FallbackBehaviorEngine.cs` | The 19 deterministic strategies + emergency tier |
 | `src/PalLLM.Domain/Runtime/PresentationCuePlanner.cs` | Visual + audio cue planner (paired with every fallback strategy) |
 | `src/PalLLM.Domain/Portable/PortableAdapterContracts.cs` | The harvest seam - 5 interfaces (DO NOT RENAME) |
-| `src/PalLLM.Sidecar/Program.cs` | Every HTTP route registration (57 `/api/*` routes) |
+| `src/PalLLM.Sidecar/Program.cs` | Host builder, middleware, static-asset manifest discovery, OpenAPI/MCP mapping, and route spine |
+| `src/PalLLM.Sidecar/Configuration/*.cs` | Service-registration extensions for core HTTP policy, inference clients, MCP, health/OpenAPI, and OTel |
+| `src/PalLLM.Sidecar/RouteRegistrations/*.cs` | Extracted route-registration extensions and Field Console static-asset routes counted with `Program.cs` by the drift audit |
 | `src/PalLLM.Sidecar/Mcp/PalLlmMcpTools.cs` | Every MCP tool (38 tools) |
 | `mod/ue4ss/Mods/PalLLM/Scripts/main.lua` | The Lua bridge (event producer + outbox consumer) |
 | `tests/PalLLM.Tests/SidecarTestFixture.cs` | Canonical fixture wiring (read this once -> know every HTTP test) |
@@ -78,8 +88,8 @@ DeepSeek), and launches `llama-server`. Deep-dive:
 | 1 | `Build_Release` | `dotnet build` succeeds with zero warnings |
 | 2 | `Tests` | `dotnet test` all-green (1315 / 1315 currently) |
 | 3 | `Drift_Mojibake` | No UTF-8 corruption in tracked files |
-| 4 | `Drift_Api_route_count` | `api.Map*` calls in `Program.cs` agree with README / ROADMAP / ARCHITECTURE / API counts |
-| 5 | `Drift_Api_reference_surface` | `API.md` route list matches `Program.cs` registrations |
+| 4 | `Drift_Api_route_count` | `api.Map*` calls in `Program.cs` + `RouteRegistrations/*.cs` agree with README / ROADMAP / ARCHITECTURE / API counts |
+| 5 | `Drift_Api_reference_surface` | `API.md` route list matches live route registrations |
 | 6 | `Drift_OpenApi_snapshot` | Committed `docs/openapi/...` matches live route surface |
 | 7 | `Drift_Feature_catalog_count` | `Id = "..."` entries match counts in docs |
 | 8 | `Drift_Feature_status_split` | ready / scaffolded / deferred counts match docs |
@@ -152,7 +162,7 @@ D:\Coding\PalLLM\
 | MCP tool | [COOKBOOK Section 3](COOKBOOK.md#3-new-mcp-tool) | `Mcp/PalLlmMcpTools.cs` |
 | Config flag | [COOKBOOK Section 4](COOKBOOK.md#4-new-config-flag) | `PalLlmOptions.cs` |
 | Advisor / builder | [COOKBOOK Section 5](COOKBOOK.md#5-new-advisor-or-builder) | new file under `Domain/Runtime/` |
-| Bridge event type | [COOKBOOK Section 6](COOKBOOK.md#6-new-bridge-event-type) | `PalLlmRuntime.cs` `ProcessBridgeEvent` + `main.lua` |
+| Bridge event type | [COOKBOOK Section 6](COOKBOOK.md#6-new-bridge-event-type) | `PalLlmRuntime.Bridge.cs` `ProcessBridgeEvent` + `main.lua` |
 | Guarded action | [COOKBOOK Section 7](COOKBOOK.md#7-new-guarded-action-type) | `ActionIntentPlanner.cs` + `main.lua` |
 | Feature catalog entry | [COOKBOOK Section 8](COOKBOOK.md#8-new-feature-catalog-entry) | `PalLlmFeatureCatalog.cs` |
 | ADR | [COOKBOOK Section 9](COOKBOOK.md#9-new-adr) | `docs/adr/000N-...md` |
