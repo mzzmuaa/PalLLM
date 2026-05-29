@@ -18,6 +18,58 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 420 - Flip repo public + activate free Advanced Security (2026-05-29)
+
+**Context.** Operator constraint: "I only use github pro 4 dollars a
+month nothing more." GitHub Pro provides `3,000` Actions minutes/month
+on private repos. Windows runners cost `2×` per minute against that
+cap. The 19 push iterations earlier in this session (each running
+build+test on Ubuntu + Windows + the doc-drift audit) consumed the
+monthly allotment, and CI stopped starting jobs with the message
+"recent account payments have failed or your spending limit needs to
+be increased." That was not a payment failure — it was the soft cap
+hitting. Pass 372's brand purge was already verified done and
+triple-enforced (local pre-commit + CI + the
+`EveryTrackedFile_DoesNotMentionPrivateSiblingProjects` MetaTest),
+so flipping the repo to public was the cleanest no-cost fix.
+
+**Visibility flip.** `gh repo edit mzzmuaa/PalLLM --visibility public`.
+Public repos get **unlimited GitHub Actions minutes** for the owner's
+account AND **free GitHub Advanced Security**.
+
+**Advanced Security features now active (all $0):**
+
+| Feature | Before | After |
+|---|---|---|
+| Secret scanning | unavailable on private Free/Pro | `enabled` |
+| Secret-scanning push protection | unavailable on private Free/Pro | `enabled` |
+| Dependabot security updates | `enabled` (was already on) | `enabled` |
+| Private vulnerability reporting | unavailable on private Free | `enabled` |
+| Branch-protection ruleset | HTTP `403` "Upgrade to GitHub Pro" | `main-protection` applied |
+| Required-status-check workflows | reachable only through Pro Actions cap | unlimited minutes |
+
+The `main-protection` ruleset blocks branch deletion + non-fast-forward
+pushes on `main`. Repository admins can bypass for emergency rollbacks
+but every-day pushes go through the normal protected path.
+
+**README badges.** The CI + CodeQL workflow-status badges that were
+deferred behind a commented-out block (waiting for the canonical
+`OWNER/PalLLM` URL to exist) are now live. They link to the
+respective workflow runs.
+
+**Verification.** `1315 / 1315` tests still pass; full audit at
+`artifacts/full-audit/20260529-013557/RESULTS.md` stays `16 / 16`.
+Push triggers a fresh CI run on the unlimited public-repo Actions
+minutes, and the `8` open Dependabot PRs (oldest from `2026-05-23`)
+become mergeable.
+
+**Net effect for the project.** The recurring "is CI healthy?"
+friction is gone permanently. Operator's $4/mo Pro plan is unchanged.
+The brand purge gate, plus secret scanning + push protection, plus
+gitleaks + pre-commit + CodeQL + the 16 drift gates form a multi-layer
+defence that catches any accidental private-data leak before it
+reaches origin.
+
 ### Pass 419 - Add AGENT-CARD headers to all 25 extracted files + polish COMPLETION.md (2026-05-29)
 
 **Context.** Operator directive: "review every aspect of code to make

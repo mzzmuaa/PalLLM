@@ -7,12 +7,9 @@
 ![MCP](https://img.shields.io/badge/MCP-2025--06--18-purple.svg)
 ![Coverage](https://img.shields.io/badge/coverage-86.9%25%20line%20%7C%2070.4%25%20branch-brightgreen.svg)
 ![Status](https://img.shields.io/badge/roadmap-76.2%25%20honest-blue.svg)
+[![CI](https://github.com/mzzmuaa/PalLLM/actions/workflows/ci.yml/badge.svg)](https://github.com/mzzmuaa/PalLLM/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/mzzmuaa/PalLLM/actions/workflows/codeql.yml/badge.svg)](https://github.com/mzzmuaa/PalLLM/actions/workflows/codeql.yml)
 
-<!-- Once this repo has a canonical owner/name on GitHub, add dynamic
-     workflow-status badges:
-     ![CI](https://github.com/OWNER/PalLLM/actions/workflows/ci.yml/badge.svg)
-     ![CodeQL](https://github.com/OWNER/PalLLM/actions/workflows/codeql.yml/badge.svg)
--->
 
 **PalLLM gives every companion in *Palworld* its own local AI voice -
 on your own computer, with no cloud account, no subscription, and no
