@@ -18,6 +18,82 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 422 - Triage 8 Dependabot PRs after public-flip unblocks CI (2026-05-29)
+
+**Context.** The 8 Dependabot PRs that had been waiting since the
+`2026-05-23` initial publish (CI was offline due to the
+private-repo Actions minutes cap that Pass 420 fixed) finally
+became actionable. No code changes — entire pass executed via
+`gh api`.
+
+**Decisions:**
+
+| PR | Action | Reason |
+|---|---|---|
+| `#1` setup-dotnet 4.3.1→5.2.0 | `--auto --squash` | v5 release notes show enhancements only (`workloads`, `architecture` inputs); no breaking changes documented. |
+| `#2` upload-artifact 4.6.2→7.0.1 | **left for review** | `v4 → v7` crosses the artifact-API breaking change at v5 (single-artifact limit removed, retention behaviour changed). Needs operator scan of v5/v6/v7 release notes. |
+| `#3` actions/attest SHA bump | `--auto --squash` | Security-only SHA pin update. |
+| `#4` NUnit + NUnit.Analyzers | `--auto --squash` | Test-only dependency. |
+| `#5` Microsoft.AspNetCore.Mvc.Testing (older) | **closed** | Superseded by `#8`. |
+| `#6` coverlet.collector patch | `--auto --squash` | Test-only patch version. |
+| `#7` ModelContextProtocol.AspNetCore 1.2→1.3 | `--auto --squash` | Production code, but minor version with no documented breaking changes. |
+| `#8` Microsoft.AspNetCore.Mvc.Testing + OpenApi | `--auto --squash` | Test + production stack, minor versions. |
+
+**Repo settings changes.** Enabled `allow_auto_merge = true`
+(was off by default). Left `@dependabot rebase` comments on each
+queued PR so they pick up the Pass 421 route-counter fix before CI
+re-runs. When each PR's CI lands green, GitHub auto-squashes the
+merge without further intervention.
+
+**Verification.** Test count unchanged at `1315`; audit unchanged
+at `16 / 16`.
+
+### Pass 421 - CI bash route counters scan RouteRegistrations/\*.cs (2026-05-29)
+
+**Context.** Pass 420's CI run exposed a stale bash pattern. The
+`Assert doc counts agree with code` step in `.github/workflows/ci.yml`
+was grepping `src/PalLLM.Sidecar/Program.cs` only, but Codex's
+Pass 387-402 extracted the `57` `/api` routes (plus the `/`,
+`/metrics`, `/health/live`, `/health/ready` operational routes) into
+the 12 `RouteRegistrations/*.cs` files. The PowerShell audit's
+`Get-SidecarRouteSourcePaths` helper was already updated to scan
+both source roots; this pass mirrors that in CI.
+
+**Changed:**
+
+```diff
+- code_routes=$(grep -cE 'api\.Map(Get|Post|Put|Delete|Patch)' src/PalLLM.Sidecar/Program.cs)
++ code_routes=$(grep -rhE 'api\.Map(Get|Post|Put|Delete|Patch)' \
++   src/PalLLM.Sidecar/Program.cs \
++   src/PalLLM.Sidecar/RouteRegistrations/ \
++   | wc -l | tr -d ' ')
+```
+
+Same treatment for `code_operational_routes`. The protocol-route
+counter still scans `Program.cs` only because `app.MapMcp("/mcp")`
+stayed there.
+
+**Why `grep -rh + wc -l + tr -d ' '`** instead of `grep -ch ... |
+paste -sd+ - | bc`? `bc` isn't available on all Bash environments
+(Git Bash on Windows, minimal Alpine containers). `grep -rh` recursively
+walks the directory and emits matching lines; `wc -l` counts them;
+`tr -d ' '` strips the leading whitespace that some `wc` implementations
+emit. Fully POSIX-portable.
+
+**Verified locally:**
+
+| Counter | Expected (per docs/API.md) | Reported |
+|---|---|---|
+| `/api` routes | `57` | `57` ✓ |
+| Operational routes | `6` | `6` ✓ |
+| Protocol route | `1` | `1` ✓ |
+
+**CI status after push:** `build + test (ubuntu-latest)` ✓,
+`build + test (windows-latest)` ✓, `doc drift audit` ✓, `CodeQL`
+in progress (standard 5-min job). Local audit at
+`artifacts/full-audit/20260529-015837/RESULTS.md` passes `16 / 16`;
+tests stay `1315 / 1315`.
+
 ### Pass 420 - Flip repo public + activate free Advanced Security (2026-05-29)
 
 **Context.** Operator constraint: "I only use github pro 4 dollars a

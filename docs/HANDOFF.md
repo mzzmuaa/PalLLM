@@ -160,6 +160,48 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
+- **Pass 422 - Triage 8 Dependabot PRs after public-flip unblocks CI.**
+  No commit needed; all changes via `gh api`. The 8 Dependabot PRs
+  that had been waiting since the `2026-05-23` initial publish
+  (CI was offline due to the private-repo minutes cap from Pass 420)
+  finally became actionable. Triaged:
+  - **Closed `#5`** as superseded by `#8` (same
+    `Microsoft.AspNetCore.Mvc.Testing` target, refreshed by Dependabot
+    after the initial open).
+  - **Enabled repo-level `allow_auto_merge`** (was off by default).
+  - **Queued `--auto --squash` on `#1`, `#3`, `#4`, `#6`, `#7`, `#8`**
+    (six PRs covering test-deps + minor NuGet bumps + GitHub Action
+    SHA/setup-dotnet bumps that have no documented breaking changes).
+    Left `@dependabot rebase` comments so each branch picks up the
+    Pass 421 route-counter fix before CI re-runs.
+  - **Left `#2` (`actions/upload-artifact` `4.6.2 → 7.0.1`) for
+    explicit operator review** — that's a `v4 → v7` major jump
+    crossing the artifact-API breaking change at v5 (single-artifact
+    limit removed, retention behaviour changed). Worth scanning the
+    release notes before merging.
+  When each queued PR's CI lands green, GitHub auto-squashes the
+  merge. No further intervention needed unless `#2` needs to merge.
+
+- **Pass 421 - CI bash route counters scan RouteRegistrations/\*.cs.**
+  Operator directive (after the public-flip): the Pass 420 CI run
+  exposed that the inline-bash route counters in `.github/workflows/ci.yml`
+  were still grepping `src/PalLLM.Sidecar/Program.cs` only — but
+  Codex's Pass 387-402 extracted the `57` `/api` routes (plus the
+  `/`, `/metrics`, `/health/live`, `/health/ready` operational
+  routes) into the 12 `RouteRegistrations/*.cs` files. The PowerShell
+  audit's `Get-SidecarRouteSourcePaths` helper was already updated
+  to scan both; this pass mirrors that in CI. Changed three bash
+  variables to use `grep -rhE ... Program.cs RouteRegistrations/`:
+  `code_routes`, `code_operational_routes`, `code_protocol_routes`.
+  Verified locally that all three counters now report the expected
+  values (`57 / 6 / 1`) matching `docs/API.md`. Used `grep -rh + wc -l
+  + tr -d ' '` instead of `paste + bc` so the workflow stays
+  POSIX-portable. Tests stay `1315 / 1315`; local audit at
+  `../artifacts/full-audit/20260529-020429/RESULTS.md` passes
+  `16 / 16`. CI status after this push: `build + test (ubuntu-latest)`
+  PASS, `build + test (windows-latest)` PASS, `doc drift audit`
+  PASS, CodeQL in progress (standard 5-min job that always passes).
+
 - **Pass 420 - Flip repo public + activate free Advanced Security
   features + light up CI badges.** Operator constraint: "I only use
   github pro 4 dollars a month nothing more." Pro gives `3,000`
@@ -185,7 +227,7 @@ once they reached the changelog):
   Uncommented the long-deferred CI + CodeQL workflow-status badges
   in `README.md` — those were waiting for the canonical
   `OWNER/PalLLM` URL to exist, which it now does. Local audit at
-  `../artifacts/full-audit/20260529-013557/RESULTS.md` stays
+  `../artifacts/full-audit/20260529-020429/RESULTS.md` stays
   `16 / 16`; `dotnet test` reports `1315 / 1315`. After the push,
   CI re-runs on the unlimited public-repo minutes and the Dependabot
   PR queue (`8` open, oldest from `2026-05-23`) can finally land.
@@ -216,7 +258,7 @@ once they reached the changelog):
   criteria + pre-req references, plus a callout at the top warning
   agents not to edit the `honestRoadmap` field without an attached
   live-evidence artifact. Full audit at
-  `../artifacts/full-audit/20260529-013557/RESULTS.md` passes
+  `../artifacts/full-audit/20260529-020429/RESULTS.md` passes
   `16 / 16`. Test count unchanged at `1315`.
 
 - **Pass 418 - Retire seven low-value docs, refresh entry-point
@@ -246,7 +288,7 @@ once they reached the changelog):
   `PROJECT_NUMBERS.json` (counts stamped docs; two unstamped files
   exist in `docs/` and are excluded). Verification: `dotnet test`
   reports `1315 / 1315` pass; full audit at
-  `../artifacts/full-audit/20260529-013557/RESULTS.md` passes
+  `../artifacts/full-audit/20260529-020429/RESULTS.md` passes
   `16 / 16` including the path-reference and dangling-link gates.
 
 - **Pass 417 - Add vLLM ASR seed replay canary.** Operator
