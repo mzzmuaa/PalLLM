@@ -14,7 +14,8 @@ Copilot, Codex, Aider, Continue, etc.) picking up this repo.
   short-form briefing. [`docs/INDEX.md`](docs/INDEX.md) is the full
   doc map. [`docs/CODE_MAP.md`](docs/CODE_MAP.md) tells you where
   any symbol lives. **For small models or full replication-from-docs,
-  start at [`docs/REPLICATION_KIT.md`](docs/REPLICATION_KIT.md).**
+  start at [`docs/CODE_MAP.md`](docs/CODE_MAP.md) plus
+  [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).**
 - **Source of truth for counts:** the feature catalog file, the live
   `Program.cs` route registrations, and the NUnit suite. Never trust
   a doc count without cross-checking — every doc count is drift-gated

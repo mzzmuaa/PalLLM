@@ -496,9 +496,9 @@ cache-identity proof, and deterministic fallback on adapter load failure).
 
 - [`BLACKWELL_RECIPES.md`](BLACKWELL_RECIPES.md) — the text-only
   Blackwell + NVFP4 / MXFP4 recipes
-- [`MEMORY_RECIPES.md`](MEMORY_RECIPES.md) — Mem0 / Letta /
+- `MEMORY_RECIPES.md` (retired Pass 418) — Mem0 / Letta /
   long-term memory patterns
-- [`AGENTIC_PATTERNS_2026.md`](AGENTIC_PATTERNS_2026.md) — Tool
+- `AGENTIC_PATTERNS_2026.md` (retired Pass 418) — Tool
   Search / Programmatic Tool Calling / Pyramid MoA
 - [`PACK_AUTHORING.md`](PACK_AUTHORING.md) — the pack format
   this doc proposes extending

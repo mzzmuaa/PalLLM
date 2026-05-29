@@ -99,19 +99,17 @@ $packagedDocs = @(
     "PRIVACY.md",
     "RELEASE.md",
     "UNINSTALL.md",
-    "EASY_MODE.md",
     # Agent + harvester docs. Ship what an LLM coding agent needs to pick
     # up the project from the zip alone, without cloning. The agent reads
     # AGENTS.md / CLAUDE.md from the root + agents.json, then dives into
     # the docs below.
     #
     # NOTE: a small set of docs - HANDOFF, ARCHITECTURE, API, HARVEST,
-    # CORE_LIBRARY, PACK_AUTHORING, COMPANION_INTELLIGENCE - is intentionally
-    # excluded here because they legitimately discuss the portable adapter
-    # surface using phrases the publication scanner reserves for clean
-    # release copy [multi-game, cross-game, game-agnostic]. The full doc
-    # set lives in the source repo; PLAYER_README points contributors there
-    # for the complete reference.
+    # CORE_LIBRARY, PACK_AUTHORING - is intentionally excluded here because
+    # they legitimately discuss the portable adapter surface using phrases
+    # the publication scanner reserves for clean release copy [multi-game,
+    # cross-game, game-agnostic]. The full doc set lives in the source repo;
+    # PLAYER_README points contributors there for the complete reference.
     "INDEX.md",
     "READINESS.md",
     "CODE_MAP.md",
@@ -137,7 +135,6 @@ $packagedDocs = @(
     "EVENTS.md",
     "INVARIANTS.md",
     "TESTING.md",
-    "AGENT_NATIVE.md",
     # Companion / texture docs
     "PROMPT_CARDS.md",
     "MOMENTS.md",
@@ -146,12 +143,9 @@ $packagedDocs = @(
     "BLACKWELL_RECIPES.md",
     "QUANTIZATION.md",
     "MULTIMODAL_RECIPES.md",
-    "AGENTIC_PATTERNS_2026.md",
-    "MEMORY_RECIPES.md",
     "MODEL_COLLABORATION.md",
     "RESEARCH_NOTES_2026-05.md",
     "FALLBACK_AI_RESEARCH.md",
-    "FIRST_HOUR.md",
     "COMPATIBILITY.md",
     "RELEASE_SIGNING.md",
     "SERVER_OPERATOR.md",
@@ -526,8 +520,6 @@ docs\OPERATIONS.md       - tuning, health probes, troubleshooting
 docs\PRIVACY.md          - inventory of every data-emitting surface
 docs\BLACKWELL_RECIPES.md       - GPU serving recipes for low-latency local inference
 docs\MULTIMODAL_RECIPES.md      - vision / audio / realtime WS recipes (2026)
-docs\AGENTIC_PATTERNS_2026.md   - Tool Search / Programmatic Tool Calling / Pyramid MoA
-docs\MEMORY_RECIPES.md          - Mem0 / Letta / Zep three-tier patterns
 docs\PROMPT_CARDS.md     - 19 deterministic-fallback strategies as scenario cards
 docs\PACK_SAMPLES.md     - the four reference personality packs
 docs\MOMENTS.md          - the five hand-curated ritual catalogs
@@ -538,7 +530,7 @@ docs\examples\           - starter narrative pack, MCP configs, Docker compose
 samples\packs\           - 4 reference personality packs (Warrior / Scholar / Healer / Trickster)
 samples\moments\         - 5 ritual catalogs (fortunes / whispers / quests / tales / patrols)
 (Source-repo-only docs: HANDOFF, ARCHITECTURE, API, HARVEST, CORE_LIBRARY,
- PACK_AUTHORING, COMPANION_INTELLIGENCE -- clone the repo for the full set)
+ PACK_AUTHORING -- clone the repo for the full set)
 
 ROOT FILES:
 README.md                - project overview

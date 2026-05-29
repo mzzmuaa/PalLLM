@@ -47,9 +47,7 @@ right doc depends on what you're trying to do right now, not who you are.
 | Know what's shipped vs coming | [`ROADMAP.md`](ROADMAP.md) |
 | Know what's actively queued for build | [`IMPLEMENTATION_QUEUE.md`](IMPLEMENTATION_QUEUE.md) |
 | Get the canonical "are we 100% complete?" answer in one doc | [`COMPLETION.md`](COMPLETION.md) (or `pwsh ../pal.ps1 complete` for the live version) |
-| Replicate PalLLM from documentation alone (small-model friendly) | [`REPLICATION_KIT.md`](REPLICATION_KIT.md) — single-doc "rebuild from scratch" recipe with reading order, prerequisites, verification |
 | Pick up the repo after an interrupted coding session | [`HANDOFF.md`](HANDOFF.md) |
-| Explore post-foundation companion-intelligence / pseudo-AGI ideas that still fit a Palworld mod | [`COMPANION_INTELLIGENCE.md`](COMPANION_INTELLIGENCE.md) |
 | Read the research that drives the fallback layer | [`FALLBACK_AI_RESEARCH.md`](FALLBACK_AI_RESEARCH.md) |
 | Read the dated research snapshot behind the 2026-05 multimodal/Blackwell defaults | [`RESEARCH_NOTES_2026-05.md`](RESEARCH_NOTES_2026-05.md) |
 | Know exactly which external library interfaces PalLLM consumes | [`CORE_LIBRARY.md`](CORE_LIBRARY.md) |
@@ -78,7 +76,6 @@ right doc depends on what you're trying to do right now, not who you are.
 | Look up what's guaranteed to be true at runtime | [`INVARIANTS.md`](INVARIANTS.md) |
 | Use the review checklist (human or agent) | [`REVIEW_CHECKLIST.md`](REVIEW_CHECKLIST.md) |
 | Get a single-shot agent context JSON | `pwsh ../pal.ps1 context` (also `make context`) |
-| Spend a guided 60-minute tour from clone to first ship | [`FIRST_HOUR.md`](FIRST_HOUR.md) |
 | Pick the right model quantization (NVFP4 vs FP8 vs Q4_K_M etc.) | [`QUANTIZATION.md`](QUANTIZATION.md) |
 | Apply GPU serving patterns to your own app (startup snippets + prompt templates + monitoring patterns) | [`BLACKWELL_RECIPES.md`](BLACKWELL_RECIPES.md) |
 | Install + tune the bundled local-inference engine with hardware-aware backend selection (Tiers A-F per GPU class) | [`LLAMA_CPP_BUNDLED.md`](LLAMA_CPP_BUNDLED.md) |
@@ -86,10 +83,8 @@ right doc depends on what you're trying to do right now, not who you are.
 | See PalLLM's SLOs + Prometheus alert rules + Grafana dashboard (Pass 358) | [`OBSERVABILITY_SLO.md`](OBSERVABILITY_SLO.md) |
 | See what's deferred to post-release (heavyweight models, alternate hardware) | [`POST_RELEASE_ANNEX.md`](POST_RELEASE_ANNEX.md) |
 | Wire vision-in / audio-in / audio-out via a multimodal-capable inference engine (recipes + realtime WS) | [`MULTIMODAL_RECIPES.md`](MULTIMODAL_RECIPES.md) (or `pwsh ../pal.ps1 connect omni`) |
-| Apply 2026 agentic patterns (Tool Search Tool / Programmatic Tool Calling / Pyramid MoA) | [`AGENTIC_PATTERNS_2026.md`](AGENTIC_PATTERNS_2026.md) |
-| Plan long-running companion memory beyond the working window (Mem0 / Letta / Zep / archival store) | [`MEMORY_RECIPES.md`](MEMORY_RECIPES.md) |
 | Cleanly uninstall PalLLM from Palworld (one-click + dry-run + full-wipe) | [`UNINSTALL.md`](UNINSTALL.md) (or double-click [`../uninstall.bat`](../uninstall.bat)) |
-| Get started with zero technical knowledge | [`EASY_MODE.md`](EASY_MODE.md) |
+| Get started with zero technical knowledge | [`QUICKSTART.md`](QUICKSTART.md) — five-minute first chat |
 | See the candid 10/10 scorecard ("is it ready for me?") | [`READINESS.md`](READINESS.md) (or `pwsh ../pal.ps1 readiness`) |
 | Wire PalLLM into any MCP-capable desktop or IDE client in one command | `pwsh ../pal.ps1 mcp connect <client>` |
 | Check for a newer PalLLM release on GitHub | `pwsh ../pal.ps1 check-updates -Owner <fork>` |
@@ -132,7 +127,7 @@ right doc depends on what you're trying to do right now, not who you are.
 | See the effective config (file + env + compiled defaults) with each key's source | `pwsh ../pal.ps1 config show` (`-Section <Name>` to filter) |
 | Measure real-world chat-turn latency vs the per-tier `HOT_PATH.md` budget | `pwsh ../pal.ps1 benchmark` (`-Probes N` to override sample size) |
 | Find files by topic in plain English: "where is the chat hot path?" | `pwsh ../pal.ps1 where '<query>'` |
-| Understand the agent-native design (AGENT-CARD blocks, manifests, drift gates) | [`AGENT_NATIVE.md`](AGENT_NATIVE.md) |
+| Understand the agent-native design (AGENT-CARD blocks, manifests, drift gates) | [`../AGENTS.md`](../AGENTS.md) |
 | Understand the operator + contributor UX choices | [`UX_PRINCIPLES.md`](UX_PRINCIPLES.md) |
 | Scaffold placeholder files for a new advisor / builder / etc. | `pwsh ../pal.ps1 scaffold <kind> <Name>` |
 | Add an HTTP endpoint / fallback strategy / MCP tool / config flag | [`COOKBOOK.md`](COOKBOOK.md) (step-by-step recipes) |
@@ -206,8 +201,7 @@ right doc depends on what you're trying to do right now, not who you are.
 - [`FALLBACK_AI_RESEARCH.md`](FALLBACK_AI_RESEARCH.md) - the published game-AI ideas behind the 19 deterministic strategies.
 - [`CORE_LIBRARY.md`](CORE_LIBRARY.md) - the portable adapter surface (inlined in one self-contained file) and how other runtimes can re-harvest it.
 - [`ROADMAP.md`](ROADMAP.md) - phased delivery plan, current audited status, next build order.
-- [`REFACTORING_ROADMAP.md`](REFACTORING_ROADMAP.md) - phased monolith-extraction plan for `PalLlmRuntime.cs` (now 1,104 lines after Phase 1h) and `Program.cs` (now 336 lines after service-registration extraction plus route/static companions). Uses C# `partial class` companions for runtime code and service/route extension files for sidecar startup so the public surface and tests stay stable while the internal layout improves. Read this before proposing "should we split the runtime?" - the plan is already written and phased.
-- [`COMPANION_INTELLIGENCE.md`](COMPANION_INTELLIGENCE.md) - post-foundation PalLLM-specific "pseudo AGI" ideas adapted from the sibling external prompt-pack research without breaking PalLLM's scope guardrails.
+- [`REFACTORING_ROADMAP.md`](REFACTORING_ROADMAP.md) - the monolith-extraction plan, **Phase 1+2 completed in Passes 375-402**. `PalLlmRuntime.cs` is now `1,105` lines (down from `4,744`) across eight `PalLlmRuntime.*.cs` partial-class files under `src/PalLLM.Domain/Runtime/`. `Program.cs` is now `336` lines (down from `2,105`), delegating to service-collection extensions in `src/PalLLM.Sidecar/Configuration/` and route registrations in `src/PalLLM.Sidecar/RouteRegistrations/`. Tests + public surface unchanged.
 
 ## Audience shortcuts
 

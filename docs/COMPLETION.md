@@ -220,7 +220,7 @@ to its script. The operator never has to remember script paths.
 For a coding agent picking up the repo:
 
 - The autonomous portion of completion is **done**.
-- New work belongs in [`COMPANION_INTELLIGENCE.md`](COMPANION_INTELLIGENCE.md)
+- New work belongs in COMPANION_INTELLIGENCE (retired Pass 418)
   (post-foundation ideas) or [`FUTURE_2035.md`](FUTURE_2035.md)
   (cutting-edge / 2030+ ideas).
 - Anything that would advance the headline 76.2% requires live

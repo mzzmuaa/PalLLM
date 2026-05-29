@@ -12,7 +12,7 @@ order.
 
 Post-foundation companion-intelligence ideas such as visible memory, replay
 traces, advisory world-model planning, and confidence-calibrated escalation are
-tracked separately in [`COMPANION_INTELLIGENCE.md`](COMPANION_INTELLIGENCE.md).
+tracked separately in COMPANION_INTELLIGENCE (retired Pass 418).
 They are intentionally **not** part of the ship-critical queue below until the
 live Palworld proof and native delivery path are fully locked.
 

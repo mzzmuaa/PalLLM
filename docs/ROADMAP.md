@@ -364,4 +364,4 @@ native and demonstrably publishable.
 - cloud-first inference posture
 - knowledge-graph memory before the in-game delivery layer is finished
 - deeply coupled UI logic inside the domain runtime
-- broad AGI-style companion expansion before the native Palworld proof chain is finished; post-foundation ideas are tracked separately in [`COMPANION_INTELLIGENCE.md`](COMPANION_INTELLIGENCE.md)
+- broad AGI-style companion expansion before the native Palworld proof chain is finished; post-foundation ideas are tracked separately in COMPANION_INTELLIGENCE (retired Pass 418)

@@ -15,8 +15,7 @@ using PalLLM.Domain.Integration;
 //   adr:     None directly; explanatory transparency is part of the
 //            "every automated change gets a proof packet" convention.
 //   docs:    docs/API.md (/api/why endpoints), docs/CONVENTIONS.md
-//            (proof-packet rule), docs/COMPANION_INTELLIGENCE.md
-//            (why-engine + agentic post-foundation ideas).
+//            (proof-packet rule).
 // ---------------------------------------------------------------------------
 
 namespace PalLLM.Domain.Runtime;

@@ -307,7 +307,7 @@ then editorial roundups).
   GPU specific tuning (FP4 / NVFP4 / TRT-LLM)
 - [`MULTIMODAL_RECIPES.md`](MULTIMODAL_RECIPES.md) — vision + audio
   end-to-end recipes
-- [`MEMORY_RECIPES.md`](MEMORY_RECIPES.md) — embedding + retrieval
+- `MEMORY_RECIPES.md` (retired Pass 418) — embedding + retrieval
   + reflection composition
 - [`adr/0001-deterministic-first-reply-pipeline.md`](adr/0001-deterministic-first-reply-pipeline.md)
   — why every chat turn still works with no model loaded at all

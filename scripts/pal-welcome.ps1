@@ -40,8 +40,8 @@
 .NOTES
     Verb shortcut:  pal welcome
 
-    A complement to docs/EASY_MODE.md (the absolute-beginner doc)
-    and docs/QUICKSTART.md (the technical first-chat path). This
+    A complement to docs/QUICKSTART.md (the technical first-chat
+    path). This
     verb is the in-terminal version - meet the user where their
     cursor is.
 #>
@@ -176,7 +176,6 @@ Write-Pal "       pal benchmark        # real-world latency vs per-tier budget" 
 Write-Pal "       pal uninstall -DryRun  # preview a clean uninstall (nothing changes)" 'Yellow'
 Write-Pal ""
 Write-Pal "   Reading order, in priority:" 'White'
-Write-Pal "       docs/EASY_MODE.md    absolute-beginner walkthrough" 'DarkGray'
 Write-Pal "       docs/QUICKSTART.md   technical first-chat path" 'DarkGray'
 Write-Pal "       docs/INDEX.md        full doc map" 'DarkGray'
 Write-Pal "       docs/READINESS.md    honest 10/10 scorecard per aspect" 'DarkGray'

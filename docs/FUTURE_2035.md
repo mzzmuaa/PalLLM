@@ -26,8 +26,8 @@ a clear stop condition. Pick one, ship the slice, and the next slice
 becomes obvious.
 
 > **Companion to:** [`ROADMAP.md`](ROADMAP.md) (the current build
-> queue, weighted by player-experience), [`AGENTIC_PATTERNS_2026.md`](AGENTIC_PATTERNS_2026.md)
-> (specific pattern recipes), [`MEMORY_RECIPES.md`](MEMORY_RECIPES.md)
+> queue, weighted by player-experience), `AGENTIC_PATTERNS_2026.md` (retired Pass 418)
+> (specific pattern recipes), `MEMORY_RECIPES.md` (retired Pass 418)
 > (long-context patterns), [`SUGGESTIONS.md`](SUGGESTIONS.md) (the
 > operator-actionable diagnostic surface).
 
@@ -88,7 +88,7 @@ place when the surface grows.
 tool an operator can choose to ignore).
 
 Recipe pattern documented in
-[`AGENTIC_PATTERNS_2026.md`](AGENTIC_PATTERNS_2026.md) Section 1.
+`AGENTIC_PATTERNS_2026.md` (retired Pass 418) Section 1.
 
 ### 2. Three-tier memory graph
 
@@ -115,7 +115,7 @@ swapping the index implementation.
 persistence.
 
 Recipe pattern documented in
-[`MEMORY_RECIPES.md`](MEMORY_RECIPES.md) Section 1.
+`MEMORY_RECIPES.md` (retired Pass 418) Section 1.
 
 ### 3. Speculative companion replies
 
@@ -296,7 +296,7 @@ dependency. The Duo planner already covers the 80% case. Worth
 implementing when an operator explicitly wants the split.
 
 Recipe pattern documented in
-[`AGENTIC_PATTERNS_2026.md`](AGENTIC_PATTERNS_2026.md) Section 3.
+`AGENTIC_PATTERNS_2026.md` (retired Pass 418) Section 3.
 
 ### 7. Programmatic Tool Calling sandbox
 
@@ -307,7 +307,7 @@ calls don't enter chat history.
 
 **First deliverable.** Out of scope for an autonomous-loop pass.
 Documented in
-[`AGENTIC_PATTERNS_2026.md`](AGENTIC_PATTERNS_2026.md) Section 2 with
+`AGENTIC_PATTERNS_2026.md` (retired Pass 418) Section 2 with
 the contract shape so the next contributor has the design.
 
 **What blocks it today.** Real sandbox (Deno permission flags or
@@ -507,9 +507,9 @@ deliverable, the PR can also include the implementation slice.
   player-experience.
 - [`HANDOFF.md`](HANDOFF.md) - what was last shipped, what to read
   before picking up.
-- [`AGENTIC_PATTERNS_2026.md`](AGENTIC_PATTERNS_2026.md) - concrete
+- `AGENTIC_PATTERNS_2026.md` (retired Pass 418) - concrete
   recipe patterns for several of the ideas above.
-- [`MEMORY_RECIPES.md`](MEMORY_RECIPES.md) - three-tier memory
+- `MEMORY_RECIPES.md` (retired Pass 418) - three-tier memory
   patterns from Mem0 / Letta / Zep mapped onto PalLLM.
 - [`MULTIMODAL_RECIPES.md`](MULTIMODAL_RECIPES.md) - vision +
   audio pipeline patterns.

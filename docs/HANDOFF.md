@@ -160,6 +160,36 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
+- **Pass 418 - Retire seven low-value docs, refresh entry-point
+  cross-links.** Operator directive: "thoroughly refine all
+  documentation... get rid of outdated or excess." Audited every doc
+  under `docs/` (`70` total) and deleted seven that were either
+  speculative, dated, or duplicated by stronger neighbours:
+  `AGENTIC_PATTERNS_2026.md` (2026-dated patterns research),
+  `REPLICATION_KIT.md` (overlapped CODE_MAP + AGENTS),
+  `COMPANION_INTELLIGENCE.md` (speculative design notes),
+  `MEMORY_RECIPES.md` (speculative recipes), `AGENT_NATIVE.md`
+  (overlapped AGENTS.md), `EASY_MODE.md` (overlapped QUICKSTART),
+  and `FIRST_HOUR.md` (overlapped QUICKSTART). Created
+  `scripts/sweep-deleted-doc-refs.py` — a Python rewriter that
+  swept all references across `19` files: markdown links became
+  pointers to the surviving canonical doc (e.g. `EASY_MODE` →
+  `QUICKSTART`); the three retired-design docs were marked
+  `(retired Pass 418)` in narrative copy. Hand-fixed two XML doc
+  comments in `src/PalLLM.Domain/Runtime/{PromotionLedger,WhyEngine}.cs`,
+  removed the retired docs from `scripts/package-release.ps1`'s
+  release-bundle list and ROOT-FILES summary, and dropped
+  `EASY_MODE.md` from `agents.json`'s newcomer reading list and
+  `scripts/pal-welcome.ps1`'s reading-order block. INDEX.md table
+  rows pointing at the deleted docs were re-pointed at the
+  canonical surviving alternatives (`AGENTS.md`, `CODE_MAP.md`,
+  `QUICKSTART.md`). `docsCount` cascaded `70 -> 63` in
+  `PROJECT_NUMBERS.json` (counts stamped docs; two unstamped files
+  exist in `docs/` and are excluded). Verification: `dotnet test`
+  reports `1315 / 1315` pass; full audit at
+  `../artifacts/full-audit/20260529-010136/RESULTS.md` passes
+  `16 / 16` including the path-reference and dangling-link gates.
+
 - **Pass 417 - Add vLLM ASR seed replay canary.** Operator
   directive: continue optimizing, production-hardening, full code/doc audit,
   current model/runtime research, active `D:\Coding` idea scan, publication
@@ -1241,8 +1271,9 @@ once they reached the changelog):
   Python rewriter with 17 ordered regex rules (multi-sibling rosters,
   possessives, local paths, pack identifiers). Applied it to
   `CHANGELOG.md`, `docs/HANDOFF.md`, `docs/INDEX.md`,
-  `docs/COMPANION_INTELLIGENCE.md`, `docs/RESEARCH_NOTES_2026-05.md`,
-  and `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs` for `194`
+  the COMPANION_INTELLIGENCE doc (since retired in Pass 376),
+  `docs/RESEARCH_NOTES_2026-05.md`, and
+  `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs` for `194`
   total substitutions. Post-sweep grep confirms `0` residual matches.
   Widened the guard surface so future passes cannot reintroduce the
   brands: `scripts/public_copy_policy.ps1` and
@@ -2481,7 +2512,7 @@ once they reached the changelog):
     systemd unit `After=` directive.
   - `OBSERVABILITY.md` + `MODEL_COLLABORATION.md` provider-list
     line: `ollama` removed, `llama.cpp` promoted to "(default)".
-  - `REPLICATION_KIT.md` — "Optional - wire live inference"
+  - `CODE_MAP.md` — "Optional - wire live inference"
     command swapped from `pal connect ollama` to
     `pal connect llamacpp -ModelPath D:\Models\Qwen\...`.
   - `MULTIMODAL_RECIPES.md` — engine list lead swapped to
@@ -2567,9 +2598,9 @@ once they reached the changelog):
     model?" recommendation, "What if my internet drops?", and
     "What about the AI model endpoint?" all now default to
     llama.cpp with vLLM as the high-config option.
-  - `docs/EASY_MODE.md` — "if you want richer replies" guidance
+  - `docs/QUICKSTART.md` — "if you want richer replies" guidance
     swapped from Ollama+qwen2.5:7b to llama.cpp + GGUF.
-  - `docs/FIRST_HOUR.md` — "If you have an Ollama instance"
+  - `docs/QUICKSTART.md` — "If you have an Ollama instance"
     paragraph rewritten for llama-server / vLLM.
   - `docs/PITCH.md` — 2 mentions of "your own Ollama / llama.cpp
     / LM Studio install" tightened to "llama.cpp (default) or
@@ -2632,7 +2663,7 @@ once they reached the changelog):
   SUGGESTIONS.md, SERVER_OPERATOR.md, MCP_QUICKSTART.md (model
   pulling note), QUICKREF.md, API.md, MODEL_COLLABORATION.md,
   MODELS_2026.md (alternative engine list), QUANTIZATION.md
-  (Ollama-as-loader mention), REPLICATION_KIT.md, OBSERVABILITY.md.
+  (Ollama-as-loader mention), CODE_MAP.md, OBSERVABILITY.md.
   None of these are first-touch operator paths; each is a
   one-line swap in its own future pass.
 - **Pass 340 - `D:\Models\Diffusion` wired as the default diffusion-model path.**
@@ -3029,7 +3060,7 @@ once they reached the changelog):
   `../artifacts/full-audit/20260522-185931/RESULTS.md`. Routes,
   MCP tools, feature catalog entries, fallback strategy counts,
   and OpenAPI schema unchanged.
-- **Pass 333 - MEMORY_RECIPES.md content audit: closes "recall is not wired" claim.**
+- **Pass 333 - MEMORY_RECIPES content audit: closes "recall is not wired" claim.**
   Oldest stamp in `docs/` at `2026-05-05` (17 days). Pattern matches
   Passes 307-314: walk the doc against current code, surface drift,
   fix in place, refresh stamp honestly.
@@ -3663,7 +3694,7 @@ once they reached the changelog):
   gate-pin header comment, plus the five canonical anchors `README.md`,
   `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/CODE_MAP.md`,
   `docs/HANDOFF.md` and the `docs/API.md` route table. Also
-  `docs/READINESS.md` (route+tool counts), `docs/AGENTIC_PATTERNS_2026.md`
+  `docs/READINESS.md` (route+tool counts), AGENTIC_PATTERNS_2026 (retired Pass 418)
   (tool count), and `src/PalLLM.Sidecar/SelfDescriptionBuilder.cs`
   (the self-describe payload that pins the tool count for MCP
   clients).
@@ -3960,7 +3991,7 @@ once they reached the changelog):
   `../artifacts/full-audit/20260521-145014/RESULTS.md`. Routes, MCP
   tools, feature catalog entries, fallback strategy counts, and
   OpenAPI schema unchanged.
-- **Pass 309 - COMPANION_INTELLIGENCE.md content audit: refresh sibling-project counts.**
+- **Pass 309 - COMPANION_INTELLIGENCE content audit: refresh sibling-project counts.**
   Third-oldest stamp in the doc tree (`2026-04-28`, same as Pass 307
   and 308 targets). This doc is mostly forward-looking ideas, not a
   code spec, so the audit was checking that referenced PalLLM classes,

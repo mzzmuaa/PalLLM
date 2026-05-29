@@ -13,7 +13,7 @@ using System.Collections.Concurrent;
 //   adr:     None directly; pattern is documented in
 //            docs/STATE_MACHINES.md (promotion ledger state machine).
 //   docs:    docs/STATE_MACHINES.md, docs/HARVEST.md (Promotion ledger
-//            harvest recipe), docs/COMPANION_INTELLIGENCE.md.
+//            harvest recipe).
 // ---------------------------------------------------------------------------
 
 namespace PalLLM.Domain.Runtime;

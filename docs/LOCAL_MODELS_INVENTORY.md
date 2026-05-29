@@ -244,7 +244,7 @@ diffusion subdirectory wired (empty), but is silent on:
   pattern: ASR runs in its own HTTP server.
 - **Embeddings** — PalLLM's in-process FNV-1a embedder doesn't load
   external weights. A future optional `bge-m3` server would (see
-  [`MEMORY_RECIPES.md`](MEMORY_RECIPES.md) recommended trajectory
+  `MEMORY_RECIPES.md` (retired Pass 418) recommended trajectory
   step 2 + [`FUTURE_2035.md` §5c](FUTURE_2035.md)).
 
 These can stay in their own engine-specific paths; nothing in PalLLM

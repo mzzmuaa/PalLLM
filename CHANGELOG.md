@@ -18,6 +18,55 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 418 - Retire seven low-value docs, refresh entry-point cross-links (2026-05-29)
+
+**Context.** Operator directive: "thoroughly refine all documentation
+to accurately reflect all code... get rid of outdated or excess
+documentation." `70` docs under `docs/` was heavy; many were
+duplicates or speculation. This pass deletes the seven clearest
+excesses and rewires every cross-reference.
+
+**Docs removed.**
+
+| Doc | Why retired | Successor |
+|---|---|---|
+| `AGENTIC_PATTERNS_2026.md` | Dated patterns research | `MULTIMODAL_RECIPES.md` + `MODEL_COLLABORATION.md` |
+| `REPLICATION_KIT.md` | Overlapped CODE_MAP + ARCHITECTURE | `CODE_MAP.md` |
+| `COMPANION_INTELLIGENCE.md` | Speculative design notes | `ROADMAP.md` |
+| `MEMORY_RECIPES.md` | Speculative recipes | `MODEL_COLLABORATION.md` |
+| `AGENT_NATIVE.md` | Overlapped AGENTS.md philosophy | `AGENTS.md` |
+| `EASY_MODE.md` | Overlapped QUICKSTART | `QUICKSTART.md` |
+| `FIRST_HOUR.md` | Overlapped QUICKSTART + `pal welcome` | `QUICKSTART.md` |
+
+**Tooling.** New `scripts/sweep-deleted-doc-refs.py` — an idempotent
+Python rewriter that walks `19` target files and replaces every
+markdown link, backticked path, and bare-path reference to the
+retired docs. The script made `60+` total substitutions and is
+itself drift-gate-safe (re-running produces no further diff).
+
+**Code references.** Two XML doc comments in
+`src/PalLLM.Domain/Runtime/PromotionLedger.cs` and `WhyEngine.cs`
+were hand-edited to drop the `COMPANION_INTELLIGENCE` mention.
+
+**Operator-surface plumbing.**
+- `scripts/package-release.ps1`: dropped the retired docs from the
+  release-bundle list and ROOT-FILES summary.
+- `scripts/pal-welcome.ps1`: dropped `EASY_MODE.md` from the
+  reading-order block.
+- `agents.json`: dropped `EASY_MODE.md` from the `newcomer` reading
+  list.
+- `docs/INDEX.md`: re-pointed seven table rows at the canonical
+  surviving alternatives.
+
+**Count cascade.** `docsCount` cascaded `70 -> 63` in
+`PROJECT_NUMBERS.json` (counts stamped docs; two unstamped files in
+`docs/` are excluded). Test count unchanged at `1315 / 1315`.
+
+**Verification.** Full audit at
+`artifacts/full-audit/20260529-010402/RESULTS.md` passes `16 / 16`,
+including the path-reference and dangling-link gates which both
+caught residual references during the iterative sweep.
+
 ### Pass 417 - Add vLLM ASR seed replay canary (2026-05-28)
 
 **Context.** Operator directive: continue optimization, production
@@ -1844,7 +1893,7 @@ stripping every mention of four still-private sibling projects
 (names withheld in this changelog so the entry itself stays
 publication-safe). The existing publication guards covered only a
 handful of release-facing docs (`README.md`, `docs/PITCH.md`, etc.);
-`CHANGELOG.md`, `docs/HANDOFF.md`, `docs/COMPANION_INTELLIGENCE.md`,
+`CHANGELOG.md`, `docs/HANDOFF.md`, COMPANION_INTELLIGENCE (retired Pass 418),
 and `docs/RESEARCH_NOTES_2026-05.md` still carried historical sibling
 mentions that would leak the names the moment the repo flipped to
 public. `RimLLM` stayed in scope — the operator's purge list did not
@@ -1861,7 +1910,7 @@ for `194` total substitutions:
 |---|---|
 | `CHANGELOG.md` | `100` |
 | `docs/RESEARCH_NOTES_2026-05.md` | `67` |
-| `docs/COMPANION_INTELLIGENCE.md` | `16` |
+| COMPANION_INTELLIGENCE (retired Pass 418) | `16` |
 | `docs/HANDOFF.md` | `9` |
 | `docs/INDEX.md` | `1` |
 | `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs` | `1` |
@@ -2293,7 +2342,7 @@ files were retained.
 
 **Docs / manifests.** Added the cleanup verb to `pal.ps1`, `pal.json`,
 `agents.json`, `docs/CHEAT_SHEET.md`, `docs/QUICKREF.md`,
-`docs/INDEX.md`, `docs/EASY_MODE.md`, `docs/FIRST_HOUR.md`, and
+`docs/INDEX.md`, EASY_MODE (retired Pass 376; see `docs/QUICKSTART.md`), FIRST_HOUR (retired Pass 376; see `docs/QUICKSTART.md`), and
 `docs/RUNBOOK.md`. Refreshed stale novice-doc test-count references from
 older baselines to the current `1307` suite.
 
@@ -4148,7 +4197,7 @@ the HANDOFF entry; summary by file:
 `SUGGESTIONS.md`, `SERVER_OPERATOR.md` (4 mentions across
 topology diagrams + install checklist + systemd),
 `OBSERVABILITY.md`, `MODEL_COLLABORATION.md` provider-list,
-`REPLICATION_KIT.md`, `MULTIMODAL_RECIPES.md`.
+`CODE_MAP.md`, `MULTIMODAL_RECIPES.md`.
 
 **Scripts swept (6 files).**
 
@@ -4238,10 +4287,10 @@ operator surfaces specifically.
   - "What about the AI model endpoint?" example BaseUrl updated
     from `:11434` (Ollama) to `:8080/v1/` (llama-server,
     PalLLM's shipping default).
-- `docs/EASY_MODE.md` — "Do I need to install a model?" guidance
+- EASY_MODE (retired Pass 376; see `docs/QUICKSTART.md`) — "Do I need to install a model?" guidance
   swapped from "Ollama with qwen2.5:7b" to "llama.cpp (default)
   or vLLM (high-config), point at a GGUF."
-- `docs/FIRST_HOUR.md` — "If you have an Ollama instance" para-
+- FIRST_HOUR (retired Pass 376; see `docs/QUICKSTART.md`) — "If you have an Ollama instance" para-
   graph rewritten to "llama-server (default) or vLLM."
 - `docs/PITCH.md` — two mentions tightened from
   "Ollama / llama.cpp / LM Studio" to "llama.cpp (default) or
@@ -4300,7 +4349,7 @@ vLLM-on-port-11434, not Ollama, but cosmetically confusing),
 `QUICKREF.md`, `API.md`, `MODEL_COLLABORATION.md`,
 `MODELS_2026.md` (alternative engine list),
 `QUANTIZATION.md` (Ollama-as-loader mention),
-`REPLICATION_KIT.md`, `OBSERVABILITY.md`.
+`CODE_MAP.md`, `OBSERVABILITY.md`.
 
 **Verification.** Full `dotnet test` `1169 / 1169` (the advice-
 string change in `HardwareProfiler.cs` didn't break any
@@ -5703,7 +5752,7 @@ anchors), `tests/README.md`,
 plus the five canonical mirrors `README.md`, `docs/ROADMAP.md`,
 `docs/ARCHITECTURE.md`, `docs/CODE_MAP.md`, `docs/HANDOFF.md`, the
 `docs/API.md` route table, `docs/READINESS.md` (route + tool
-counts), `docs/AGENTIC_PATTERNS_2026.md` (tool count), and
+counts), AGENTIC_PATTERNS_2026 (retired Pass 418) (tool count), and
 `src/PalLLM.Sidecar/SelfDescriptionBuilder.cs` (the self-describe
 payload that pins the tool count for MCP introspection clients).
 
@@ -10166,7 +10215,7 @@ exactly what Pass 198 shipped, now with direct regression coverage.
 Multiple stale current-state references to the previous test count
 (`720` / `723` / `731`) were updated to the live regex count `735` in
 `.cursorrules`, `tests/README.md`, `docs/REVIEW_CHECKLIST.md`,
-`docs/REPLICATION_KIT.md`, and the `PalLlmRuntime.cs` header gate-pin
+REPLICATION_KIT (retired Pass 376; see `docs/CODE_MAP.md`), and the `PalLlmRuntime.cs` header gate-pin
 comment. The `Drift_Test_count_docs` gate was already green because the
 primary anchors (README, ROADMAP, ARCHITECTURE, CODE_MAP, HANDOFF) were
 updated alongside the test file in earlier passes; these were the
@@ -10624,7 +10673,7 @@ right after the play.bat step:
 Placed above the PITCH/FAQ rows so it catches anyone
 scanning the table for "the fastest path to using this."
 
-**`docs/EASY_MODE.md`.** New "Even easier: skip the
+**EASY_MODE (retired Pass 376; see `docs/QUICKSTART.md`).** New "Even easier: skip the
 dashboard entirely" sub-section under "The 60-second path":
 
 > If the dashboard feels like a spreadsheet to you (it kind
@@ -10643,7 +10692,7 @@ bonus paragraph with a one-line welcome callout:
 > accessibility toggles, installable as a PWA) — same
 > /api/chat underneath, no jargon on the surface.
 
-**`docs/REPLICATION_KIT.md`.** Replaced the previous
+**REPLICATION_KIT (retired Pass 376; see `docs/CODE_MAP.md`).** Replaced the previous
 single-paragraph "Field Console at /, OpenAPI at /openapi/v1.json,
 MCP at /mcp" prose with a 4-row table naming every
 user-facing surface AND its audience. `/welcome.html`
@@ -12276,7 +12325,7 @@ self-explanatory for an operator deciding whether to install:
    PS 7 is recommended for cross-platform but not required
    on Windows.
 
-#### Side fix: REPLICATION_KIT.md
+#### Side fix: CODE_MAP.md
 
 The prerequisites table previously said `PowerShell 7+`.
 Updated to `PowerShell 5.1+ (7+ recommended)` so a small
@@ -12361,7 +12410,7 @@ become load-bearing.
 #### Test-count rollup
 
 `654 -> 662` (+8). Bumped across the same 24 anchor files prior
-count-rolling passes touched, plus the new `REPLICATION_KIT.md`
+count-rolling passes touched, plus the new `CODE_MAP.md`
 and `COMPLETION.md` references.
 
 #### What this does and does not change
@@ -12656,7 +12705,7 @@ the work; this pass shipped the highest-leverage refinements.
 
 #### What this pass shipped
 
-**(1) New `docs/REPLICATION_KIT.md`.** A single replication
+**(1) New REPLICATION_KIT (retired Pass 376; see `docs/CODE_MAP.md`).** A single replication
 entry point. Contents:
 
 - **60-second TL;DR** — three-layer topology in plain monospace
@@ -12740,7 +12789,7 @@ This pass does not change any production code, HTTP route, MCP
 tool, feature-catalog entry, fallback strategy, test count,
 verb count, or runtime behaviour. It changes:
 
-- One new doc (`REPLICATION_KIT.md`)
+- One new doc (`CODE_MAP.md`)
 - One refined section in `COMPLETION.md`
 - Five refreshed `Last audited:` stamps
 - One TL;DR shortcut in `AGENTS.md`
@@ -12942,7 +12991,7 @@ Public-facing doc claims:
 - `docs/COMPLETION.md` (autonomous-progress table row)
 - `docs/READINESS.md` (3 references)
 - `docs/MCP_QUICKSTART.md` (capability summary)
-- `docs/AGENTIC_PATTERNS_2026.md` (2 references)
+- AGENTIC_PATTERNS_2026 (retired Pass 418) (2 references)
 - `docs/FUTURE_2035.md` (2 references including the
   Tool Search Tool first-deliverable)
 - `docs/GLOSSARY.md` (MCP definition)
@@ -13135,8 +13184,8 @@ Pass 163 / Pass 164 touched: `README.md`, `docs/ROADMAP.md`,
 `docs/ARCHITECTURE.md`, `docs/CODE_MAP.md`, `docs/HANDOFF.md`,
 `agents.json`, `pal.json`, `pal.ps1`, `docs/CHEAT_SHEET.md`,
 `docs/READINESS.md`, `docs/FAQ.md`, `docs/COOKBOOK.md`,
-`docs/REVIEW_CHECKLIST.md`, `docs/AGENT_NATIVE.md`,
-`docs/TESTING.md`, `docs/FIRST_HOUR.md`, `docs/INVARIANTS.md`,
+`docs/REVIEW_CHECKLIST.md`, AGENT_NATIVE (retired Pass 376; see `AGENTS.md`),
+`docs/TESTING.md`, FIRST_HOUR (retired Pass 376; see `docs/QUICKSTART.md`), `docs/INVARIANTS.md`,
 `.github/copilot-instructions.md`, `CONTRIBUTING.md`,
 `CLAUDE.md`, `tests/README.md`, `scripts/onboard.ps1`,
 `docs/PROJECT_NUMBERS.json`, this `CHANGELOG.md`.
@@ -13455,7 +13504,7 @@ touched: `README.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`,
 `docs/CODE_MAP.md`, `docs/HANDOFF.md`, `agents.json`, `pal.json`,
 `pal.ps1`, `docs/CHEAT_SHEET.md`, `docs/READINESS.md`,
 `docs/FAQ.md`, `docs/COOKBOOK.md`, `docs/REVIEW_CHECKLIST.md`,
-`docs/AGENT_NATIVE.md`, `docs/TESTING.md`, `docs/FIRST_HOUR.md`,
+AGENT_NATIVE (retired Pass 376; see `AGENTS.md`), `docs/TESTING.md`, FIRST_HOUR (retired Pass 376; see `docs/QUICKSTART.md`),
 `docs/INVARIANTS.md`, `.github/copilot-instructions.md`,
 `CONTRIBUTING.md`, `CLAUDE.md`, `tests/README.md`,
 `scripts/onboard.ps1`, `docs/PROJECT_NUMBERS.json`, this `CHANGELOG.md`.
@@ -13555,8 +13604,8 @@ files where it appears (`README.md`, `docs/ROADMAP.md`,
 `docs/ARCHITECTURE.md`, `docs/CODE_MAP.md`, `docs/HANDOFF.md`,
 `agents.json`, `pal.json`, `pal.ps1`, `docs/CHEAT_SHEET.md`,
 `docs/READINESS.md`, `docs/FAQ.md`, `docs/COOKBOOK.md`,
-`docs/REVIEW_CHECKLIST.md`, `docs/AGENT_NATIVE.md`,
-`docs/TESTING.md`, `docs/FIRST_HOUR.md`, `docs/INVARIANTS.md`,
+`docs/REVIEW_CHECKLIST.md`, AGENT_NATIVE (retired Pass 376; see `AGENTS.md`),
+`docs/TESTING.md`, FIRST_HOUR (retired Pass 376; see `docs/QUICKSTART.md`), `docs/INVARIANTS.md`,
 `.github/copilot-instructions.md`, `CONTRIBUTING.md`, `CLAUDE.md`,
 `tests/README.md`, `scripts/onboard.ps1`, `docs/PROJECT_NUMBERS.json`,
 this `CHANGELOG.md`).
@@ -14616,7 +14665,7 @@ scrolling.
 Test count rolls `644 -> 645`. MCP tool count rolls `37 -> 38` across
 all nine doc surfaces (`PROJECT_NUMBERS.json`, `agents.json`, `README.md`,
 `CHANGELOG.md`, `AGENTS.md`, `docs/HANDOFF.md`, `docs/READINESS.md`,
-`docs/AGENTIC_PATTERNS_2026.md`, `docs/ARCHITECTURE.md` Mermaid).
+AGENTIC_PATTERNS_2026 (retired Pass 418), `docs/ARCHITECTURE.md` Mermaid).
 
 The diagnostic surface is now end-to-end production-shape with
 both an at-a-glance topbar badge and a one-call agent summary:
@@ -14675,7 +14724,7 @@ architecture without inventing new concepts.
 Test count rolls `643 -> 644`. MCP tool count rolls `36 -> 37` across all
 nine surfaces (`PROJECT_NUMBERS.json`, `agents.json`, `README.md`,
 `CHANGELOG.md`, `AGENTS.md`, `docs/HANDOFF.md`, `docs/READINESS.md`,
-`docs/AGENTIC_PATTERNS_2026.md`, `docs/ARCHITECTURE.md` Mermaid).
+AGENTIC_PATTERNS_2026 (retired Pass 418), `docs/ARCHITECTURE.md` Mermaid).
 
 The diagnostic surface is now production-shape end-to-end:
 - Operators get `pal next` (single recommended action), `pal doctor`
@@ -15005,7 +15054,7 @@ operators reach for when something's wrong.
 Test count rolls `631 -> 632`. Doc anchors moved across all 9 surfaces
 referencing the MCP tool count (`PROJECT_NUMBERS.json`, `agents.json`,
 `README.md`, `CHANGELOG.md`, `AGENTS.md`, `docs/HANDOFF.md`,
-`docs/READINESS.md`, `docs/AGENTIC_PATTERNS_2026.md`) plus the
+`docs/READINESS.md`, AGENTIC_PATTERNS_2026 (retired Pass 418)) plus the
 test-count drift gate's 5 consumers.
 
 Verification: focused
@@ -15820,7 +15869,7 @@ changes.
   + LoRA bundle (4-tuple per pack: prompt + voice-ref +
   lora-adapter + memory-namespace). Each recipe names what
   PalLLM ships today vs. what it would need to wire.
-- **`docs/AGENTIC_PATTERNS_2026.md`** -- the six tool-use
+- **AGENTIC_PATTERNS_2026 (retired Pass 418)** -- the six tool-use
   patterns that landed in production by mid-2026:
   - Anthropic **Tool Search Tool** (meta-tool for tool
     discovery; eliminates context bloat when tool count > 50)
@@ -15837,7 +15886,7 @@ changes.
   - **xgrammar constrained decoding** (default in vLLM v0.8+;
     enforces JSON schema at the token level so models cannot
     emit malformed tool calls)
-- **`docs/MEMORY_RECIPES.md`** -- four memory recipes mapped
+- **MEMORY_RECIPES (retired Pass 418)** -- four memory recipes mapped
   onto PalLLM's current single-tier `ConversationMemoryStore`
   (working tier only):
   - Recipe 1: drop-in Mem0 service + adapter
@@ -16774,7 +16823,7 @@ changes.
     + content-hash algorithm; not directly drift-gated)
   Each block names what / surface / gate / adr / docs in one
   paragraph. `pal explain` reads these preferentially.
-- **`docs/AGENT_NATIVE.md`** - design doc explaining what
+- **AGENT_NATIVE (retired Pass 376; see `AGENTS.md`)** - design doc explaining what
   agent-native means, the four agent-native surfaces
   (`agents.json` / `pal.json` / `pal explain` / `pal where`),
   the AGENT-CARD convention, the four reading orders by
@@ -16792,7 +16841,7 @@ changes.
 - **`Makefile`** gains `where` (`QUERY="..."`) and `explain`
   (`PATH_=...`) targets; `.PHONY` list updated.
 - **`docs/INDEX.md`** gains five new Start-here rows: agents.json,
-  pal.json, pal explain, pal where, AGENT_NATIVE.md.
+  pal.json, pal explain, pal where, AGENTS.md.
 - **`docs/PROJECT_NUMBERS.json`** `docsCount` bumped `55 -> 56`.
 - **Verification:** smoke-tested `pal where 'fallback strategies'`
   (top hit `docs/FALLBACK_AI_RESEARCH.md` followed by the engine
@@ -16806,7 +16855,7 @@ changes.
   fallback strategies / drift gates unchanged. `pal.ps1` verbs:
   `28 -> 30` (+2: `where`, `explain`). New scripts: `+2`
   (`pal-where.ps1`, `pal-explain.ps1`). New docs: `+1`
-  (`AGENT_NATIVE.md`). New manifests: `+2` at repo root
+  (`AGENTS.md`). New manifests: `+2` at repo root
   (`agents.json`, `pal.json`). New aspect: `+1` at
   READINESS.md ("Agent-native discoverability"); aspect count
   `22 -> 23`.
@@ -17219,7 +17268,7 @@ unblocks anyone with zero technical background). Pure documentation
   typed, the dispatcher now suggests the closest matching verb
   by prefix instead of just dumping the help. Saves a guess
   cycle for every typo.
-- **`docs/EASY_MODE.md`** - single-page absolute-beginner doc.
+- **EASY_MODE (retired Pass 376; see `docs/QUICKSTART.md`)** - single-page absolute-beginner doc.
   60-second quickstart, common-questions Q&A, three things to
   know about privacy in plain English, and a closing table that
   lists every `pal X` verb with a one-line description. Aimed at
@@ -17238,7 +17287,7 @@ unblocks anyone with zero technical background). Pure documentation
   / fallback strategies / drift gates unchanged. Repo-root
   files: `+1` (`pal.bat`). `pal.ps1` verbs: `19 -> 22` (+3:
   hello, models, config). Docs (root + docs/): `51 -> 52`
-  (+1: EASY_MODE.md).
+  (+1: QUICKSTART.md).
 
 ### Pass 96 - One-click polish + release-packaging fix (2026-05-01)
 
@@ -17649,7 +17698,7 @@ but wasn't fully delivered there.
 
 ### Pass 74 - companion-intelligence design pass from external research prompt-pack audit (2026-04-28)
 
-- **Added a PalLLM-specific companion-intelligence design note instead of smuggling speculative AGI work into the ship-critical queue.** New [`docs/COMPANION_INTELLIGENCE.md`](docs/COMPANION_INTELLIGENCE.md) captures the best PalLLM fits from the sibling an external sibling-project tree audit: visible memory, replay/rationale traces, confidence-calibrated escalation, advisory world-model planning, idle reflection/compaction, anomaly detection, and batching/quant-aware routing.
+- **Added a PalLLM-specific companion-intelligence design note instead of smuggling speculative AGI work into the ship-critical queue.** The retired COMPANION_INTELLIGENCE design note (Pass 376) captured the best PalLLM fits from an external sibling-project tree audit: visible memory, replay/rationale traces, confidence-calibrated escalation, advisory world-model planning, idle reflection/compaction, anomaly detection, and batching/quant-aware routing.
 - **The external prompt-pack audit was broad, but the conclusions were intentionally narrow.** The scan covered the extracted prompt-pack directories, the older `_archive` material, and the `12` top-level zip archives. The zips were confirmed to be mirrors of the extracted prompt packs rather than hidden extra content. Highest-signal packs for PalLLM were `external-pack`, `external-pack`, `external-pack`, `external-pack`, `external-pack`, and the older `external-pack` archive.
 - **The design note keeps PalLLM scoped as a Palworld mod.** Browser/computer-use agents, sandboxed code execution, webcam/mic-first features, social/viral generators, and broad gameplay autopilot were explicitly rejected as poor fits. The approved direction is "AGI-lite" through better memory, world modeling, self-critique, confidence, replay, and low-latency scheduling on top of the current deterministic local-first runtime.
 - **Roadmap and queue docs now explain where this work belongs.** `docs/INDEX.md` now links the new note directly, `docs/IMPLEMENTATION_QUEUE.md` now says these ideas are post-foundation and must not preempt the native-proof/HUD/audio/action queue, and `docs/ROADMAP.md` now calls broad AGI-style expansion a non-goal until the native Palworld proof chain is finished.
@@ -17952,7 +18001,7 @@ tooling additions; zero runtime code changes.
   refuses to overwrite existing files; never edits existing
   files (so multiple invocations stay safe). Prints a
   next-step checklist tailored to the kind.
-- **`docs/FIRST_HOUR.md`** — guided 60-minute tour from
+- **FIRST_HOUR (retired Pass 376; see `docs/QUICKSTART.md`)** — guided 60-minute tour from
   fresh clone to first shipped change. Five 10-15 minute
   slices: one-command setup → rolling baseline → mental
   model → poke at the running runtime → poke at the code →

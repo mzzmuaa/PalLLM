@@ -87,7 +87,7 @@ Different audiences need different doors. PalLLM ships:
 |---|---|---|
 | `PITCH.md` | Curious layperson | 5 min |
 | `QUICKSTART.md` | First-time operator | 5 min |
-| `FIRST_HOUR.md` | First-time contributor | 60 min |
+| `QUICKSTART.md` | First-time contributor | 60 min |
 | `MENTAL_MODEL.md` | Anyone forming the conceptual map | 10 min |
 | `CHEAT_SHEET.md` | Returning contributor | 1 page |
 | `QUICKREF.md` | Returning contributor (sortable lookup) | 1 page |
