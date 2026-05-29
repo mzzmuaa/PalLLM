@@ -1,6 +1,6 @@
 # Completion status - "are we 100%?"
 
-Last audited: `2026-05-24`
+Last audited: `2026-05-29`
 
 > A single canonical answer to the question that matters: **is the
 > program 100% complete?** This doc consolidates the per-phase numbers
@@ -13,6 +13,14 @@ Last audited: `2026-05-24`
 For a live, terminal-rendered version of the same board, run
 `pwsh ./pal.ps1 complete`. For programmatic consumption, run
 `pwsh ./pal.ps1 complete -Json`.
+
+> **For a small coding agent picking up the repo:** the autonomous
+> portion of completion is **done**. The remaining `23.8%` requires
+> live Palworld + a clean Windows machine — see the
+> [`Clean small steps to 100%`](#clean-small-steps-to-100) section
+> below for the six atomic checkboxes that close the gap. Do **not**
+> try to advance these from the repo alone; each one needs in-game
+> evidence the live operator must capture.
 
 ## TL;DR
 
@@ -108,123 +116,200 @@ as the queue table above.
 
 ## Clean small steps to 100%
 
-The remaining `23.8%` is six concrete steps, each with one
-command, one expected artifact, and one verifiable success
-condition. Read top-to-bottom. Each step depends on the
-previous step's evidence.
+The remaining `23.8%` is **six atomic checkboxes**. Each has one
+command, one expected artifact, one verifiable success condition,
+one explicit "DONE WHEN" criterion, and one "FAILED IF" criterion
+that catches the most common confusion. Read top-to-bottom — each
+step depends on the previous step's captured evidence.
 
-### Step 1 - capture live-Palworld smoke proof  *(unlocks ~6.0%)*
+> ⚠️ **Live hardware required for all six.** A coding agent picking
+> up the repo cannot move these from the repo alone. Treat the
+> headline `76.2%` as the **autonomous ceiling** and do not edit
+> code, docs, or counts trying to advance it without live evidence
+> attached.
+
+### ☐ Step 1 — capture live-Palworld smoke proof  *(unlocks ~6.0%)*
+
+**Pre-req:** Palworld is installed on a Windows machine and you have
+the bundled sidecar release extracted.
+
+**Command:**
 
 ```powershell
-pwsh ./pal.ps1 play          # boot sidecar + game
-pwsh ./pal.ps1 native-proof  # active watcher
+pwsh ./pal.ps1 play          # boot sidecar + Palworld + dashboard
+pwsh ./pal.ps1 native-proof  # active watcher polls /api/bridge/proof
 ```
 
-Expect: the watcher polls `/api/bridge/proof` until the live
-session emits `delivery_proven`. Watcher persists
-`Runtime/ReleaseEvidence/latest-native-proof.json`.
+**Expected artifact:** `Runtime/ReleaseEvidence/latest-native-proof.json`
+written by the watcher. Contains `LiveDeliveryProven: true` once the
+in-game bridge has emitted a `delivery_proven` event.
 
-Verify: `pal proof` reports `overall: PROVEN` when the sidecar is live or the
-durable proof is still inside the configured freshness window, and the artifact
-has `LiveDeliveryProven: true`. If the only durable proof is older than the
-freshness window, `pal proof` reports `overall: STALE PROOF` and
-`pal proof -RequireProven` exits non-zero until the live watcher captures a new
-session.
+**DONE WHEN:** `pal proof` reports `overall: PROVEN` AND the
+artifact's freshness window (default 7 days) hasn't expired.
 
-### Step 2 - confirm the production sampler  *(unlocks ~4.5%)*
+**FAILED IF:** `pal proof` reports `overall: STALE PROOF` (proof exists
+but is older than the freshness window — re-run the watcher) OR `pal
+proof -RequireProven` exits non-zero (no proof at all).
 
-In the running session, walk past a base camp with active
-crafting stations. The Lua mod's `production_sampler_enabled`
-flag (currently OFF by default) needs validation against the
-live `PalBaseCampManager` hook signature on the current build.
+---
 
-Edit `mod/ue4ss/Mods/PalLLM/Scripts/main.lua` to flip the kill
-switch on, observe `production` events flowing into
-`Bridge/Inbox/`, and confirm they merge into the world snapshot
-via `GET /api/world`.
+### ☐ Step 2 — confirm the production sampler  *(unlocks ~4.5%)*
 
-Verify: `pal proof -Json | ConvertFrom-Json` shows
-`BridgeProofStatus: ready_for_hud_bind` and the snapshot's
+**Pre-req:** Step 1 has captured a live session.
+
+**Command:** In a running game session, walk past a base camp with
+active crafting stations.
+
+The Lua mod's `production_sampler_enabled` flag is OFF by default
+because it needs validation against the live `PalBaseCampManager`
+hook signature on the current Palworld build.
+
+```lua
+-- mod/ue4ss/Mods/PalLLM/Scripts/main.lua
+-- flip the kill switch on:
+production_sampler_enabled = true
+```
+
+Observe `production` events flowing into `Bridge/Inbox/`. Confirm
+they merge into the world snapshot via `GET /api/world`.
+
+**DONE WHEN:** `pal proof -Json | ConvertFrom-Json` shows
+`BridgeProofStatus: ready_for_hud_bind` AND the snapshot's
 `Bases[].Production[]` is non-empty.
 
-### Step 3 - bind the native HUD  *(unlocks ~7.5%)*
+**FAILED IF:** the snapshot's `Bases[].Production[]` stays empty
+even with the flag on (hook signature drift — file an issue
+against the current Palworld build).
+
+---
+
+### ☐ Step 3 — bind the native HUD  *(unlocks ~7.5%)*
+
+**Pre-req:** Step 2 confirmed `ready_for_hud_bind`.
+
+**Command:**
 
 ```powershell
 pwsh ./pal.ps1 hud-bind   # writes config/native-hud.lua
 ```
 
-Expect: the ranked HUD bind recommendation from `ui_probe`
-becomes the installed mod's render target. A subsequent
-`pal native-proof` run shows `VisibleDeliveryConfirmed: true`.
+The verb writes the ranked HUD-bind recommendation from `ui_probe`
+into `config/native-hud.lua`, which the installed mod loads as its
+render target.
 
-Verify: in-game, send a chat message via the dashboard or
-`pal hello`. The reply renders through the bound widget, not the
+**Verify:** in-game, send a chat message via the dashboard or
+`pal hello`. The reply renders through the bound widget, NOT the
 generic `ClientMessage` chat surface.
 
-### Step 4 - wire native audio  *(unlocks ~2.0%)*
+**DONE WHEN:** a subsequent `pal native-proof` run shows
+`VisibleDeliveryConfirmed: true` in the persisted artifact.
 
-In `appsettings.json`, set `PalLLM:Tts:Enabled = true` and pick
-a configured TTS engine. Replace the local Windows playback
-fallback with a UE4SS-side `Play2DSound` (or equivalent native
-audio call) in `main.lua`'s outbox consumer. The current bridge
-already emits a content-free `speech_playback` receipt after local
-helper attempts, including low-latency native-mixer queue and buffer-duration
-estimates plus stale-speech supersession, prior-buffer-overlap, and
-cancellation-mode receipts, so this
-queue should preserve that receipt while swapping in the real in-world playback
-primitive.
+**FAILED IF:** the reply still appears in the chat box, not the
+HUD widget (the bind picked the wrong widget — re-run `ui_probe`,
+inspect candidates with `pal proof -Json`, pick a different
+recommendation and re-bind).
 
-Verify: a chat turn emits a TTS-flagged outbox envelope, the
-mod renders text + plays audio in-world, and the
-`Speech.PlaybackHint` plus `/api/bridge/proof` `speech_playback`
-lane round-trip correctly.
+---
 
-### Step 5 - promote remaining native actions  *(unlocks ~3.0%)*
+### ☐ Step 4 — wire native audio  *(unlocks ~2.0%)*
 
-Two allowlisted action types still degrade to feedback-only
-paths: `recall_pals` and `request_craft_queue`. Each needs a
-native UE4SS implementation in `main.lua`'s
-`execute_*` family beside `execute_waypoint_suggest`. Preserve
-the existing kill switches and dry-run mode.
+**Pre-req:** Step 3 confirmed native HUD delivery works.
 
-Verify: with automation enabled and the type in the allowlist,
-the action executes natively in the game and emits a
+**Configure:** in `appsettings.json`, set `PalLLM:Tts:Enabled = true`
+and pick a configured TTS engine (Piper local is the safe default;
+see `docs/MULTIMODAL_RECIPES.md`).
+
+**Implement:** replace the local Windows playback fallback with a
+UE4SS-side `Play2DSound` (or equivalent native audio call) in
+`main.lua`'s outbox consumer. Preserve the existing content-free
+`speech_playback` receipt — it includes low-latency native-mixer
+queue + buffer-duration estimates + stale-speech supersession +
+prior-buffer-overlap + cancellation-mode receipts. The current
+bridge already emits these; this step swaps the playback primitive
+underneath, not the proof surface above.
+
+**DONE WHEN:** a chat turn emits a TTS-flagged outbox envelope AND
+the mod renders text + plays audio in-world AND the
+`Speech.PlaybackHint` + `/api/bridge/proof` `speech_playback` lane
+round-trip correctly.
+
+**FAILED IF:** audio plays via local Windows speakers instead of
+in-world (the fallback didn't get replaced — check the outbox
+consumer dispatch table).
+
+---
+
+### ☐ Step 5 — promote remaining native actions  *(unlocks ~3.0%)*
+
+**Scope:** two allowlisted action types still degrade to
+feedback-only paths instead of native execution:
+
+- `recall_pals`
+- `request_craft_queue`
+
+Each needs a native UE4SS implementation in `main.lua`'s
+`execute_*` family beside the existing `execute_waypoint_suggest`.
+Preserve the existing kill switches (`actions_enabled`,
+`actions_dry_run`) and the per-type allowlist.
+
+**DONE WHEN:** with automation enabled AND the type in the
+allowlist, the action executes natively in the game AND emits a
 `feedback` event. With automation disabled, nothing executes.
 
-### Step 6 - ship the clean-machine release  *(unlocks ~1.5%)*
+**FAILED IF:** the action executes even when automation is
+disabled (kill switch broken — STOP and revert).
+
+---
+
+### ☐ Step 6 — ship the clean-machine release  *(unlocks ~1.5%)*
+
+**Pre-req:** Steps 1-5 have all captured proven evidence.
+
+**Build:**
 
 ```powershell
-pwsh ./pal.ps1 package         # build the release zip
-pwsh ./pal.ps1 verify          # verify the zip's manifest + hashes
-pwsh ./pal.ps1 proof-bundle    # bundle the evidence
-
-# On a clean Windows machine without dev artifacts:
-#   1. Extract the zip
-#   2. Double-click play.bat
-#   3. Confirm the dashboard opens at http://localhost:5088
-#   4. Confirm the doctor reports no errors
+pwsh ./pal.ps1 package        # build the release zip
+pwsh ./pal.ps1 verify         # verify the zip's manifest + hashes
+pwsh ./pal.ps1 proof-bundle   # bundle every evidence artifact
 ```
 
-Verify: the clean-machine walkthrough reaches a working
+**Validate on a clean Windows machine** (no dev artifacts, no
+source repo, no installed dotnet SDK):
+
+1. Extract the zip to any folder.
+2. Double-click `play.bat`.
+3. Confirm the dashboard opens at `http://localhost:5088`.
+4. Confirm `pal doctor` reports no errors.
+5. Send a chat message — confirm reply renders through the native HUD.
+
+**DONE WHEN:** the clean-machine walkthrough reaches a working
 companion + dashboard + native HUD without any reference to the
 source repo.
 
+**FAILED IF:** any step requires manual SDK install, manual
+appsettings edit, or other dev-tooling assumption (the packaged
+flow has a gap — add the missing piece to `play.bat`).
+
+---
+
 ### After step 6
 
-Headline rolls `76.2 -> 100`. `pal complete` reports every
-queue as `PROVEN`. The release tag can ship.
+Headline rolls `76.2 -> 100`. `pal complete` reports every queue
+as `PROVEN`. The release tag can ship.
 
 Each step has a `pal` verb. Each verb has a meta-test pinning it
 to its script. The operator never has to remember script paths.
 
-For a coding agent picking up the repo:
+### Reminder for coding agents
 
 - The autonomous portion of completion is **done**.
-- New work belongs in COMPANION_INTELLIGENCE (retired Pass 418)
-  (post-foundation ideas) or [`FUTURE_2035.md`](FUTURE_2035.md)
-  (cutting-edge / 2030+ ideas).
-- Anything that would advance the headline 76.2% requires live
-  hardware. Don't pretend to advance it from the repo.
+- New post-foundation ideas belong in
+  [`ROADMAP.md`](ROADMAP.md) → "Post-100 surfaces" OR
+  [`FUTURE_2035.md`](FUTURE_2035.md) (cutting-edge / 2030+).
+- Anything that would advance the headline `76.2%` requires
+  live hardware. **Do not** edit the `honestRoadmap` field in
+  `PROJECT_NUMBERS.json` without an attached live-evidence
+  artifact under `Runtime/ReleaseEvidence/`.
 
 ## How to read the live verb
 

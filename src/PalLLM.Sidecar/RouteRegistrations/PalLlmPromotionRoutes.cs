@@ -1,6 +1,20 @@
 using PalLLM.Domain.Configuration;
 using PalLLM.Domain.Runtime;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Maps /api/promotion/* + /api/why/* routes: promotion ledger
+//            reads, why-engine traces, proof packet inspection. Read-only
+//            views into the deterministic-promotion pipeline.
+//   surface: PalLlmPromotionRoutes.MapPromotion(IEndpointRouteBuilder).
+//   gate:    tests/PalLLM.Tests/PromotionApply*Tests.cs +
+//            tests/PalLLM.Tests/WhyEngineTests.cs +
+//            tests/PalLLM.Tests/SidecarEndpointTests.cs (promotion
+//            routes).
+//   adr:     None directly.
+//   docs:    docs/STATE_MACHINES.md (promotion ledger), docs/API.md.
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmPromotionRoutes

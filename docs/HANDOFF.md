@@ -160,6 +160,35 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
+- **Pass 419 - Add AGENT-CARD headers to all 25 extracted files +
+  polish COMPLETION.md for atomic-checkbox handoff.** Operator
+  directive: "review every aspect of code to make it clean and
+  handoff ready for another small coding agent to easily complete
+  and perfect." Codex's Pass 375-402 extraction left 25 new files
+  (8 `PalLlmRuntime.*.cs` partials, 5
+  `*ServiceCollectionExtensions.cs`, 12 `*Routes.cs`) **without**
+  the AGENT-CARD header convention the rest of the codebase uses.
+  Built `scripts/add-agent-card-headers.py` — an idempotent Python
+  inserter that adds a properly-formatted `what:` / `surface:` /
+  `gate:` / `adr:` / `docs:` block to each file between the
+  `using` directives and the `namespace` declaration. Each card
+  was hand-authored from a read of the actual file contents (not
+  generic boilerplate): `Bridge.cs` cites the
+  `BridgeIngestAdversarialTests` fuzz suite + ADR 0003, `Inference.cs`
+  cites ADR 0001 + HOT_PATH.md, the route-registration files cite
+  their corresponding `SidecarEndpointTests` slices, etc. Result:
+  every new file now answers the four questions any incoming agent
+  asks ("what does this do, what's the public surface, which tests
+  guard me from regressions, which docs explain why"). Build stayed
+  clean: `0` warnings, `1315 / 1315` tests still pass. Also polished
+  `docs/COMPLETION.md` to make each of the six "small steps to 100%"
+  an atomic checkbox with explicit `DONE WHEN` + `FAILED IF`
+  criteria + pre-req references, plus a callout at the top warning
+  agents not to edit the `honestRoadmap` field without an attached
+  live-evidence artifact. Full audit at
+  `../artifacts/full-audit/20260529-013350/RESULTS.md` passes
+  `16 / 16`. Test count unchanged at `1315`.
+
 - **Pass 418 - Retire seven low-value docs, refresh entry-point
   cross-links.** Operator directive: "thoroughly refine all
   documentation... get rid of outdated or excess." Audited every doc
@@ -187,7 +216,7 @@ once they reached the changelog):
   `PROJECT_NUMBERS.json` (counts stamped docs; two unstamped files
   exist in `docs/` and are excluded). Verification: `dotnet test`
   reports `1315 / 1315` pass; full audit at
-  `../artifacts/full-audit/20260529-010136/RESULTS.md` passes
+  `../artifacts/full-audit/20260529-013350/RESULTS.md` passes
   `16 / 16` including the path-reference and dangling-link gates.
 
 - **Pass 417 - Add vLLM ASR seed replay canary.** Operator

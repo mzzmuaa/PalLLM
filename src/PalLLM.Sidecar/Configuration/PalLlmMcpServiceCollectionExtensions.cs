@@ -1,3 +1,16 @@
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    DI registration for the MCP server: tools, resources, prompts,
+//            and the SSE transport. Reads PalLLM:Mcp:Enabled and wires the
+//            38 tools + 6 resources + 1 templated resource + 4 prompts
+//            surface.
+//   surface: PalLlmMcpServiceCollectionExtensions.AddPalLlmMcp(IServiceCollection,
+//            IConfiguration).
+//   gate:    tests/PalLLM.Tests/McpServerTests.cs.
+//   adr:     ADR 0006 (opt-in everything by default).
+//   docs:    docs/MCP_QUICKSTART.md, docs/API.md (/mcp route).
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmMcpServiceCollectionExtensions

@@ -4,6 +4,20 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using PalLLM.Domain.Runtime;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    DI registration for OpenTelemetry: traces, metrics, logs. Adds
+//            the PalLLM ActivitySource + Meter, the Prometheus scrape
+//            endpoint, and the GenAI semantic-convention emitters used by
+//            InferenceClient. Aligned with docs/OBSERVABILITY_SLO.md.
+//   surface: PalLlmObservabilityServiceCollectionExtensions.AddPalLlmObservability(IServiceCollection,
+//            IConfiguration).
+//   gate:    tests/PalLLM.Tests/ObservabilitySloTests.cs.
+//   adr:     None directly.
+//   docs:    docs/OBSERVABILITY.md, docs/OBSERVABILITY_SLO.md,
+//            scripts/observability/palllm.alerts.yaml.
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmObservabilityServiceCollectionExtensions

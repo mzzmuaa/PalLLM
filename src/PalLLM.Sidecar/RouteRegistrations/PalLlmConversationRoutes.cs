@@ -3,6 +3,18 @@ using PalLLM.Domain.Inference;
 using PalLLM.Domain.Integration;
 using PalLLM.Domain.Runtime;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Maps the /api/chat/* + /api/conversation/* + /api/memory/*
+//            routes: the chat hot path, conversation transcript reads,
+//            memory inspection, and the SSE chat stream endpoint.
+//   surface: PalLlmConversationRoutes.MapConversation(IEndpointRouteBuilder).
+//   gate:    tests/PalLLM.Tests/SidecarEndpointTests.cs (chat hot path) +
+//            tests/PalLLM.Tests/ConversationMemoryStoreTests.cs.
+//   adr:     ADR 0001 (deterministic-first reply pipeline).
+//   docs:    docs/API.md (/api/chat/*), docs/DATAFLOW.md (chat hot path).
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmConversationRoutes

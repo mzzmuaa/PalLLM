@@ -2,6 +2,22 @@ using System.Text.Json;
 using PalLLM.Domain;
 using PalLLM.Domain.Integration;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Vision/snapshot ingest: pulls Bridge/Screenshots/*.png through
+//            the vision orchestrator, merges the extracted world-state
+//            into the live snapshot, and writes outbox responses back to
+//            Bridge/Outbox/. Bounded by maxFiles to keep long sessions
+//            responsive.
+//   surface: PalLlmRuntime.ProcessScreenshotsAsync(CancellationToken, int
+//            maxFiles), ScreenshotIngestResult (return type).
+//   gate:    tests/PalLLM.Tests/SnapshotVisionFallbackTests.cs +
+//            tests/PalLLM.Tests/RuntimeTests.cs (Outbox lane).
+//   adr:     ADR 0003 (one-way advisory bridge).
+//   docs:    docs/DATAFLOW.md (vision sequence diagram),
+//            docs/MULTIMODAL_RECIPES.md.
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Domain.Runtime;
 
 public sealed partial class PalLlmRuntime

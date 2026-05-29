@@ -5,6 +5,18 @@ using PalLLM.Domain.Integration;
 using PalLLM.Domain.Runtime;
 using PalLLM.Sidecar.Mcp;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Maps /api/inference/* routes: performance snapshot, active
+//            model and tier, collaboration plan, circuit-breaker state.
+//            Read-only introspection of the inference lane.
+//   surface: PalLlmInferenceRoutes.MapInference(IEndpointRouteBuilder).
+//   gate:    tests/PalLLM.Tests/SidecarEndpointTests.cs (inference routes)
+//            + tests/PalLLM.Tests/InferenceClientTests.cs.
+//   adr:     ADR 0001 (deterministic-first reply pipeline).
+//   docs:    docs/API.md (/api/inference/*), docs/MODEL_COLLABORATION.md.
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmInferenceRoutes

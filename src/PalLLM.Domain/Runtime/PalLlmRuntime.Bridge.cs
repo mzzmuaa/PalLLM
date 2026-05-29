@@ -4,6 +4,23 @@ using PalLLM.Domain;
 using PalLLM.Domain.Inference;
 using PalLLM.Domain.Integration;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Inbox drain loop: pulls Bridge/Inbox/*.json envelopes through
+//            the bridge gate, dispatches each to ProcessBridgeEvent,
+//            quarantines malformed payloads to Bridge/Failed/, and updates
+//            the activity snapshot. The 'one-way advisory bridge' contract
+//            lives here.
+//   surface: PalLlmRuntime.DrainInbox(int maxFiles), BridgeDrainResult
+//            (return type), internal ProcessBridgeEvent dispatch.
+//   gate:    tests/PalLLM.Tests/BridgeIngestAdversarialTests.cs (35 fuzz
+//            cases) + tests/PalLLM.Tests/DrainInboxTests.cs + every
+//            event-type fixture named DrainInbox_*Tests.cs.
+//   adr:     ADR 0003 (one-way advisory bridge).
+//   docs:    docs/DATAFLOW.md (bridge sequence diagram), docs/EVENTS.md
+//            (event taxonomy).
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Domain.Runtime;
 
 public sealed partial class PalLlmRuntime

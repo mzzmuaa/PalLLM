@@ -1,5 +1,17 @@
 using PalLLM.Domain.Runtime;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    DI registration for ASP.NET Core health checks (live + ready),
+//            OpenAPI 3.1 document generation, and the
+//            /openapi/v1.{json,yaml} static asset routes.
+//   surface: PalLlmHealthAndOpenApiServiceCollectionExtensions.AddPalLlmHealthAndOpenApi(IServiceCollection).
+//   gate:    tests/PalLLM.Tests/SidecarEndpointTests.cs (health + OpenAPI
+//            routes).
+//   adr:     None directly.
+//   docs:    docs/API.md (operational routes), docs/openapi/.
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmHealthAndOpenApiServiceCollectionExtensions

@@ -2,6 +2,26 @@ using System.Diagnostics;
 using PalLLM.Domain.Inference;
 using PalLLM.Domain.Integration;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Inference-lane introspection: surfaces the active model id,
+//            tier id, performance snapshot, and circuit-breaker state to
+//            the snapshot builder, /api/inference/* routes, and the SLO
+//            metrics scrape. Calls into _inferenceClient; never sends a
+//            chat completion.
+//   surface: PalLlmRuntime.GetInferencePerformanceSnapshot,
+//            PalLlmRuntime.GetInferenceCircuitState (private),
+//            PalLlmRuntime.GetInferenceActiveModel (private),
+//            PalLlmRuntime.GetInferenceActiveTierId (private).
+//   gate:    tests/PalLLM.Tests/InferenceClientTests.cs +
+//            tests/PalLLM.Tests/ModelTierTests.cs +
+//            tests/PalLLM.Tests/SidecarEndpointTests.cs (inference
+//            routes).
+//   adr:     ADR 0001 (deterministic-first reply pipeline).
+//   docs:    docs/API.md (/api/inference/*), docs/MODEL_COLLABORATION.md,
+//            docs/HOT_PATH.md.
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Domain.Runtime;
 
 public sealed partial class PalLlmRuntime

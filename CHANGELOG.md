@@ -18,6 +18,69 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 419 - Add AGENT-CARD headers to all 25 extracted files + polish COMPLETION.md (2026-05-29)
+
+**Context.** Operator directive: "review every aspect of code to make
+it clean and handoff ready for another small coding agent to easily
+complete and perfect." Codex's Pass 375-402 monolith extraction left
+25 new files without the AGENT-CARD header convention the rest of
+the codebase uses (visible at the top of `PromotionLedger.cs`,
+`WhyEngine.cs`, etc.). A small coding agent landing on one of these
+files needed to read the whole file to figure out what it did and
+which tests pinned its contract.
+
+**Tooling.** New `scripts/add-agent-card-headers.py` — an idempotent
+Python inserter that:
+- Reads each of the 25 target files.
+- Skips if `AGENT-CARD:` is already present in the first 2 KB.
+- Inserts a properly-formatted header block between the last
+  `using` line and the `namespace` declaration.
+- Hand-wraps long field values at column 75 with consistent
+  indentation under each field name.
+
+Each card was hand-authored from a read of the actual file (not
+generic boilerplate). Fields populated per file:
+
+| Field | What it answers |
+|---|---|
+| `what:` | One paragraph: what does this file do? |
+| `surface:` | Public types/methods exposed to the rest of the codebase |
+| `gate:` | Which test fixture(s) pin its contract |
+| `adr:` | Which ADR (if any) governs its behaviour |
+| `docs:` | Which docs the agent should read for context |
+
+**Files touched (25):**
+
+| Group | Files |
+|---|---|
+| Runtime partials (`src/PalLLM.Domain/Runtime/`) | `PalLlmRuntime.Helpers.cs`, `.UiProbe.cs`, `.Prompt.cs`, `.BridgeBoot.cs`, `.Bridge.cs`, `.Outbox.cs`, `.Snapshot.cs`, `.Inference.cs` |
+| Service-collection extensions (`src/PalLLM.Sidecar/Configuration/`) | `PalLlmCore`, `PalLlmInference`, `PalLlmMcp`, `PalLlmHealthAndOpenApi`, `PalLlmObservability` |
+| Route registrations (`src/PalLLM.Sidecar/RouteRegistrations/`) | `Bridge`, `ContentWorld`, `Conversation`, `Health`, `Inference`, `Inspection`, `Media`, `Planning`, `Promotion`, `ProofReadiness`, `State`, `StaticAsset` |
+
+**COMPLETION.md polish.** Each of the six "Clean small steps to 100%"
+checkboxes now carries:
+
+- `☐` checkbox glyph (so an agent can visually track progress).
+- A `Pre-req:` line stating what must already have been done.
+- A clear `Command:` block.
+- An `Expected artifact:` line naming the file the step writes.
+- An explicit `DONE WHEN:` criterion that any agent can verify.
+- An explicit `FAILED IF:` criterion that catches the most common
+  confusion for that step.
+- Horizontal rule between steps for visual separation.
+
+Plus a top-of-doc callout: agents must **not** edit the
+`honestRoadmap` field in `PROJECT_NUMBERS.json` without an attached
+live-evidence artifact under `Runtime/ReleaseEvidence/`. This
+catches the common failure mode where an autonomous agent infers
+progress from doc changes alone.
+
+**Verification.** Build stayed clean (`0` warnings). Tests stayed
+at `1315 / 1315`. Full audit at
+`artifacts/full-audit/20260529-013350/RESULTS.md` passes `16 / 16`,
+including the `Drift_Hot_file_line_count` gate (the inserted headers
+are within the 5% tolerance).
+
 ### Pass 418 - Retire seven low-value docs, refresh entry-point cross-links (2026-05-29)
 
 **Context.** Operator directive: "thoroughly refine all documentation

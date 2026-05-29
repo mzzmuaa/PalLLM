@@ -3,6 +3,20 @@ using System.Globalization;
 using System.Security.Cryptography;
 using Microsoft.Net.Http.Headers;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Maps the static asset surface: dashboard at /, /welcome.html,
+//            /openapi/v1.{json,yaml}, source-generated conditional ETags +
+//            last-modified validation. The Field Console UI lives behind
+//            these routes.
+//   surface: PalLlmStaticAssetRoutes.MapStaticAssets(IEndpointRouteBuilder).
+//   gate:    tests/PalLLM.Tests/StaticAssetTests.cs +
+//            tests/PalLLM.Tests/SidecarEndpointTests.cs (static routes).
+//   adr:     None directly.
+//   docs:    docs/API.md (operational routes), src/PalLLM.Sidecar/wwwroot/
+//            (the dashboard sources).
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmStaticAssetRoutes

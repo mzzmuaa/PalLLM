@@ -3,6 +3,19 @@ using PalLLM.Domain.Configuration;
 using PalLLM.Domain.Integration;
 using PalLLM.Domain.Runtime;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Maps /api/release/readiness + the proof-bundle export
+//            endpoints. Surfaces release-evidence artifacts (smoke proof,
+//            native-proof, full-audit, package verification) as one
+//            machine-readable shape.
+//   surface: PalLlmProofReadinessRoutes.MapProofReadiness(IEndpointRouteBuilder).
+//   gate:    tests/PalLLM.Tests/ReleaseReadinessTests.cs +
+//            tests/PalLLM.Tests/SidecarEndpointTests.cs (release routes).
+//   adr:     None directly.
+//   docs:    docs/RELEASE.md, docs/API.md (/api/release/readiness).
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmProofReadinessRoutes

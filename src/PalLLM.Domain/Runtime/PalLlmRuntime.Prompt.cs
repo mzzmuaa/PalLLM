@@ -6,6 +6,22 @@ using PalLLM.Domain.Integration;
 using PalLLM.Domain.Memory;
 using PalLLM.Domain.Packs;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Prompt-building helpers: resolves speaker name, formats area
+//            ranges, stitches memory + relationship hints + personality
+//            packs + world snapshot into the prompt that Chat.Inference
+//            sends downstream. Pure formatting; no model calls.
+//   surface: PalLlmRuntime.ResolveSpeakerName,
+//            PalLlmRuntime.FormatAreaRange,
+//            PalLlmRuntime.BuildPromptInputs (all private).
+//   gate:    tests/PalLLM.Tests/PalLlmRuntimeChatTests.cs +
+//            tests/PalLLM.Tests/PromptBuilderTests.cs.
+//   adr:     ADR 0001 (deterministic-first reply pipeline).
+//   docs:    docs/DATAFLOW.md (Chat hot path), docs/PROMPT_CARDS.md
+//            (deterministic-fallback strategies).
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Domain.Runtime;
 
 public sealed partial class PalLlmRuntime

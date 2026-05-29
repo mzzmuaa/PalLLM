@@ -1,6 +1,18 @@
 using PalLLM.Domain.Integration;
 using PalLLM.Domain.Runtime;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Maps /api/media/* routes: vision describe, TTS synth (when
+//            enabled), ASR transcribe, multimodal cache-id lookup,
+//            screenshot ingest.
+//   surface: PalLlmMediaRoutes.MapMedia(IEndpointRouteBuilder).
+//   gate:    tests/PalLLM.Tests/SidecarEndpointTests.cs (media routes) +
+//            tests/PalLLM.Tests/SnapshotVisionFallbackTests.cs.
+//   adr:     ADR 0006 (opt-in everything by default).
+//   docs:    docs/MULTIMODAL_RECIPES.md, docs/API.md (/api/media/*).
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmMediaRoutes

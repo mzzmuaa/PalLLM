@@ -3,6 +3,25 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using PalLLM.Domain.Integration;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Owns the ui_probe dump-parsing pipeline: parses Lua-emitted
+//            widget trees out of Bridge/UiProbe, scores candidates against
+//            keyword allow/deny lists, caches parsed dumps under a
+//            2-second TTL with a 512-entry LRU cap, surfaces ranked
+//            HUD-bind recommendations.
+//   surface: PalLlmRuntime.GetUiProbeStatus,
+//            PalLlmRuntime.GetUiProbeWidgetCandidates,
+//            PalLlmRuntime.IngestUiProbeDump, the
+//            UiProbeDumpCacheMaxEntries / UiProbeDiagnosticsSnapshotTtl
+//            tuning constants.
+//   gate:    tests/PalLLM.Tests/UiProbeTests.cs +
+//            tests/PalLLM.Tests/RuntimeTests.cs (drain + status paths).
+//   adr:     ADR 0003 (one-way advisory bridge).
+//   docs:    docs/ARCHITECTURE.md (HUD-bind seam), docs/API.md
+//            (/api/ui-probe endpoints).
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Domain.Runtime;
 
 public sealed partial class PalLlmRuntime

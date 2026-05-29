@@ -1,5 +1,17 @@
 using PalLLM.Domain.Runtime;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Maps the /api/bridge/* operational routes: bridge proof,
+//            native-proof evidence, HUD-bind recommendations. Each route
+//            is a thin shim that calls into PalLlmRuntime and serialises
+//            through PalLlmDomainJsonSerializerContext.
+//   surface: PalLlmBridgeRoutes.MapBridge(IEndpointRouteBuilder).
+//   gate:    tests/PalLLM.Tests/SidecarEndpointTests.cs (bridge routes).
+//   adr:     ADR 0003 (one-way advisory bridge).
+//   docs:    docs/API.md (/api/bridge/*).
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmBridgeRoutes

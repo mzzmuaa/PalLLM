@@ -1,5 +1,21 @@
 using PalLLM.Domain.Integration;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Records and normalises the Lua mod's boot payload (UE4SS
+//            version, HUD compatibility signals, native-hud-widget
+//            targets, ui_probe enablement). Cached under _bridgeGate so
+//            /api/bridge/proof can return it without re-parsing the inbox
+//            file.
+//   surface: PalLlmRuntime.RememberBridgeBoot,
+//            PalLlmRuntime.GetLastBridgeBoot (returns BridgeBootPayload).
+//   gate:    tests/PalLLM.Tests/BridgeBootTests.cs +
+//            tests/PalLLM.Tests/BridgeIngestAdversarialTests.cs (fuzz).
+//   adr:     ADR 0003 (one-way advisory bridge).
+//   docs:    docs/STATE_MACHINES.md (bridge boot lifecycle), docs/EVENTS.md
+//            (bridge_boot envelope shape).
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Domain.Runtime;
 
 public sealed partial class PalLlmRuntime

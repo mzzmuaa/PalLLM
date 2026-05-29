@@ -1,6 +1,18 @@
 using PalLLM.Domain.Integration;
 using PalLLM.Domain.Runtime;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Maps /api/state/* routes: lifetime relationship aggregate,
+//            personality pack list, session snapshot, opt-in posture
+//            report. Read-only views into persistent state.
+//   surface: PalLlmStateRoutes.MapState(IEndpointRouteBuilder).
+//   gate:    tests/PalLLM.Tests/SidecarEndpointTests.cs (state routes) +
+//            tests/PalLLM.Tests/LifetimeRelationshipAggregatorTests.cs.
+//   adr:     None directly.
+//   docs:    docs/API.md (/api/state/*).
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmStateRoutes

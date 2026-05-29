@@ -3,6 +3,18 @@ using PalLLM.Domain.Inference;
 using PalLLM.Domain.Integration;
 using PalLLM.Domain.Runtime;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Maps /api/plan/* routes: action-intent planning, world-model
+//            advisory planning, fallback-director dry-run. Surfaces the
+//            deterministic planner outputs without executing anything.
+//   surface: PalLlmPlanningRoutes.MapPlanning(IEndpointRouteBuilder).
+//   gate:    tests/PalLLM.Tests/SidecarEndpointTests.cs (planning routes) +
+//            tests/PalLLM.Tests/ActionIntentPlannerTests.cs.
+//   adr:     ADR 0006 (opt-in everything by default).
+//   docs:    docs/API.md (/api/plan/*), docs/ADVISORS.md.
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmPlanningRoutes

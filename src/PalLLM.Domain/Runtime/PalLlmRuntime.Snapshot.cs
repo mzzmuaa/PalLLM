@@ -4,6 +4,24 @@ using PalLLM.Domain.Inference;
 using PalLLM.Domain.Integration;
 using PalLLM.Domain.Memory;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Health + activity snapshot construction. Composes
+//            GameWorldSnapshot, BridgeActivitySnapshot,
+//            DirectoryActivitySnapshot, and runtime gauges into the
+//            RuntimeHealth payload consumed by /api/health, the dashboard,
+//            and the SLO Prometheus scrape.
+//   surface: PalLlmRuntime.GetHealth(),
+//            PalLlmRuntime.GetDirectoryActivitySnapshot (private),
+//            PalLlmRuntime.BuildRuntimeHealth (private).
+//   gate:    tests/PalLLM.Tests/RuntimeTests.cs +
+//            tests/PalLLM.Tests/SidecarEndpointTests.cs (/api/health
+//            route).
+//   adr:     None directly (composes ADR 0001 + ADR 0003 surfaces).
+//   docs:    docs/API.md (/api/health), docs/OBSERVABILITY.md,
+//            docs/OBSERVABILITY_SLO.md.
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Domain.Runtime;
 
 public sealed partial class PalLlmRuntime

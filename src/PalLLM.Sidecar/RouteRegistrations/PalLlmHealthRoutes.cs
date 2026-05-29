@@ -5,6 +5,18 @@ using PalLLM.Domain.Inference;
 using PalLLM.Domain.Integration;
 using PalLLM.Domain.Runtime;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Maps /api/health, /api/release/readiness,
+//            /api/inference/health, and operational /health/live +
+//            /health/ready. Each emits a RuntimeHealth-derived payload
+//            from PalLlmRuntime.GetHealth().
+//   surface: PalLlmHealthRoutes.MapHealth(IEndpointRouteBuilder).
+//   gate:    tests/PalLLM.Tests/SidecarEndpointTests.cs (health routes).
+//   adr:     None directly.
+//   docs:    docs/API.md (health routes), docs/OBSERVABILITY_SLO.md.
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmHealthRoutes

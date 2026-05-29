@@ -2,6 +2,24 @@ using System.Text;
 using System.Text.Json;
 using PalLLM.Domain.Integration;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Static helpers + small private utility methods shared by the
+//            other PalLlmRuntime.*.cs partials. Endpointing math
+//            (NormalizeEndpointingMs, SumEndpointingMs), bridge-directory
+//            bookkeeping caps, file-sort + budget clamps. Pure functions;
+//            no I/O, no state.
+//   surface: PalLlmRuntime.NormalizeEndpointingMs,
+//            PalLlmRuntime.SumEndpointingMs,
+//            PalLlmRuntime.ClampPositiveBudget, the
+//            DirectoryActivityCountCap constant. All internal/private.
+//   gate:    Covered transitively by every PalLlmRuntime fixture that calls
+//            a method using these helpers; pinned directly by
+//            tests/PalLLM.Tests/RuntimeTests.cs.
+//   adr:     None directly.
+//   docs:    docs/CODE_MAP.md, docs/REFACTORING_ROADMAP.md (Phase 1a).
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Domain.Runtime;
 
 public sealed partial class PalLlmRuntime

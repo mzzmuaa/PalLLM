@@ -7,6 +7,22 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Options;
 using PalLLM.Domain.Configuration;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    DI registration entry point for the PalLLM Domain runtime:
+//            portable adapter, runtime, fallback engine, memory store,
+//            relationship aggregator, narrative pack service, and all the
+//            advisor/builder singletons. Called by
+//            Program.cs.AddPalLlmCore().
+//   surface: PalLlmCoreServiceCollectionExtensions.AddPalLlmCore(IServiceCollection,
+//            IConfiguration).
+//   gate:    tests/PalLLM.Tests/SidecarTestFixture.cs (fixture wiring) +
+//            every fixture that boots the host.
+//   adr:     ADR 0002 (portable adapter seam).
+//   docs:    docs/ARCHITECTURE.md (DI lanes), docs/CODE_MAP.md (where
+//            things live).
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmCoreServiceCollectionExtensions

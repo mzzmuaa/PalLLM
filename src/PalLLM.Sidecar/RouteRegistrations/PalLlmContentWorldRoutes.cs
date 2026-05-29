@@ -3,6 +3,18 @@ using PalLLM.Domain.Integration;
 using PalLLM.Domain.Packs;
 using PalLLM.Domain.Runtime;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Maps the /api/content/* and /api/world/* routes:
+//            world-snapshot read, content-pack inspection, narrative-pack
+//            list.
+//   surface: PalLlmContentWorldRoutes.MapContentWorld(IEndpointRouteBuilder).
+//   gate:    tests/PalLLM.Tests/SidecarEndpointTests.cs (content + world
+//            routes).
+//   adr:     None directly.
+//   docs:    docs/API.md (/api/content/*, /api/world/*).
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmContentWorldRoutes

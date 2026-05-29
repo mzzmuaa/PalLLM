@@ -3,6 +3,22 @@ using PalLLM.Domain.Configuration;
 using PalLLM.Domain.Inference;
 using PalLLM.Domain.Runtime;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    DI registration for the inference lane: chat completions
+//            client + vision client + ASR client + reranker, all wired
+//            against SocketsHttpHandler pooling (PooledConnectionLifetime,
+//            no per-request HttpClient instances). Reads PalLLM:Inference
+//            / :Vision / :Asr.
+//   surface: PalLlmInferenceServiceCollectionExtensions.AddPalLlmInference(IServiceCollection,
+//            IConfiguration).
+//   gate:    tests/PalLLM.Tests/InferenceClientTests.cs +
+//            tests/PalLLM.Tests/MetaTests.cs (SocketsHttpHandler
+//            invariants).
+//   adr:     ADR 0001 (deterministic-first reply pipeline).
+//   docs:    docs/MODEL_COLLABORATION.md, docs/LLAMA_CPP_BUNDLED.md.
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmInferenceServiceCollectionExtensions

@@ -3,6 +3,18 @@ using PalLLM.Domain.Configuration;
 using PalLLM.Domain.Inference;
 using PalLLM.Domain.Runtime;
 
+// ---------------------------------------------------------------------------
+// AGENT-CARD:
+//   what:    Maps /api/inspect/* routes: feature catalog, advisor
+//            inventory, fallback strategy enumeration, environment
+//            posture, suggestion surface. Read-only introspection of the
+//            runtime composition.
+//   surface: PalLlmInspectionRoutes.MapInspection(IEndpointRouteBuilder).
+//   gate:    tests/PalLLM.Tests/SidecarEndpointTests.cs (inspect routes).
+//   adr:     None directly.
+//   docs:    docs/API.md (/api/inspect/*), docs/ADVISORS.md.
+// ---------------------------------------------------------------------------
+
 namespace PalLLM.Sidecar;
 
 internal static class PalLlmInspectionRoutes
