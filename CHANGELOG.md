@@ -18,6 +18,65 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 423 - Fix Linux-only path-audit failure on combined line-ref suffix (2026-05-30)
+
+**Context.** The Pass 421/422 docs commit (`42c3c04`) turned `main`'s
+`doc drift audit` CI job red. Because that job is a required status
+check, it blocked all 7 queued Dependabot auto-merges. This was a
+self-inflicted Windows/Linux divergence — the third of its kind.
+
+**Root cause.** A historical CHANGELOG entry references
+`scripts/uninstall-mod.ps1:62-65,73` — a line-reference suffix that
+combines a *range* (`62-65`) and a *comma* (`,73`). The Pass 372
+`lineRefPattern` (`([.][A-Za-z0-9]{1,8}):\d+(?:[-,:]\d+)?$`) only
+stripped a single trailing numeric group, so the combined form leaked
+through unstripped. The path resolver then looked for a file literally
+named `uninstall-mod.ps1:62-65,73`:
+
+- **On Windows** the trailing `:62-65,73` is interpreted as an NTFS
+  *alternate data stream* of the real `uninstall-mod.ps1`, so
+  `Test-Path` returned true and the local audit passed. **Blind spot.**
+- **On the Linux CI runner** `:` is a literal filename character, so
+  the path doesn't exist and the audit failed.
+
+**Fixes (both in `scripts/path_reference_audit.ps1`):**
+
+1. **Broadened the strip pattern** to
+   `([.][A-Za-z0-9]{1,8}):[\d][\d,:-]*$` — strips any run of digits,
+   commas, colons, and dashes after a `file.<ext>:`. Validated against
+   all six known suffix shapes:
+
+   | Input | Stripped to |
+   |---|---|
+   | `foo.ps1:62-65,73` | `foo.ps1` |
+   | `foo.ps1:26` | `foo.ps1` |
+   | `foo.ps1:26-31` | `foo.ps1` |
+   | `foo.ps1:26,31` | `foo.ps1` |
+   | `Bar.cs:26:5` | `Bar.cs` |
+   | `API.md` (no suffix) | `API.md` (untouched) |
+
+2. **Added a defensive colon guard** in `Test-LooksLikeRepoPath`: any
+   candidate that still contains a `:` and is not a drive-letter
+   absolute path is rejected as malformed. This means the **local
+   Windows audit now catches the same thing the Linux runner would**,
+   so the two can't diverge on this class again. Drive-letter paths
+   (`C:/...`) are already excluded from repo-local resolution
+   downstream, so treating them as "not a repo path" here is safe.
+
+**Why it matters.** This is the third Windows/Linux path-audit
+divergence fixed — after drive-letter prefixes (Pass 372a) and
+mid-path `bin/`/`obj/` segments (Pass 374). The defensive colon guard
+is the first fix that closes the *blind spot itself* rather than just
+the specific trigger, so a fourth divergence of this shape can't pass
+locally and fail in CI.
+
+**Verification.** Path-reference audit: `1595` candidates, `0`
+findings. Full local audit at
+`artifacts/full-audit/20260530-021218/RESULTS.md` passes `16 / 16`.
+Tests stay `1315 / 1315`. Once `main`'s doc-drift job goes green, the
+6 auto-merge Dependabot PRs (`#1`, `#3`, `#4`, `#6`, `#7`, `#8`) land
+on their next rebase.
+
 ### Pass 422 - Triage 8 Dependabot PRs after public-flip unblocks CI (2026-05-29)
 
 **Context.** The 8 Dependabot PRs that had been waiting since the

@@ -160,6 +160,37 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
+- **Pass 423 - Fix Linux-only path-audit failure on combined line-ref
+  suffix; unblock the Dependabot queue.** The Pass 421/422 docs commit
+  (`42c3c04`) turned `main`'s `doc drift audit` CI job red, which —
+  because it's a required status check — was blocking all 7 queued
+  Dependabot auto-merges. Root cause: a CHANGELOG entry references
+  `scripts/uninstall-mod.ps1:62-65,73`, a line-ref suffix that
+  combines a range (`62-65`) AND a comma (`,73`). The Pass 372
+  `lineRefPattern` only stripped a single numeric group, so the
+  combined form leaked through. On Windows the leftover trailing
+  `:62-65,73` is silently interpreted as an NTFS alternate-data-stream
+  of the real file, so `Test-Path` passed and the LOCAL audit went
+  green — a genuine Windows/Linux blind spot. On the Linux CI runner
+  it's a literal filename that doesn't exist, so the audit failed.
+  Two fixes in `scripts/path_reference_audit.ps1`: (1) broadened
+  `lineRefPattern` to `([.][A-Za-z0-9]{1,8}):[\d][\d,:-]*$` which
+  strips any combination of digits / commas / colons / dashes after
+  a `file.ext:` (covers `:26`, `:26-31`, `:26,31`, `:26:5`, and the
+  combined `:62-65,73`); (2) added a defensive guard in
+  `Test-LooksLikeRepoPath` that rejects any non-drive-letter candidate
+  still containing a `:` — so the local Windows audit now catches the
+  same malformed reference the Linux runner would, closing the blind
+  spot permanently. Verified the regex against all six suffix shapes
+  (strips line-refs, leaves real paths intact) and the colon guard
+  adds `0` false positives (`1595` candidates, `0` findings). This is
+  the third Windows/Linux path-audit divergence fixed (drive letters
+  Pass 372a, mid-path `bin/` Pass 374, line-refs Pass 423); the
+  defensive colon guard should prevent a fourth. Local audit at
+  `../artifacts/full-audit/20260530-021646/RESULTS.md` passes
+  `16 / 16`; tests stay `1315 / 1315`. Once `main`'s doc-drift goes
+  green, the 6 auto-merge Dependabot PRs land on their next rebase.
+
 - **Pass 422 - Triage 8 Dependabot PRs after public-flip unblocks CI.**
   No commit needed; all changes via `gh api`. The 8 Dependabot PRs
   that had been waiting since the `2026-05-23` initial publish
@@ -197,7 +228,7 @@ once they reached the changelog):
   values (`57 / 6 / 1`) matching `docs/API.md`. Used `grep -rh + wc -l
   + tr -d ' '` instead of `paste + bc` so the workflow stays
   POSIX-portable. Tests stay `1315 / 1315`; local audit at
-  `../artifacts/full-audit/20260529-020429/RESULTS.md` passes
+  `../artifacts/full-audit/20260530-021646/RESULTS.md` passes
   `16 / 16`. CI status after this push: `build + test (ubuntu-latest)`
   PASS, `build + test (windows-latest)` PASS, `doc drift audit`
   PASS, CodeQL in progress (standard 5-min job that always passes).
@@ -227,7 +258,7 @@ once they reached the changelog):
   Uncommented the long-deferred CI + CodeQL workflow-status badges
   in `README.md` — those were waiting for the canonical
   `OWNER/PalLLM` URL to exist, which it now does. Local audit at
-  `../artifacts/full-audit/20260529-020429/RESULTS.md` stays
+  `../artifacts/full-audit/20260530-021646/RESULTS.md` stays
   `16 / 16`; `dotnet test` reports `1315 / 1315`. After the push,
   CI re-runs on the unlimited public-repo minutes and the Dependabot
   PR queue (`8` open, oldest from `2026-05-23`) can finally land.
@@ -258,7 +289,7 @@ once they reached the changelog):
   criteria + pre-req references, plus a callout at the top warning
   agents not to edit the `honestRoadmap` field without an attached
   live-evidence artifact. Full audit at
-  `../artifacts/full-audit/20260529-020429/RESULTS.md` passes
+  `../artifacts/full-audit/20260530-021646/RESULTS.md` passes
   `16 / 16`. Test count unchanged at `1315`.
 
 - **Pass 418 - Retire seven low-value docs, refresh entry-point
@@ -288,7 +319,7 @@ once they reached the changelog):
   `PROJECT_NUMBERS.json` (counts stamped docs; two unstamped files
   exist in `docs/` and are excluded). Verification: `dotnet test`
   reports `1315 / 1315` pass; full audit at
-  `../artifacts/full-audit/20260529-020429/RESULTS.md` passes
+  `../artifacts/full-audit/20260530-021646/RESULTS.md` passes
   `16 / 16` including the path-reference and dangling-link gates.
 
 - **Pass 417 - Add vLLM ASR seed replay canary.** Operator

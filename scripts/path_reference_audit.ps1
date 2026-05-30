@@ -91,10 +91,17 @@ $quotedTokenPattern = @'
 '@
 
 $markdownLinkPattern = '\[[^\]]+\]\(([^)]+)\)'
-# Pass 372: also strip `:26,31` (comma-separated line+column) and
-# `:26:5` (compiler-style line:column) tails in addition to the older
-# `:26` and `:26-31` forms.
-$lineRefPattern = '([.][A-Za-z0-9]{1,8}):\d+(?:[-,:]\d+)?$'
+# Pass 423: strip ANY trailing line-reference suffix after a file
+# extension, including combined range+comma forms like `:62-65,73`,
+# `:26,31,45`, and compiler-style `:26:5`. The earlier pattern
+# (Pass 372) only stripped a SINGLE numeric group, so `:62-65,73`
+# leaked through. On Windows the leftover `:...` is silently treated
+# as an NTFS alternate-data-stream so `Test-Path` passed; on the
+# Linux CI runner it is a literal filename char so the audit failed.
+# `[\d,:-]+` after `.<ext>:` matches any combination of digits,
+# commas, colons, and dashes at end-of-string — covering every
+# line/column reference shape without eating real path content.
+$lineRefPattern = '([.][A-Za-z0-9]{1,8}):[\d][\d,:-]*$'
 $ignoredCharPattern = '[*?\[\]{}<>|$]'
 
 function Get-ScanFiles {
@@ -227,6 +234,21 @@ function Test-LooksLikeRepoPath {
 
     $isWindowsAbsolute = [regex]::IsMatch($normalized, '^[A-Za-z]:/')
     $isUnixAbsolute = $normalized.StartsWith("/", [System.StringComparison]::Ordinal)
+
+    # Pass 423: defensive guard against the Windows/Linux blind spot.
+    # If a candidate still contains a `:` after line-ref stripping AND
+    # is not a drive-letter-absolute path, it is a malformed reference
+    # (e.g. an un-stripped `file.cs:12-15,20` line-ref shape the regex
+    # missed). On Windows such a path resolves as an NTFS alternate
+    # data stream of the real file so `Test-Path` falsely passes; on
+    # Linux it is a literal filename that fails. Rejecting it here means
+    # the LOCAL audit catches the same thing the CI runner would, so
+    # the two never diverge again. Drive-letter paths (`C:/...`) are
+    # already excluded from repo-local resolution downstream, so it is
+    # safe to treat them as "not a repo path" here too.
+    if (-not $isWindowsAbsolute -and $normalized.Contains(":")) {
+        return $false
+    }
 
     if (-not $isWindowsAbsolute -and -not $isUnixAbsolute) {
         if (-not (Test-MatchesRepoPrefix -Candidate $normalized)) {
