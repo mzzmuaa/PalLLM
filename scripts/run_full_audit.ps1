@@ -61,19 +61,17 @@ $MojibakeSentinel = [Text.Encoding]::UTF8.GetString([byte[]](0xC3, 0xA2, 0xE2, 0
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
-function Get-SidecarRouteSourcePaths {
-    $paths = New-Object System.Collections.Generic.List[string]
-    $paths.Add("src/PalLLM.Sidecar/Program.cs")
-
-    $routeRegistrationDir = "src/PalLLM.Sidecar/RouteRegistrations"
-    if (Test-Path $routeRegistrationDir) {
-        Get-ChildItem -Path $routeRegistrationDir -Filter "*.cs" -File |
-            Sort-Object FullName |
-            ForEach-Object { $paths.Add($_.FullName) }
-    }
-
-    return $paths.ToArray()
-}
+# Pass 424: dot-source the canonical doc-count drift checks. The
+# Assert-* functions defined here are the SINGLE source of truth for
+# the route / feature / strategy / test count gates below; CI's
+# `doc drift audit` job runs the same scripts/assert-doc-counts.ps1
+# directly. `-DefineOnly` loads the functions without running them so
+# each gate stays inside its own Record-Step wrapper for granular
+# RESULTS.md reporting.
+. "$PSScriptRoot/assert-doc-counts.ps1" -DefineOnly
+# Note: Get-SidecarRouteSourcePaths is now defined by the dot-sourced
+# assert-doc-counts.ps1 (single source of truth). The audit's former
+# local copy was removed in Pass 424.
 
 # ---- Timestamped artifact directory (UTC for determinism across TZs) ----
 $timestamp = (Get-Date).ToUniversalTime().ToString("yyyyMMdd-HHmmss")
@@ -361,80 +359,13 @@ Record-Step -Name "Drift_Mojibake" -Body {
 }
 
 Record-Step -Name "Drift_Api_route_count" -Body {
-    $routeSourcePaths = Get-SidecarRouteSourcePaths
-    $codeRoutes = (Select-String -Path $routeSourcePaths -Pattern 'api\.Map(Get|Post|Put|Delete|Patch)').Count
-    $roadmapPattern = "$BT(\d+)$BT $BT/api$BT routes"
-    $readmePattern  = "\*\*(\d+) $BT/api$BT routes\*\*"
-    $architecturePattern = '/api routes \((\d+) total\)'
-    $codeMapPattern = '\((\d+) /api/\* routes\)'
-    $handoffPattern = "$BT(\d+)$BT $BT/api$BT routes"
-    $roadmapRoutes = [int]([regex]::Match((Get-Content -Raw "docs/ROADMAP.md"), $roadmapPattern).Groups[1].Value)
-    $readmeRoutes  = [int]([regex]::Match((Get-Content -Raw "README.md"), $readmePattern).Groups[1].Value)
-    $architectureRoutes = [int]([regex]::Match((Get-Content -Raw "docs/ARCHITECTURE.md"), $architecturePattern).Groups[1].Value)
-    $codeMapRoutes = [int]([regex]::Match((Get-Content -Raw "docs/CODE_MAP.md"), $codeMapPattern).Groups[1].Value)
-    $handoffRoutes = [int]([regex]::Match((Get-Content -Raw "docs/HANDOFF.md"), $handoffPattern).Groups[1].Value)
-    Write-Output "code=$codeRoutes roadmap=$roadmapRoutes readme=$readmeRoutes architecture=$architectureRoutes codemap=$codeMapRoutes handoff=$handoffRoutes"
-    if ($codeRoutes -ne $roadmapRoutes -or $codeRoutes -ne $readmeRoutes -or $codeRoutes -ne $architectureRoutes -or $codeRoutes -ne $codeMapRoutes -or $codeRoutes -ne $handoffRoutes) {
-        throw "route count drift (code=$codeRoutes roadmap=$roadmapRoutes readme=$readmeRoutes architecture=$architectureRoutes codemap=$codeMapRoutes handoff=$handoffRoutes)"
-    }
+    # Pass 424: canonical logic lives in scripts/assert-doc-counts.ps1
+    # (dot-sourced above). CI runs the same script directly.
+    Assert-ApiRouteCount
 }
 
 Record-Step -Name "Drift_Api_reference_surface" -Body {
-    $routeSourcePaths = Get-SidecarRouteSourcePaths
-    $programPath = "src/PalLLM.Sidecar/Program.cs"
-    $codeApiRoutes = @(Select-String -Path $routeSourcePaths -Pattern 'api\.Map(Get|Post|Put|Delete|Patch)').Count
-    $codeOperationalRoutes = @(
-        Select-String -Path $routeSourcePaths -Pattern 'app\.MapGet\("/metrics"|app\.MapGet\("/"|app\.MapHealthChecks\(|app\.MapOpenApi'
-    ).Count
-
-    $codeProtocolRoutes = @(Select-String -Path $programPath -Pattern 'app\.MapMcp\("/mcp"\)').Count
-
-    $apiText = Get-Content -Raw "docs/API.md"
-    $roadmapText = Get-Content -Raw "docs/ROADMAP.md"
-
-    $apiRouteMatch = [regex]::Match($apiText, 'Total `/api` routes: (\d+)')
-    $apiOpsMatch = [regex]::Match($apiText, 'Operational routes outside `/api`: (\d+)')
-    $apiProtocolMatch = [regex]::Match($apiText, 'Separate protocol route: (\d+)')
-    $roadmapOpsMatch = [regex]::Match($roadmapText, "$BT(\d+)$BT operational routes outside $BT/api$BT")
-    $roadmapProtocolMatch = [regex]::Match($roadmapText, "$BT(\d+)$BT separate protocol route")
-    $handoffText = Get-Content -Raw "docs/HANDOFF.md"
-    $handoffOpsMatch = [regex]::Match($handoffText, "$BT(\d+)$BT operational routes outside $BT/api$BT")
-    $handoffProtocolMatch = [regex]::Match($handoffText, "$BT(\d+)$BT separate $BT/mcp$BT protocol route")
-
-    if (-not $apiRouteMatch.Success -or -not $apiOpsMatch.Success -or -not $apiProtocolMatch.Success `
-        -or -not $roadmapOpsMatch.Success -or -not $roadmapProtocolMatch.Success `
-        -or -not $handoffOpsMatch.Success -or -not $handoffProtocolMatch.Success)
-    {
-        throw "could not extract API/ROADMAP/HANDOFF surface counts; check docs formatting"
-    }
-
-    $apiRoutes = [int]$apiRouteMatch.Groups[1].Value
-    $apiOperationalRoutes = [int]$apiOpsMatch.Groups[1].Value
-    $apiProtocolRoutes = [int]$apiProtocolMatch.Groups[1].Value
-    $roadmapOperationalRoutes = [int]$roadmapOpsMatch.Groups[1].Value
-    $roadmapProtocolRoutes = [int]$roadmapProtocolMatch.Groups[1].Value
-    $handoffOperationalRoutes = [int]$handoffOpsMatch.Groups[1].Value
-    $handoffProtocolRoutes = [int]$handoffProtocolMatch.Groups[1].Value
-
-    Write-Output "code_api=$codeApiRoutes api_doc=$apiRoutes code_ops=$codeOperationalRoutes api_doc_ops=$apiOperationalRoutes roadmap_ops=$roadmapOperationalRoutes handoff_ops=$handoffOperationalRoutes code_protocol=$codeProtocolRoutes api_doc_protocol=$apiProtocolRoutes roadmap_protocol=$roadmapProtocolRoutes handoff_protocol=$handoffProtocolRoutes"
-
-    if ($codeApiRoutes -ne $apiRoutes) {
-        throw "API.md /api route drift (code=$codeApiRoutes api_doc=$apiRoutes)"
-    }
-
-    if ($codeOperationalRoutes -ne $apiOperationalRoutes -or $codeOperationalRoutes -ne $roadmapOperationalRoutes -or $codeOperationalRoutes -ne $handoffOperationalRoutes) {
-        throw "operational route drift (code=$codeOperationalRoutes api_doc=$apiOperationalRoutes roadmap=$roadmapOperationalRoutes handoff=$handoffOperationalRoutes)"
-    }
-
-    if ($codeProtocolRoutes -ne $apiProtocolRoutes -or $codeProtocolRoutes -ne $roadmapProtocolRoutes -or $codeProtocolRoutes -ne $handoffProtocolRoutes) {
-        throw "protocol route drift (code=$codeProtocolRoutes api_doc=$apiProtocolRoutes roadmap=$roadmapProtocolRoutes handoff=$handoffProtocolRoutes)"
-    }
-
-    foreach ($required in @('/openapi/v1.json', '/openapi/v1.yaml', '/api/release/readiness', 'SmokeEvidence', 'POST /mcp', 'application/health+json')) {
-        if ($apiText -notmatch [regex]::Escape($required)) {
-            throw "docs/API.md is missing required contract marker '$required'"
-        }
-    }
+    Assert-ApiReferenceSurface
 }
 
 Record-Step -Name "Drift_OpenApi_snapshot" -Body {
@@ -442,101 +373,19 @@ Record-Step -Name "Drift_OpenApi_snapshot" -Body {
 }
 
 Record-Step -Name "Drift_Feature_catalog_count" -Body {
-    $codeFeatures = (Select-String -Path "src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs" -Pattern 'Id = "[a-z0-9-]+"').Count
-    $roadmapPattern = "$BT(\d+)$BT feature-catalog entries"
-    $readmePattern = '`(\d+)`\s*\r?\n> feature-catalog entries'
-    $architecturePattern = 'contains `(\d+)` entries'
-    $apiPattern = 'Feature catalog \(`(\d+)` entries'
-    $codeMapPattern = 'All (\d+) entries'
-    $handoffPattern = "$BT(\d+)$BT feature-catalog entries"
-    $roadmapFeatures = [int]([regex]::Match((Get-Content -Raw "docs/ROADMAP.md"), $roadmapPattern).Groups[1].Value)
-    $readmeFeatures = [int]([regex]::Match((Get-Content -Raw "README.md"), $readmePattern).Groups[1].Value)
-    $architectureFeatures = [int]([regex]::Match((Get-Content -Raw "docs/ARCHITECTURE.md"), $architecturePattern).Groups[1].Value)
-    $apiFeatures = [int]([regex]::Match((Get-Content -Raw "docs/API.md"), $apiPattern).Groups[1].Value)
-    $codeMapFeatures = [int]([regex]::Match((Get-Content -Raw "docs/CODE_MAP.md"), $codeMapPattern).Groups[1].Value)
-    $handoffFeatures = [int]([regex]::Match((Get-Content -Raw "docs/HANDOFF.md"), $handoffPattern).Groups[1].Value)
-    Write-Output "code=$codeFeatures roadmap=$roadmapFeatures readme=$readmeFeatures architecture=$architectureFeatures api=$apiFeatures codemap=$codeMapFeatures handoff=$handoffFeatures"
-    if ($codeFeatures -ne $roadmapFeatures -or $codeFeatures -ne $readmeFeatures -or $codeFeatures -ne $architectureFeatures -or $codeFeatures -ne $apiFeatures -or $codeFeatures -ne $codeMapFeatures -or $codeFeatures -ne $handoffFeatures) {
-        throw "feature count drift (code=$codeFeatures roadmap=$roadmapFeatures readme=$readmeFeatures architecture=$architectureFeatures api=$apiFeatures codemap=$codeMapFeatures handoff=$handoffFeatures)"
-    }
+    Assert-FeatureCatalogCount
 }
 
 Record-Step -Name "Drift_Feature_status_split" -Body {
-    $featureText = Get-Content -Raw "src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs"
-    $codeReady = ([regex]::Matches($featureText, 'Status = "ready"')).Count
-    $codeScaffolded = ([regex]::Matches($featureText, 'Status = "scaffolded"')).Count
-    $codeDeferred = ([regex]::Matches($featureText, 'Status = "deferred"')).Count
-
-    $readmeText = Get-Content -Raw "README.md"
-    $roadmapText = Get-Content -Raw "docs/ROADMAP.md"
-    $architectureText = Get-Content -Raw "docs/ARCHITECTURE.md"
-    $apiText = Get-Content -Raw "docs/API.md"
-    $handoffText = Get-Content -Raw "docs/HANDOFF.md"
-
-    $readmeMatch = [regex]::Match($readmeText, '`(\d+) ready / (\d+) scaffolded / (\d+) deferred`')
-    $roadmapMatch = [regex]::Match($roadmapText, 'feature status split: `(\d+) ready`, `(\d+) scaffolded`, `(\d+) deferred`')
-    $architectureMatch = [regex]::Match($architectureText, 'contains `\d+` entries \(`(\d+) ready`, `(\d+) scaffolded`, `(\d+) deferred`\)')
-    $apiMatch = [regex]::Match($apiText, 'Feature catalog \(`\d+` entries: `(\d+) ready`, `(\d+) scaffolded`, `(\d+) deferred`\)')
-    $handoffMatch = [regex]::Match($handoffText, 'feature split: `(\d+) ready`, `(\d+) scaffolded`, `(\d+) deferred`')
-
-    if (-not $readmeMatch.Success -or -not $roadmapMatch.Success -or -not $architectureMatch.Success -or -not $apiMatch.Success -or -not $handoffMatch.Success) {
-        throw "could not extract feature status split from docs; check formatting"
-    }
-
-    $readmeReady = [int]$readmeMatch.Groups[1].Value
-    $readmeScaffolded = [int]$readmeMatch.Groups[2].Value
-    $readmeDeferred = [int]$readmeMatch.Groups[3].Value
-    $roadmapReady = [int]$roadmapMatch.Groups[1].Value
-    $roadmapScaffolded = [int]$roadmapMatch.Groups[2].Value
-    $roadmapDeferred = [int]$roadmapMatch.Groups[3].Value
-    $architectureReady = [int]$architectureMatch.Groups[1].Value
-    $architectureScaffolded = [int]$architectureMatch.Groups[2].Value
-    $architectureDeferred = [int]$architectureMatch.Groups[3].Value
-    $apiReady = [int]$apiMatch.Groups[1].Value
-    $apiScaffolded = [int]$apiMatch.Groups[2].Value
-    $apiDeferred = [int]$apiMatch.Groups[3].Value
-    $handoffReady = [int]$handoffMatch.Groups[1].Value
-    $handoffScaffolded = [int]$handoffMatch.Groups[2].Value
-    $handoffDeferred = [int]$handoffMatch.Groups[3].Value
-
-    Write-Output "code=$codeReady/$codeScaffolded/$codeDeferred readme=$readmeReady/$readmeScaffolded/$readmeDeferred roadmap=$roadmapReady/$roadmapScaffolded/$roadmapDeferred architecture=$architectureReady/$architectureScaffolded/$architectureDeferred api=$apiReady/$apiScaffolded/$apiDeferred handoff=$handoffReady/$handoffScaffolded/$handoffDeferred"
-
-    if ($codeReady -ne $readmeReady -or $codeReady -ne $roadmapReady -or $codeReady -ne $architectureReady -or $codeReady -ne $apiReady `
-        -or $codeReady -ne $handoffReady `
-        -or $codeScaffolded -ne $readmeScaffolded -or $codeScaffolded -ne $roadmapScaffolded -or $codeScaffolded -ne $architectureScaffolded -or $codeScaffolded -ne $apiScaffolded `
-        -or $codeScaffolded -ne $handoffScaffolded `
-        -or $codeDeferred -ne $readmeDeferred -or $codeDeferred -ne $roadmapDeferred -or $codeDeferred -ne $architectureDeferred -or $codeDeferred -ne $apiDeferred `
-        -or $codeDeferred -ne $handoffDeferred)
-    {
-        throw "feature status split drift detected"
-    }
+    Assert-FeatureStatusSplit
 }
 
 Record-Step -Name "Drift_Fallback_strategy_count" -Body {
-    $codeStrategies = (Select-String -Path "src/PalLLM.Domain/Runtime/FallbackBehaviorEngine.cs" -Pattern '^\s*private static FallbackBehaviorDecision (Try[A-Z][A-Za-z]+|CreateGeneralDirector)').Count
-    $roadmapPattern = "$BT(\d+)$BT deterministic fallback strategies"
-    $roadmapStrategies = [int]([regex]::Match((Get-Content -Raw "docs/ROADMAP.md"), $roadmapPattern).Groups[1].Value)
-    Write-Output "code=$codeStrategies roadmap=$roadmapStrategies"
-    if ($codeStrategies -ne $roadmapStrategies) {
-        throw "strategy count drift (code=$codeStrategies roadmap=$roadmapStrategies)"
-    }
+    Assert-FallbackStrategyCount
 }
 
 Record-Step -Name "Drift_Test_count_docs" -Body {
-    $codeTests = (Get-ChildItem -Recurse -Path "tests/PalLLM.Tests" -Filter "*.cs" | Select-String -Pattern '^\s*\[(?:TestCase|Test)(?:\(|\])').Count
-    $roadmapPattern = "$BT(\d+)$BT passing NUnit tests"
-    $architecturePattern = '`(\d+)` tests passed on'
-    $codeMapPattern = 'NUnit, (\d+) tests'
-    $handoffPattern = "$BT(\d+)$BT passing tests"
-    $roadmapTests = [int]([regex]::Match((Get-Content -Raw "docs/ROADMAP.md"), $roadmapPattern).Groups[1].Value)
-    $readmeTests  = [int]([regex]::Match((Get-Content -Raw "README.md"), 'Passed: (\d+)').Groups[1].Value)
-    $architectureTests = [int]([regex]::Match((Get-Content -Raw "docs/ARCHITECTURE.md"), $architecturePattern).Groups[1].Value)
-    $codeMapTests = [int]([regex]::Match((Get-Content -Raw "docs/CODE_MAP.md"), $codeMapPattern).Groups[1].Value)
-    $handoffTests = [int]([regex]::Match((Get-Content -Raw "docs/HANDOFF.md"), $handoffPattern).Groups[1].Value)
-    Write-Output "code=$codeTests roadmap=$roadmapTests readme=$readmeTests architecture=$architectureTests codemap=$codeMapTests handoff=$handoffTests"
-    if ($roadmapTests -ne $readmeTests -or $codeTests -ne $roadmapTests -or $codeTests -ne $architectureTests -or $codeTests -ne $codeMapTests -or $codeTests -ne $handoffTests) {
-        throw "test count drift (code=$codeTests roadmap=$roadmapTests readme=$readmeTests architecture=$architectureTests codemap=$codeMapTests handoff=$handoffTests)"
-    }
+    Assert-TestCountDocs
 }
 
 Record-Step -Name "Drift_Public_copy" -Body {

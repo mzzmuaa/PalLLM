@@ -160,6 +160,35 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
+- **Pass 424 - Collapse CI's bash drift-counters into the canonical
+  PowerShell audit (root-cause DRY fix).** After fixing the same class
+  of CI-parity bug in SIX passes (369, 370, 371, 372, 421, 423), this
+  pass removes the root cause. `.github/workflows/ci.yml`'s
+  `doc drift audit` job had a ~105-line bash reimplementation of the
+  route / feature / strategy / test count checks — a parallel
+  implementation that (a) lived in a different shell dialect than the
+  canonical PowerShell `run_full_audit.ps1`, and (b) checked only a
+  SUBSET of the mirror docs the PowerShell audit checks (it omitted
+  ARCHITECTURE.md and CODE_MAP.md), so a stale count there could pass
+  CI but fail the local audit. New `scripts/assert-doc-counts.ps1` is
+  now the SINGLE source of truth: it defines six `Assert-*` functions
+  (Api route count, Api reference surface, Feature catalog count,
+  Feature status split, Fallback strategy count, Test count) with the
+  exact logic lifted verbatim from the audit's gates. `run_full_audit.ps1`
+  dot-sources it (`-DefineOnly`) and calls the functions inside its
+  Record-Step wrappers (preserving per-gate RESULTS.md granularity);
+  CI runs the same script directly via `pwsh`. Deleted the audit's
+  now-redundant local `Get-SidecarRouteSourcePaths` copy (the
+  dot-sourced version is canonical). Because both Windows (local) and
+  Linux (CI) now run the identical PowerShell, the count checks can no
+  longer diverge on shell semantics OR on which mirror docs they
+  inspect — the entire bash-vs-pwsh divergence class is dead. Validated
+  locally: the standalone script exits `0` with all counts agreeing
+  (`57`/`6`/`1` routes, `122` features, `119/2/1` split, `19`
+  strategies, `1315` tests), and the dot-sourced full audit passes
+  `16 / 16` at `../artifacts/full-audit/20260530-024137/RESULTS.md`.
+  No code or test changes; test count stays `1315`.
+
 - **Pass 423 - Fix Linux-only path-audit failure on combined line-ref
   suffix; unblock the Dependabot queue.** The Pass 421/422 docs commit
   (`42c3c04`) turned `main`'s `doc drift audit` CI job red, which —
@@ -187,7 +216,7 @@ once they reached the changelog):
   the third Windows/Linux path-audit divergence fixed (drive letters
   Pass 372a, mid-path `bin/` Pass 374, line-refs Pass 423); the
   defensive colon guard should prevent a fourth. Local audit at
-  `../artifacts/full-audit/20260530-021646/RESULTS.md` passes
+  `../artifacts/full-audit/20260530-024137/RESULTS.md` passes
   `16 / 16`; tests stay `1315 / 1315`. Once `main`'s doc-drift goes
   green, the 6 auto-merge Dependabot PRs land on their next rebase.
 
@@ -228,7 +257,7 @@ once they reached the changelog):
   values (`57 / 6 / 1`) matching `docs/API.md`. Used `grep -rh + wc -l
   + tr -d ' '` instead of `paste + bc` so the workflow stays
   POSIX-portable. Tests stay `1315 / 1315`; local audit at
-  `../artifacts/full-audit/20260530-021646/RESULTS.md` passes
+  `../artifacts/full-audit/20260530-024137/RESULTS.md` passes
   `16 / 16`. CI status after this push: `build + test (ubuntu-latest)`
   PASS, `build + test (windows-latest)` PASS, `doc drift audit`
   PASS, CodeQL in progress (standard 5-min job that always passes).
@@ -258,7 +287,7 @@ once they reached the changelog):
   Uncommented the long-deferred CI + CodeQL workflow-status badges
   in `README.md` — those were waiting for the canonical
   `OWNER/PalLLM` URL to exist, which it now does. Local audit at
-  `../artifacts/full-audit/20260530-021646/RESULTS.md` stays
+  `../artifacts/full-audit/20260530-024137/RESULTS.md` stays
   `16 / 16`; `dotnet test` reports `1315 / 1315`. After the push,
   CI re-runs on the unlimited public-repo minutes and the Dependabot
   PR queue (`8` open, oldest from `2026-05-23`) can finally land.
@@ -289,7 +318,7 @@ once they reached the changelog):
   criteria + pre-req references, plus a callout at the top warning
   agents not to edit the `honestRoadmap` field without an attached
   live-evidence artifact. Full audit at
-  `../artifacts/full-audit/20260530-021646/RESULTS.md` passes
+  `../artifacts/full-audit/20260530-024137/RESULTS.md` passes
   `16 / 16`. Test count unchanged at `1315`.
 
 - **Pass 418 - Retire seven low-value docs, refresh entry-point
@@ -319,7 +348,7 @@ once they reached the changelog):
   `PROJECT_NUMBERS.json` (counts stamped docs; two unstamped files
   exist in `docs/` and are excluded). Verification: `dotnet test`
   reports `1315 / 1315` pass; full audit at
-  `../artifacts/full-audit/20260530-021646/RESULTS.md` passes
+  `../artifacts/full-audit/20260530-024137/RESULTS.md` passes
   `16 / 16` including the path-reference and dangling-link gates.
 
 - **Pass 417 - Add vLLM ASR seed replay canary.** Operator

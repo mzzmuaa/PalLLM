@@ -112,111 +112,15 @@ jobs:
           fi
 
       - name: Assert doc counts agree with code
-        shell: bash
+        shell: pwsh
         run: |
-          set -eu
-
-          # 1. /api route count.
-          # Pass 421 (CI parity): Codex's Pass 387-402 extracted the
-          # 57 /api routes from Program.cs into 12 *Routes.cs files
-          # under src/PalLLM.Sidecar/RouteRegistrations/. The PowerShell
-          # audit's Get-SidecarRouteSourcePaths helper already scans
-          # both; mirror that here.
-          code_routes=$(grep -rhE 'api\.Map(Get|Post|Put|Delete|Patch)' \
-            src/PalLLM.Sidecar/Program.cs \
-            src/PalLLM.Sidecar/RouteRegistrations/ \
-            | wc -l | tr -d ' ')
-          roadmap_routes=$(grep -oE '`[0-9]+` `/api` routes' docs/ROADMAP.md | grep -oE '[0-9]+' | head -1)
-          readme_routes=$(grep -oE '\*\*[0-9]+ `/api` routes\*\*' README.md | grep -oE '[0-9]+' | head -1)
-          if [ "$code_routes" != "$roadmap_routes" ] || [ "$code_routes" != "$readme_routes" ]; then
-            echo "Route count drift: code=$code_routes, ROADMAP=$roadmap_routes, README=$readme_routes."
-            exit 1
-          fi
-
-          # 1b. Operational + protocol route counts must agree with API.md and ROADMAP.md.
-          # Pass 370 (CI parity): the dashboard root route is now `app.MapGet("/", ...)`
-          # served alongside `app.MapStaticAssets(...)` rather than the older
-          # `UseDefaultFiles() + UseStaticFiles()` middleware pair. Count the
-          # MapGet("/") line directly so the CI bash counter matches the
-          # PowerShell audit in `scripts/run_full_audit.ps1` (which already
-          # uses the same pattern).
-          # Pass 421: also scan extracted RouteRegistrations/*.cs
-          # because Codex's Pass 387-402 moved /metrics + / +
-          # /health/live + /health/ready out of Program.cs into
-          # PalLlmHealthRoutes.cs and PalLlmStaticAssetRoutes.cs.
-          # OpenApi + Mcp stayed in Program.cs.
-          code_operational_routes=$(grep -rhE 'app\.MapGet\("/metrics"|app\.MapGet\("/"|app\.MapHealthChecks\(|app\.MapOpenApi' \
-            src/PalLLM.Sidecar/Program.cs \
-            src/PalLLM.Sidecar/RouteRegistrations/ \
-            | wc -l | tr -d ' ')
-          code_protocol_routes=$(grep -cE 'app\.MapMcp\("/mcp"\)' src/PalLLM.Sidecar/Program.cs)
-          api_routes=$(grep -oE 'Total `/api` routes: [0-9]+' docs/API.md | grep -oE '[0-9]+' | head -1)
-          api_operational_routes=$(grep -oE 'Operational routes outside `/api`: [0-9]+' docs/API.md | grep -oE '[0-9]+' | head -1)
-          api_protocol_routes=$(grep -oE 'Separate protocol route: [0-9]+' docs/API.md | grep -oE '[0-9]+' | head -1)
-          roadmap_operational_routes=$(grep -oE '`[0-9]+` operational routes outside `/api`' docs/ROADMAP.md | grep -oE '[0-9]+' | head -1)
-          roadmap_protocol_routes=$(grep -oE '`[0-9]+` separate protocol route' docs/ROADMAP.md | grep -oE '[0-9]+' | head -1)
-          if [ "$code_routes" != "$api_routes" ]; then
-            echo "API.md /api route drift: code=$code_routes, API=$api_routes."
-            exit 1
-          fi
-          if [ "$code_operational_routes" != "$api_operational_routes" ] || [ "$code_operational_routes" != "$roadmap_operational_routes" ]; then
-            echo "Operational route drift: code=$code_operational_routes, API=$api_operational_routes, ROADMAP=$roadmap_operational_routes."
-            exit 1
-          fi
-          if [ "$code_protocol_routes" != "$api_protocol_routes" ] || [ "$code_protocol_routes" != "$roadmap_protocol_routes" ]; then
-            echo "Protocol route drift: code=$code_protocol_routes, API=$api_protocol_routes, ROADMAP=$roadmap_protocol_routes."
-            exit 1
-          fi
-          for marker in '/openapi/v1.json' '/openapi/v1.yaml' 'POST /mcp' 'application/health+json'; do
-            if ! grep -Fq "$marker" docs/API.md; then
-              echo "docs/API.md is missing required contract marker: $marker"
-              exit 1
-            fi
-          done
-
-          # 2. Feature catalog count (Id = "..." lines).
-          code_features=$(grep -cE 'Id = "[a-z0-9-]+"' src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs)
-          roadmap_features=$(grep -oE '`[0-9]+` feature-catalog entries' docs/ROADMAP.md | grep -oE '[0-9]+' | head -1)
-          if [ "$code_features" != "$roadmap_features" ]; then
-            echo "Feature count drift: code=$code_features, ROADMAP=$roadmap_features."
-            exit 1
-          fi
-
-          # 3. Fallback strategy count (Try*/CreateGeneralDirector defs in the engine).
-          code_strategies=$(grep -cE '^\s*private static FallbackBehaviorDecision (Try[A-Z][A-Za-z]+|CreateGeneralDirector)' src/PalLLM.Domain/Runtime/FallbackBehaviorEngine.cs)
-          roadmap_strategies=$(grep -oE '`[0-9]+` deterministic fallback strategies' docs/ROADMAP.md | grep -oE '[0-9]+' | head -1)
-          if [ "$code_strategies" != "$roadmap_strategies" ]; then
-            echo "Strategy count drift: code=$code_strategies, ROADMAP=$roadmap_strategies."
-            exit 1
-          fi
-
-          # 4. Test count — source vs ROADMAP vs README pinned tail.
-          # Pass 372 (CI parity, take 2): the PowerShell audit in
-          # scripts/run_full_audit.ps1 uses the pattern
-          # `^\s*\[(?:TestCase|Test)(?:\(|\])` and counts both NUnit
-          # attributes. The previous CI bash counter matched only
-          # `[Test]` so it under-counted by ~271 cases. Also pass `-a`
-          # so adversarial-fuzz test files with embedded control bytes
-          # (Pass 355) are scanned as text, not flagged as binary.
-          code_tests=$(grep -rhoaE '^\s*\[(TestCase|Test)(\(|\])' tests/PalLLM.Tests/*.cs | wc -l | tr -d ' ')
-          roadmap_tests=$(grep -oE '`[0-9]+` passing NUnit tests' docs/ROADMAP.md | grep -oE '[0-9]+' | head -1)
-          readme_tests=$(grep -oE 'Passed: [0-9]+' README.md | grep -oE '[0-9]+' | head -1)
-          if [ -z "$code_tests" ] || [ -z "$roadmap_tests" ] || [ -z "$readme_tests" ]; then
-            echo "Could not extract test counts — check README/ROADMAP formatting."
-            exit 1
-          fi
-          if [ "$code_tests" != "$roadmap_tests" ] || [ "$roadmap_tests" != "$readme_tests" ]; then
-            echo "Test count drift: code=$code_tests, ROADMAP=$roadmap_tests, README=$readme_tests."
-            exit 1
-          fi
-
-          echo "All doc counts agree with code:"
-          echo "  /api routes:         $code_routes"
-          echo "  Operational routes:  $code_operational_routes"
-          echo "  Protocol routes:     $code_protocol_routes"
-          echo "  Feature entries:     $code_features"
-          echo "  Fallback strategies: $code_strategies"
-          echo "  Test count:          $code_tests"
+          # Pass 424: single source of truth. This is the SAME script
+          # run_full_audit.ps1 dot-sources for its count gates, run here
+          # directly via pwsh. Replaces the former ~105-line bash
+          # reimplementation that drifted from the PowerShell audit six
+          # times (Passes 369-372, 421, 423) because it lived in a second
+          # shell dialect and checked only a subset of the mirror docs.
+          ./scripts/assert-doc-counts.ps1
 
       - name: Assert public copy stays publication-safe
         shell: pwsh

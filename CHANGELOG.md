@@ -18,6 +18,45 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 424 - Collapse CI bash drift-counters into the canonical PowerShell audit (2026-05-30)
+
+**Context.** Root-cause fix for a bug class fixed six times in
+symptom form (Passes 369, 370, 371, 372, 421, 423). CI's
+`doc drift audit` job carried a ~105-line bash reimplementation of
+the route / feature / strategy / test count checks — parallel to the
+canonical PowerShell `run_full_audit.ps1`. Two failure modes:
+(1) the two lived in different shell dialects, so every structural
+change had to be mirrored twice; (2) the bash version inspected only
+a subset of the mirror docs (it omitted `ARCHITECTURE.md` and
+`CODE_MAP.md`), so a stale count there could pass CI yet fail the
+local audit.
+
+**Fix — one implementation, two callers.** New
+`scripts/assert-doc-counts.ps1` defines six `Assert-*` functions
+(`Assert-ApiRouteCount`, `Assert-ApiReferenceSurface`,
+`Assert-FeatureCatalogCount`, `Assert-FeatureStatusSplit`,
+`Assert-FallbackStrategyCount`, `Assert-TestCountDocs`) with the
+logic lifted verbatim from the audit's gates. Wiring:
+
+- `run_full_audit.ps1` dot-sources it (`. assert-doc-counts.ps1
+  -DefineOnly`) and calls the functions inside its existing
+  `Record-Step` wrappers, preserving per-gate RESULTS.md granularity.
+- `.github/workflows/ci.yml` runs the script directly via `pwsh`
+  (replacing the 105-line bash block).
+- The audit's now-redundant local `Get-SidecarRouteSourcePaths` copy
+  was deleted; the dot-sourced version is canonical.
+
+Because both Windows (local) and Linux (CI) now execute the identical
+PowerShell, the count checks can no longer diverge on shell semantics
+or on which mirror docs they inspect. The bash-vs-pwsh divergence
+class is eliminated, not merely patched.
+
+**Verification.** Standalone script exits `0` with every count in
+agreement (`57`/`6`/`1` routes, `122` features, `119/2/1` split, `19`
+strategies, `1315` tests). Dot-sourced full audit passes `16 / 16` at
+`artifacts/full-audit/20260530-023052/RESULTS.md`. No code or test
+changes; test count stays `1315`.
+
 ### Pass 423 - Fix Linux-only path-audit failure on combined line-ref suffix (2026-05-30)
 
 **Context.** The Pass 421/422 docs commit (`42c3c04`) turned `main`'s
