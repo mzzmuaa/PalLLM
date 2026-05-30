@@ -28,7 +28,7 @@
     <!-- .NET 10 first-party OpenAPI 3.1 document generation for Minimal
          APIs. Generates a JSON Schema 2020-12-compliant spec from the
          route registrations in Program.cs. See docs/API.md. -->
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
 
     <!-- Opt-in OpenTelemetry distributed tracing. The runtime only
          activates when OTEL_EXPORTER_OTLP_ENDPOINT is set in the
