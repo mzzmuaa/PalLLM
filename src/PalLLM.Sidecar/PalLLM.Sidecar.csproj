@@ -46,7 +46,7 @@
          server rides alongside the existing REST surface — no-op for REST
          clients, fully usable for MCP clients. See
          docs/OPERATIONS.md § "Exposing PalLLM via MCP". -->
-    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.2.0" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.3.0" />
   </ItemGroup>
 
   <!-- Feed XML docs from the domain assembly into the .NET 10 OpenAPI
