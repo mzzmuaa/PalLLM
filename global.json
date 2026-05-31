@@ -1,0 +1,8 @@
+{
+  "$comment": "Pins the .NET SDK band for reproducible builds across developer machines and CI. version is the floor; rollForward 'latestMinor' accepts any installed 10.x SDK at or above it (so CI's setup-dotnet '10.0.x' resolves cleanly) but will NOT silently jump to a future major (.NET 11) that could change analyzer behaviour. allowPrerelease:false keeps preview SDKs out of release builds. Bump 'version' deliberately when adopting a newer band.",
+  "sdk": {
+    "version": "10.0.100",
+    "rollForward": "latestMinor",
+    "allowPrerelease": false
+  }
+}

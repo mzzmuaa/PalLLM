@@ -25,6 +25,28 @@
         contextual naming.
     -->
     <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <!--
+      Pass 425: enforce the long-standing 0-warning discipline structurally.
+      The repo has shipped at 0 warnings for hundreds of passes by hand; this
+      makes a regression FAIL the build instead of relying on the operator
+      noticing. Scope note: this escalates compiler + Roslyn-analyzer
+      *warning*-severity diagnostics (CSxxxx, CAxxxx). It does NOT touch
+      IDExxxx code-STYLE rules — those stay at `suggestion` in .editorconfig
+      and are not build-enforced (EnforceCodeStyleInBuild stays off), so this
+      flip cannot surface a wall of style noise. If a future SDK band
+      introduces a new analyzer warning, that is a real signal to address,
+      caught immediately rather than drifting in.
+    -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!--
+      Reproducible-build hygiene: deterministic compilation so identical
+      source produces byte-identical output regardless of build path or
+      machine. (Defaults to true on modern SDKs; stated explicitly as a
+      contract alongside global.json's SDK pin.)
+    -->
+    <Deterministic>true</Deterministic>
   </PropertyGroup>
 
 </Project>

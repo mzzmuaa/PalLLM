@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260528-014035/RESULTS.md`](../artifacts/full-audit/20260528-014035/RESULTS.md)
+  [`../artifacts/full-audit/20260531-233325/RESULTS.md`](../artifacts/full-audit/20260531-233325/RESULTS.md)
 - committed OpenAPI snapshot:
   [`openapi/palllm-sidecar-v1.json`](openapi/palllm-sidecar-v1.json)
 
@@ -159,6 +159,25 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
+
+- **Pass 425 - Build-determinism + structural 0-warning enforcement
+  (10/10 build hygiene).** Two reproducible-build best-practice gaps
+  closed: (1) new `global.json` pins the SDK band
+  (`version 10.0.100`, `rollForward latestMinor`, `allowPrerelease
+  false`) so local and any future CI build resolve the same .NET 10
+  SDK family and never silently jump to a new major; (2)
+  `Directory.Build.props` now sets `TreatWarningsAsErrors=true` —
+  the long-standing hand-maintained 0-warning discipline is now
+  enforced structurally (a regression fails the build) — plus an
+  explicit `Deterministic=true` contract. Scope-limited on purpose:
+  it escalates only compiler/analyzer *warning*-severity diagnostics
+  (CSxxxx/CAxxxx), not IDExxxx code-style rules, which stay at
+  `suggestion` in `.editorconfig` (EnforceCodeStyleInBuild stays
+  off), so the flip cannot surface a wall of style noise. Verified:
+  SDK resolves to `10.0.202`; clean `dotnet build` is `0 warnings /
+  0 errors`; full audit `16 / 16` at
+  `../artifacts/full-audit/20260531-233325/RESULTS.md`; tests stay
+  `1315 / 1315`.
 
 - **Pass 424 - Collapse CI's bash drift-counters into the canonical
   PowerShell audit (root-cause DRY fix).** After fixing the same class

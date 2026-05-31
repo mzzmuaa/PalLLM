@@ -18,6 +18,36 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 425 - Build-determinism + structural 0-warning enforcement (2026-05-31)
+
+**Context.** Two reproducible-build best-practice gaps in an
+otherwise 10/10-hygiene repo: the SDK version floated, and the
+long-standing 0-warning discipline was maintained by hand rather
+than enforced by the build.
+
+**Changes.**
+- New `global.json`: pins the SDK band (`version 10.0.100`,
+  `rollForward latestMinor`, `allowPrerelease false`). Local and CI
+  now resolve the same .NET 10 SDK family; a future .NET 11 SDK
+  won't silently change analyzer behaviour.
+- `Directory.Build.props`: `TreatWarningsAsErrors=true` makes the
+  0-warning invariant structural (regression → build failure) and an
+  explicit `Deterministic=true` reproducibility contract.
+
+**Scope discipline.** `TreatWarningsAsErrors` escalates only
+compiler + Roslyn-analyzer *warning*-severity diagnostics
+(CSxxxx/CAxxxx). It does NOT touch IDExxxx code-style rules — those
+stay at `suggestion` in `.editorconfig` and are not build-enforced
+(`EnforceCodeStyleInBuild` stays off) — so this cannot surface a
+wall of pre-existing style noise. The build was already at 0
+warnings, so the flip is a no-op today and a guardrail tomorrow.
+
+**Verification.** SDK resolves to `10.0.202`; clean `dotnet build
+PalLLM.sln --configuration Release` reports `0 Warning(s) / 0
+Error(s)`; full audit passes `16 / 16` at
+`artifacts/full-audit/20260531-233325/RESULTS.md`; tests stay
+`1315 / 1315`.
+
 ### Pass 424 - Collapse CI bash drift-counters into the canonical PowerShell audit (2026-05-30)
 
 **Context.** Root-cause fix for a bug class fixed six times in
