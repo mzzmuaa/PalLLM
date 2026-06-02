@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 427)
+## Codex handoff (read first — Pass 428)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260602-010942/RESULTS.md`](../artifacts/full-audit/20260602-010942/RESULTS.md)
+  [`../artifacts/full-audit/20260602-020435/RESULTS.md`](../artifacts/full-audit/20260602-020435/RESULTS.md)
 - committed OpenAPI snapshot:
   [`openapi/palllm-sidecar-v1.json`](openapi/palllm-sidecar-v1.json)
 
@@ -159,6 +159,53 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
+
+- **Pass 428 - Third code↔doc semantic-accuracy audit wave (post-Codex).**
+  Six parallel read-only audits over the domains Passes 426-427 left:
+  ROADMAP/feature-set, the six ADRs, README + CLI quick-refs, SECURITY,
+  appsettings-vs-option-defaults, and the intelligence docs
+  (MENTAL_MODEL/ADVISORS/HARVEST). The feature-set (`122` = `119`/`2`/`1`,
+  `76.2%`), SECURITY.md, and the intelligence docs verified ACCURATE.
+  This wave caught real code/script bugs, not just docs:
+  - **`pal.ps1` arg-forwarding bug:** `pal install-llama-cpp` splatted an
+    undefined `@rest` at the top-level switch instead of
+    `@script:ForwardArgs`, silently dropping every forwarded flag — so the
+    promoted one-command flow `pal install-llama-cpp -AutoLaunch` ran the
+    installer with zero args. Fixed.
+  - **Dead-default bug class (more Pass 426 instances):**
+    `scripts/pal-config-wizard.ps1` wrote the removed Ollama port `11434`
+    + tags `gemma3:4b`/`gemma4:e2b` into user configs;
+    `scripts/pal-config-show.ps1` mis-reported the compiled Inference/Vision
+    BaseUrl default as `11434` (real: `8080`). Both repointed to the
+    llama.cpp shipping defaults. Removed the committed
+    `appsettings.json.bak` (the whole file was the pre-migration Ollama
+    config).
+  - **Stale `pal connect ollama` residue:** Pass 339 deprecated the
+    `ollama` connector (the verb now exits 2; `connect-ollama.ps1` does
+    not exist), but `CODE_MAP.md` pointed at the phantom script,
+    `READINESS.md` listed `ollama` as a live connector, and
+    `COMPATIBILITY.md` + `pal.json` + four helper scripts (`pal-next`,
+    `pal-welcome`, `pal-preflight`, `pal-benchmark`) + a `MetaTests.cs`
+    comment all recommended the dead command. All repointed to `llamacpp`.
+  - **ADR 0002 / 0003:** corrected the portable-seam ADR (the Palworld
+    adapter is Domain-owned `Integration/BridgeGameAdapter.cs`, not
+    Sidecar-supplied; one implementation, not two; the runtime constructs
+    it internally — there is no constructor-injection seam today) and the
+    one-way-bridge ADR's Lua helper name (`emit_event` ->
+    `write_event(event_type, payload_json)`).
+  - **Dead-port + stale-model doc sweep:** standardised vLLM examples on
+    `:8000` and the docker host-engine example on `:8080`
+    (BLACKWELL_RECIPES, QUANTIZATION, MODEL_COLLABORATION, OPERATIONS);
+    fixed API.md vision-response examples + the MODELS_2026 "shipped
+    default" from `gemma4:e2b` to the real `Qwen3.6-35B-A3B-UD-Q8_K_XL`.
+  - **Code comments + front-door:** `PalLlmOptions.cs` ADR filename
+    (`0006-opt-in-defaults.md` -> `0006-opt-in-everything-by-default.md`)
+    and the `ApiKey` comparison note (`ordinal` -> constant-time
+    `FixedTimeEquals`); README `40% credit` parenthetical -> ROADMAP's
+    actual wording; CHEAT_SHEET feature count `121` -> `122`.
+  Bumped `Last audited` on the seven edited stamped docs. Verification:
+  `dotnet test` `1315 / 1315`; full audit `16 / 16` with `0` build
+  warnings at `../artifacts/full-audit/20260602-020435/RESULTS.md`.
 
 - **Pass 427 - Second code↔doc semantic-accuracy audit wave (post-Codex).**
   Pass 426 covered 5 doc domains; this wave swept the 5 that were left:

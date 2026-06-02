@@ -97,7 +97,7 @@ in-process by the Lua bridge talking directly to the UE4SS API.
 If you're harvesting the Outbox/Inbox pattern for any
 two-process system: the producers' write paths are in
 `PalLlmRuntime.WriteOutboxReplyAsync` and the Lua bridge's
-`emit_event(envelope)` helper. The drain side is
+`write_event(event_type, payload_json)` helper. The drain side is
 `BridgeInboxWorker.cs` (sidecar) and the polling loop in
 `main.lua`. The retention math lives in `BridgeOptions` and
 applies on every write — that's the part most "queue-on-disk"

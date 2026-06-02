@@ -1,6 +1,6 @@
 # Readiness - candid 10/10 scorecard
 
-Last audited: `2026-05-24`
+Last audited: `2026-06-01`
 
 > "Is it ready to run? Will users rate it 10/10 in every aspect?"
 >
@@ -64,7 +64,7 @@ live in-game work I cannot do autonomously.
 | 2 | Download / extract | **7/10** | SHA-256 + sigstore + SLSA + checksums all ship. Windows SmartScreen unavoidable for unsigned `.bat`. | Code-signed `.bat` (or wrap as a signed `.exe` launcher). |
 | 3 | Install (one-click) | **9.5/10** | `play.bat` auto-detects Palworld, installs mod, boots sidecar, opens dashboard, launches game. Atomic install with rollback. | Interactive prompt for missing UE4SS prerequisite. |
 | 4 | First chat (deterministic) | **7/10** | 19 hand-authored fallback strategies + emergency tier always answer. Replies are competent, not magical. | By-design ceiling - deterministic replies stay predictable on purpose. |
-| 5 | First chat (with inference) | **9/10** | Works against any OpenAI-compatible endpoint. Nine first-party connectors via `pal connect <target>` (`ollama`, `llamacpp`, `lmstudio`, `vllm`, `vllm-omni`, `transformers`, `tensorrt`, `openvino`, `foundry`). Each has `-DryRun` preview, `.bak` backup, hardware-tier-aware recommendation. | One-click "Connect to Ollama" button inside the dashboard. |
+| 5 | First chat (with inference) | **9/10** | Works against any OpenAI-compatible endpoint. Nine first-party connectors via `pal connect <target>` (`cloud`, `llamacpp`, `lmstudio`, `vllm`, `vllm-omni`, `transformers`, `tensorrt`, `openvino`, `foundry`). Each has `-DryRun` preview, `.bak` backup, hardware-tier-aware recommendation. | One-click "Connect to llama.cpp" button inside the dashboard. |
 | 6 | **In-game experience (native HUD/audio/actions)** | **5/10** | **The biggest gap.** Replies render via generic `ClientMessage`, not a true subtitle / portrait / HUD. Audio is local Windows playback fallback, not in-world. `recall_pals` and `request_craft_queue` show feedback messages but don't execute natively. | Phase 4 + Phase 5 of [`ROADMAP.md`](ROADMAP.md) - requires live Palworld + UE4SS session (~12-13pp of the remaining 23.8%). |
 | 7 | Configuration | **8/10** | `pal config` opens / shows / wizards `appsettings.json`. The wizard is a 5-question interactive setup; `show` annotates each value's source (file vs env-var vs default); `-Json` for programmatic consumption. [`ENV_VARS.md`](ENV_VARS.md) + [`TUNING.md`](TUNING.md) are comprehensive. | Dashboard-side editor with validation + diff preview before save. |
 | 8 | Diagnose / troubleshoot | **9.7/10** | `pal doctor`, `pal support`, `pal logs`, `pal preflight`, `pal proof`, [`RUNBOOK.md`](RUNBOOK.md) per-symptom playbook, friendly errors with "try this next" hints. | One-click "send anonymized support bundle" button inside the dashboard. |
@@ -178,7 +178,7 @@ environment to push the average up:
 | Documentation (9 -> 10) | Add a "what to read in order" dropdown on the dashboard pointing at 5 docs. |
 | Polish (7 -> 8) | Tighten dashboard CSS, add subtle animations, theme refresh. |
 | Discovery (8 -> 9) | Add ASCII-diagram screenshots to README until video assets are available. |
-| Configure (7 -> 8) | Add a one-click "Connect to Ollama" wizard that probes localhost:11434 and offers to flip the right config flag. |
+| Configure (7 -> 8) | Extend the config wizard to probe localhost:8080 for a running llama.cpp engine and offer to flip the right config flag automatically. |
 | Customize (6 -> 7) | Add a `pal pack list` / `pal pack install` flow that scans GitHub for community packs. |
 | ~~Update (7 -> 8)~~ shipped Pass 99 | `pal check-updates` queries GitHub Releases via `Invoke-RestMethod` with semver comparison + opt-in disclosure. |
 | ~~MCP (8 -> 9)~~ shipped Pass 99 | `pal mcp connect <client>` writes the config in place idempotently for Claude Desktop / VS Code / Cursor with `-DryRun` preview and `.bak` backups. |

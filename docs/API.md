@@ -433,7 +433,7 @@ parses them.
   "Success": true,
   "Description": "Night-time base perimeter with one Rayhound circling the gate.",
   "StatusMessage": "Vision describe completed.",
-  "Model": "gemma4:e2b",
+  "Model": "Qwen3.6-35B-A3B-UD-Q8_K_XL",
   "LatencyMs": 412
 }
 ```
@@ -458,7 +458,7 @@ policy as chat: high-level cause, no raw upstream body or exception text.
 {
   "Success": true,
   "StatusMessage": "Vision world-state extracted. Applied to snapshot.",
-  "Model": "gemma4:e2b",
+  "Model": "Qwen3.6-35B-A3B-UD-Q8_K_XL",
   "LatencyMs": 1103,
   "RawContent": "{ ... model's raw JSON ... }",
   "State": { /* VisionWorldStateSnapshot */ },

@@ -151,8 +151,9 @@ into Palworld; the mod consumes outbox files at its own cadence.
 > for the components PalLLM calls at runtime.
 
 > **Status:** `76.2%` on the honest player-experience-weighted roadmap
-> (scaffolded features at 40% credit; see `docs/ROADMAP.md`, 2026-04-23
-> honesty pass). Sidecar runtime is effectively production-ready; the
+> (scaffolded features discounted, verification gaps treated as real
+> blockers; see `docs/ROADMAP.md`). Sidecar runtime is effectively
+> production-ready; the
 > remaining ~24pp live in the UE4SS Lua mod (native HUD binding, native
 > audio playback, full action executor coverage).
 > `1315` tests passing. `57` `/api` routes + complete `MCP` server at `/mcp`

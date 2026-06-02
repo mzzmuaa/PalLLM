@@ -1282,7 +1282,7 @@ vLLM 0.6+
 
 PalLLM
   Inference:Enabled = true
-  Inference:BaseUrl = http://127.0.0.1:11434/v1/   (vLLM bound there)
+  Inference:BaseUrl = http://127.0.0.1:8000/v1/   (vLLM bound there)
   Inference:Model   = nvidia/Llama-3.3-70B-Instruct-FP4
 ```
 

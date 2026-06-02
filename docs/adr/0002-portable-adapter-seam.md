@@ -32,9 +32,11 @@ interfaces describe everything domain code needs from a host game:
 - `ILogger` — minimal log surface
 
 Every concrete consumer of "what's happening in the game" goes
-through `IGameAdapter`. The Sidecar project supplies a
-Palworld-specific implementation (via the Lua bridge file
-producer/consumer); the domain project never references it.
+through `IGameAdapter`. The Domain project itself supplies the
+Palworld implementation — `Integration/BridgeGameAdapter.cs`
+(`AdapterName = "Palworld (UE4SS bridge)"`) — which reaches the game
+*only* through the filesystem Outbox/Inbox bridge, never via a direct
+reference to UE4SS or the Sidecar.
 
 `PalLLM.Domain.csproj` deliberately has **no** project reference to
 the Sidecar or the UE4SS layer. Build the domain in isolation and it
@@ -47,10 +49,9 @@ compiles to a self-contained NuGet-shape DLL.
   cross-cutting references are everywhere and the refactor takes
   weeks. We paid the up-front cost.
 - **Inversion-of-control container with reflection-based discovery.**
-  Adds ceremony for no gain — there are five interfaces, two
-  implementations (Palworld + the in-memory test fake), and the
-  binding happens once at startup. Constructor injection beats DI
-  containers here.
+  Adds ceremony for no gain — there are five interfaces, one shipping
+  implementation (`BridgeGameAdapter`), and the binding happens once
+  at startup. Direct construction beats DI containers here.
 - **Pinned adapter as an interface inside `PalLlmRuntime`.** Mixes
   layers. Anyone harvesting just the runtime would inherit the pinned
   shape. The standalone interfaces compose better.
@@ -61,8 +62,9 @@ compiles to a self-contained NuGet-shape DLL.
 - A harvester implements 5 small interfaces and gets the entire
   PalLLM runtime in their own game. `docs/HARVEST.md` § "Lift the
   runtime into a different game" walks through this end-to-end.
-- The domain project's tests can use an in-memory adapter fake. No
-  game required to run `dotnet test`.
+- No game is required to run `dotnet test`: the bridge adapter
+  reaches the game only through files, so tests drive the runtime
+  against a temp bridge directory instead of a live Palworld session.
 - Drift gates can enforce the seam: any new domain-code reference to
   Palworld-specific types would be a build-time failure (the project
   doesn't reference them, so the symbol wouldn't resolve).
@@ -79,11 +81,13 @@ compiles to a self-contained NuGet-shape DLL.
 
 The literal seam file is the harvest target:
 `src/PalLLM.Domain/Portable/PortableAdapterContracts.cs`. Implement
-the five interfaces against your target environment and pass the
-`IGameAdapter` to `PalLlmRuntime`'s constructor. Everything else
-(memory, fallback, presentation, vision orchestration, TTS, role
-mesh, promotion ledger, advisors, builders, validators) comes
-along.
+the five interfaces for your target environment. The runtime today
+constructs `BridgeGameAdapter` from `PalLlmOptions` and exposes it as
+the `Adapter` property; a harvester swaps in their own `IGameAdapter`
+by replacing that construction (a `PalLlmRuntime` constructor overload
+that accepts an `IGameAdapter` is the natural future seam). Everything
+else (memory, fallback, presentation, vision orchestration, TTS, role
+mesh, promotion ledger, advisors, builders, validators) comes along.
 
 ## Related
 

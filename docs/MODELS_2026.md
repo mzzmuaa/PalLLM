@@ -1,6 +1,6 @@
 # Model recommendations — May 2026
 
-Last audited: `2026-05-22`
+Last audited: `2026-06-01`
 
 This doc is a **research-grounded rethink** of which local models should
 sit behind each PalLLM function. Sources: Hugging Face Hub trending feeds
@@ -107,10 +107,11 @@ reply.
 | Frontier | `OpenGVLab/InternVL3-78B` | 78 B | server | Record-holder on MMMU (72.2); for offline labs only | Various |
 
 **Wire-up.** `PalLLM:Vision:BaseUrl` + `PalLLM:Vision:Model` already
-exist. The shipped default stays `gemma4:e2b` as a small edge-class
-placeholder; operators with a consumer GPU should pin `Qwen3-VL-8B`
-after proving the exact endpoint accepts PalLLM's image content-part
-shape and structured-output request.
+exist. The shipped default is `Qwen3.6-35B-A3B-UD-Q8_K_XL` (the same
+multimodal model as chat); operators with a consumer GPU can instead
+pin a dedicated VLM like `Qwen3-VL-8B` after proving the exact
+endpoint accepts PalLLM's image content-part shape and
+structured-output request.
 
 ---
 

@@ -1,6 +1,6 @@
 # PalLLM cheat sheet - one page
 
-Last audited: `2026-05-24`
+Last audited: `2026-06-01`
 
 The TL;DR-of-TL;DRs. Everything you need to operate the repo
 fits on one screen. For the full doc tour, see
@@ -173,7 +173,7 @@ D:\Coding\PalLLM\
 curl -s http://localhost:5088/api/health      # full RuntimeHealth + opt-in flags
 curl -s http://localhost:5088/api/describe    # one-shot self-description manifest
 curl -s http://localhost:5088/api/quickstart  # state-aware "what should I do next?"
-curl -s http://localhost:5088/api/features    # feature catalog (121 entries)
+curl -s http://localhost:5088/api/features    # feature catalog (122 entries)
 curl -s http://localhost:5088/api/release/readiness   # machine-readable release posture
 curl -s http://localhost:5088/api/bridge/proof        # native-readiness + loop-proof snapshot
 ```

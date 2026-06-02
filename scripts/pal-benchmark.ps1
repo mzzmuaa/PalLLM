@@ -204,7 +204,7 @@ $bottleneck = ''
 if ($errors -gt 0) {
     $bottleneck = 'request failures - check sidecar logs first'
 } elseif ($fallbackHits -gt 0 -and $liveHits -eq 0) {
-    $bottleneck = 'fully on deterministic fallback - no live inference wired (run `pal connect ollama`, `pal connect llamacpp`, `pal connect lmstudio`, `pal connect vllm`, `pal connect foundry`, or `pal connect transformers`)'
+    $bottleneck = 'fully on deterministic fallback - no live inference wired (run `pal connect llamacpp`, `pal connect lmstudio`, `pal connect vllm`, `pal connect foundry`, or `pal connect transformers`)'
 } elseif ($median -gt $budget.WarmMs * 2) {
     $bottleneck = 'model latency dominates - try a smaller model or NVFP4 quant if hardware supports'
 } elseif ($median -gt $budget.WarmMs * 1.2 -and $tier -eq 'Standard') {

@@ -11,7 +11,7 @@
 //            AutomationOptions / AuthOptions / HttpSurfaceOptions /
 //            McpClientOptions (nested).
 //   gate:    None directly; option validation lives in PalLlmOptionsValidator.
-//   adr:     0006-opt-in-defaults.md (every privacy-sensitive opt-in is off
+//   adr:     0006-opt-in-everything-by-default.md (every privacy-sensitive opt-in is off
 //            by default; the wizard NEVER flips defaults without explicit
 //            consent).
 //   docs:    docs/ENV_VARS.md (every knob with effects), docs/TUNING.md
@@ -1351,7 +1351,8 @@ public sealed class AuthOptions
     /// Optional bearer-token key. When set to a non-empty string, every
     /// request under <c>/api/*</c> must carry an
     /// <c>Authorization: Bearer &lt;key&gt;</c> header whose value matches
-    /// exactly (ordinal comparison). When null or empty (default) the
+    /// exactly (constant-time <c>CryptographicOperations.FixedTimeEquals</c>
+    /// byte comparison). When null or empty (default) the
     /// sidecar serves <c>/api/*</c> unauthenticated — the right posture for
     /// localhost-only deployments where the port is only reachable from the
     /// machine owner.

@@ -28,7 +28,7 @@
 
        1.  Repo not built / not tested      -> `pal onboard`
        2.  Sidecar offline                  -> `pal play`
-       3.  Sidecar up, no inference         -> `pal connect ollama` (also llamacpp / vllm / omni / foundry / openvino / tensorrt / transformers)
+       3.  Sidecar up, no inference         -> `pal connect llamacpp` (also vllm / omni / foundry / openvino / tensorrt / transformers / lmstudio)
        3b. Inference wired but unreachable  -> `pal doctor` (circuit open / probe failed)
        4.  Sidecar up, no packs loaded      -> `pal pack copy companion-warrior`
        5.  Latest audit FAIL                -> `pal fast-audit` to confirm
@@ -288,7 +288,7 @@ elseif (-not $inferenceWired) {
     if ($hardwareTier -eq 'Blackwell' -or $hardwareTier -eq 'Generous') {
         $command = 'pal connect vllm   # or: pal connect llamacpp / lmstudio / openvino / foundry / transformers'
     } else {
-        $command = 'pal connect ollama   # easiest path; ''pal connect llamacpp'' for raw GGUF; ''pal connect lmstudio'' for desktop local models; ''pal connect openvino'' for Intel GPU/NPU; ''pal connect foundry'' for Windows ML; ''pal connect transformers'' for pinned HF serving; ''pal connect omni'' for multimodal'
+        $command = 'pal connect llamacpp   # bundled default (raw GGUF); ''pal connect lmstudio'' for desktop local models; ''pal connect openvino'' for Intel GPU/NPU; ''pal connect foundry'' for Windows ML; ''pal connect transformers'' for pinned HF serving; ''pal connect omni'' for multimodal'
     }
 }
 # 3b. Inference wired in config but the configured backend is unreachable.
@@ -299,7 +299,7 @@ elseif (-not $inferenceLive) {
     $action = 'inference-unreachable'
     $verdict = 'INFERENCE UNREACHABLE'
     $why = "Inference is enabled in config but the sidecar reports the circuit as '$inferenceCircuit'. The configured backend at the BaseUrl in appsettings.json isn't responding. Boot it (or pick a different lane with 'pal connect') and the companion swaps back to live replies on the next probe."
-    $command = "pal doctor   # diagnose the backend; or pick a lane with pal connect ollama / llamacpp / openvino / foundry"
+    $command = "pal doctor   # diagnose the backend; or pick a lane with pal connect llamacpp / vllm / openvino / foundry"
 }
 # 4. No packs loaded -> get a voice. Four ready-made samples ship under
 # samples\packs\; `pal pack copy <name>` is the dedicated one-step bridge

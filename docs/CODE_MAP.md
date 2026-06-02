@@ -1,6 +1,6 @@
 # PalLLM Code Map
 
-Last audited: `2026-05-24`
+Last audited: `2026-06-01`
 
 "Where does X live?" � symbol-to-file navigation for coding agents and
 harvesters. Maintained alongside the code; freshness gated by the
@@ -137,8 +137,7 @@ route `POST /api/chat`. Downstream: `ChatResponse` contract in
 - **Background feeder** -> `PalLLM.Sidecar/PromotionLedgerFeeder.cs`
 
 ### Inference-engine connectors (`pal connect <target>`)
-- **Ollama** -> `scripts/connect-ollama.ps1` (`pal connect ollama`)
-- **llama.cpp `llama-server`** -> `scripts/connect-llamacpp.ps1` (`pal connect llamacpp`)
+- **llama.cpp `llama-server`** (bundled default) -> `scripts/connect-llamacpp.ps1` (`pal connect llamacpp`)
 - **LM Studio** -> `scripts/connect-lmstudio.ps1` (`pal connect lmstudio`)
 - **vLLM** -> `scripts/connect-vllm.ps1` (`pal connect vllm`)
 - **vLLM-Omni (multimodal)** -> `scripts/connect-vllm-omni.ps1` (`pal connect omni`)

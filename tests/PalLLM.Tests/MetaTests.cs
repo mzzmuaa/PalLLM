@@ -283,7 +283,7 @@ public sealed class MetaTests
             if (entry.Value.ValueKind != JsonValueKind.String) continue;
             string command = entry.Value.GetString() ?? string.Empty;
             // The actual command strings carry the .ps1 extension
-            // (`pwsh ./pal.ps1 connect ollama`), so the regex must allow it.
+            // (`pwsh ./pal.ps1 connect llamacpp`), so the regex must allow it.
             Match m = Regex.Match(command, @"\bpal(?:\.ps1)?\s+connect\s+(?<target>\S+)");
             if (!m.Success) continue;
             string target = m.Groups["target"].Value;

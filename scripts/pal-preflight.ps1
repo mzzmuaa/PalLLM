@@ -125,7 +125,7 @@ if ($activeConfig) {
 if ($inferenceEnabled) {
     Add-Check 'inference-wired' 'Inference endpoint wired?' 'pass' 'PalLLM:Inference:Enabled = true'
 } else {
-    Add-Check 'inference-wired' 'Inference endpoint wired?' 'warn' "deterministic-fallback only (run 'pal connect ollama', 'pal connect llamacpp', or 'pal config wizard' to wire one)"
+    Add-Check 'inference-wired' 'Inference endpoint wired?' 'warn' "deterministic-fallback only (run 'pal connect llamacpp' or 'pal config wizard' to wire one)"
 }
 
 # 4. Personality pack loaded

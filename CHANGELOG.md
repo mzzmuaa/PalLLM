@@ -18,6 +18,67 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 428 - Third code↔doc semantic-accuracy audit wave (2026-06-01)
+
+**Context.** Passes 426-427 hand-audited ten doc domains for semantic
+accuracy. This pass swept the remainder with six parallel read-only
+audits: ROADMAP/feature-set, the six ADRs, README + CLI quick-refs,
+SECURITY, appsettings-vs-option-defaults, and the intelligence docs
+(MENTAL_MODEL/ADVISORS/HARVEST). The feature-set (`122` = `119`/`2`/`1`,
+`76.2%`), SECURITY.md, and the intelligence docs verified accurate. This
+wave surfaced real code/script bugs, not only documentation drift.
+
+**Changes.**
+- **`pal.ps1` arg-forwarding bug (script):** the `install-llama-cpp`
+  dispatch case splatted an undefined `@rest` at the top-level switch
+  instead of `@script:ForwardArgs` (the pattern every other plain verb
+  uses), so `pal install-llama-cpp -AutoLaunch` — the one-command flow
+  promoted in README/CHEAT_SHEET — silently dropped `-AutoLaunch` and all
+  other flags. Fixed.
+- **Dead-default bug class (more instances of the Pass 426 class):**
+  `scripts/pal-config-wizard.ps1` offered and wrote the removed Ollama
+  port `11434` plus tags `gemma3:4b`/`gemma4:e2b` into the user's config;
+  `scripts/pal-config-show.ps1` (the "compiled defaults" mirror)
+  mis-reported the Inference/Vision BaseUrl default as `11434` (real:
+  `8080`). Both repointed to the llama.cpp shipping defaults
+  (`8080` / `Qwen3.6-35B-A3B-UD-Q8_K_XL`). Removed the git-tracked
+  `src/PalLLM.Sidecar/appsettings.json.bak`, whose entire body was the
+  superseded pre-migration Ollama config.
+- **Stale `pal connect ollama` residue:** Pass 339 deprecated the
+  `ollama` connector (the `connect` verb now prints a redirect and exits
+  2; `connect-ollama.ps1` does not exist), but several surfaces still
+  treated it as live — `CODE_MAP.md` pointed at the phantom script,
+  `READINESS.md` listed `ollama` among the nine connectors,
+  `COMPATIBILITY.md` + `pal.json` + four helper scripts (`pal-next`,
+  `pal-welcome`, `pal-preflight`, `pal-benchmark`) recommended the dead
+  command, and a `MetaTests.cs` comment used it as an example. All
+  repointed to `llamacpp` (the bundled default); `READINESS.md`'s
+  connector list corrected to the real nine (swapped `ollama` -> `cloud`).
+- **ADR 0002 / 0003:** corrected the portable-adapter-seam ADR — the
+  Palworld adapter is Domain-owned (`Integration/BridgeGameAdapter.cs`),
+  not Sidecar-supplied; there is one shipping implementation, not two;
+  and the runtime constructs it internally from `PalLlmOptions` rather
+  than via constructor injection (noted as the natural future seam).
+  Fixed the one-way-bridge ADR's Lua helper name (`emit_event` ->
+  `write_event(event_type, payload_json)`).
+- **Dead-port + stale-model doc sweep:** standardised vLLM examples on
+  `:8000` and the docker host-engine example on `:8080` across
+  BLACKWELL_RECIPES, QUANTIZATION, MODEL_COLLABORATION, and OPERATIONS;
+  corrected API.md vision-response examples and the MODELS_2026 "shipped
+  default" claim from `gemma4:e2b` to the real
+  `Qwen3.6-35B-A3B-UD-Q8_K_XL`.
+- **Code comments + front-door:** `PalLlmOptions.cs` ADR filename
+  (`0006-opt-in-defaults.md` -> `0006-opt-in-everything-by-default.md`)
+  and the `Auth.ApiKey` comparison note (`ordinal comparison` ->
+  constant-time `CryptographicOperations.FixedTimeEquals`); the README
+  `40% credit` parenthetical replaced with ROADMAP's actual phase-weighted
+  wording; CHEAT_SHEET feature-catalog count `121` -> `122`. Bumped
+  `Last audited` on the seven edited stamped docs.
+
+**Verification.** `dotnet test` `1315 / 1315`; full audit `16 / 16` with
+`0` build warnings at
+`artifacts/full-audit/20260602-020435/RESULTS.md`.
+
 ### Pass 427 - Second code↔doc semantic-accuracy audit wave (2026-06-01)
 
 **Context.** The 16 drift gates verify cross-doc *count* consistency,

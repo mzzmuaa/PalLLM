@@ -227,7 +227,7 @@ if ($onWindows) {
 
 $inferenceChoice = Ask-Choice -Question "2. Wire an OpenAI-compatible inference endpoint?" -Choices @(
     "No - keep deterministic-fallback only (zero outbound traffic)"
-    "Yes - local engine at default port http://127.0.0.1:11434/v1/"
+    "Yes - local engine at default port http://127.0.0.1:8080/v1/"
     "Yes - custom URL (you'll be asked next)"
 ) -Default 0
 
@@ -236,8 +236,8 @@ $inferenceModel = ''
 $inferenceEnabled = $false
 switch ($inferenceChoice) {
     1 {
-        $inferenceBaseUrl = 'http://127.0.0.1:11434/v1/'
-        $inferenceModel = Ask-String -Question "  Model name? (e.g. gemma3:4b, qwen3:14b-instruct)" -Default 'gemma3:4b'
+        $inferenceBaseUrl = 'http://127.0.0.1:8080/v1/'
+        $inferenceModel = Ask-String -Question "  Model name? (e.g. Qwen3.6-35B-A3B-UD-Q8_K_XL, gemma-4-E4B-it-UD-Q4_K_XL)" -Default 'Qwen3.6-35B-A3B-UD-Q8_K_XL'
         $inferenceEnabled = $true
     }
     2 {
@@ -263,12 +263,12 @@ $ttsEnabled = ($ttsChoice -eq 1)
 
 $visionChoice = Ask-Choice -Question "4. Wire local vision describer at the default port?" -Choices @(
     "No - keep vision off"
-    "Yes - local vision at http://127.0.0.1:11434/v1/ (same engine, different model)"
+    "Yes - local vision at http://127.0.0.1:8080/v1/ (same OpenAI-compatible engine)"
 ) -Default 0
 $visionEnabled = ($visionChoice -eq 1)
 $visionModel = ''
 if ($visionEnabled) {
-    $visionModel = Ask-String -Question "  Vision model name?" -Default 'gemma4:e2b'
+    $visionModel = Ask-String -Question "  Vision model name?" -Default 'Qwen3.6-35B-A3B-UD-Q8_K_XL'
 }
 
 # -----------------------------------------------------------------------------
@@ -323,7 +323,7 @@ $pal['Tts']['Enabled'] = $ttsEnabled
 if (-not (Test-ConfigKey $pal 'Vision')) { $pal['Vision'] = [ordered]@{} }
 $pal['Vision']['Enabled'] = $visionEnabled
 if ($visionEnabled) {
-    $pal['Vision']['BaseUrl'] = 'http://127.0.0.1:11434/v1/'
+    $pal['Vision']['BaseUrl'] = 'http://127.0.0.1:8080/v1/'
     $pal['Vision']['Model']   = $visionModel
 }
 

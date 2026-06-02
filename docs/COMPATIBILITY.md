@@ -1,6 +1,6 @@
 # PalLLM Compatibility Matrix
 
-Last audited: `2026-05-24`
+Last audited: `2026-06-01`
 
 Known-compatible and known-conflicting setups for PalLLM. Consumed by
 `scripts/doctor.ps1` via [`scripts/compatibility.json`](../scripts/compatibility.json)
@@ -79,7 +79,7 @@ deterministically from `(coreCount, ramGiB, gpuPresent)` - see
 
 | Tier | Classification rule (live code) | Recommended for | What runs |
 |---|---|---|---|
-| `Constrained` | no GPU, OR `< 8 cores`, OR `< 16 GiB RAM` | 2016-era CPU-only laptops, basic desktops | Deterministic fallback always; small local model (1-3B) optional via `pal connect ollama` |
+| `Constrained` | no GPU, OR `< 8 cores`, OR `< 16 GiB RAM` | 2016-era CPU-only laptops, basic desktops | Deterministic fallback always; small local model (1-3B) optional via `pal connect llamacpp` |
 | `Standard` | GPU present + `>= 8 cores` + `>= 16 GiB RAM` | 2018-2024 mid-range gaming PCs | All of Constrained, plus 7-13B local models, vision describe, TTS |
 | `Generous` | GPU present + `>= 16 cores` + `>= 48 GiB RAM` | 2022+ high-end workstations | All of Standard, plus 30-70B local models, multimodal lanes, Duo mesh |
 
@@ -185,10 +185,9 @@ is missing.
 
 | Provider | Transport | Status | Notes |
 |---|---|---|---|
-| Ollama (loopback) | `http://127.0.0.1:11434/v1/` | **Reference** | Default in `appsettings.json` |
-| Ollama (LAN) | `http://<host>:11434/v1/` | Supported | Set `PalLLM:Inference:BaseUrl` |
-| llama.cpp server | `http://<host>:8080/v1/` | Supported | OpenAI-compatible |
-| vLLM | `http://<host>:8000/v1/` | Supported | OpenAI-compatible |
+| llama.cpp server (bundled, loopback) | `http://127.0.0.1:8080/v1/` | **Reference** | Default in `appsettings.json`; installed via `pal install-llama-cpp` |
+| llama.cpp server (LAN) | `http://<host>:8080/v1/` | Supported | Set `PalLLM:Inference:BaseUrl` |
+| vLLM | `http://<host>:8000/v1/` | Supported | OpenAI-compatible; high-VRAM rigs |
 | Text Generation Inference | `http://<host>:3000/v1/` | Supported | OpenAI-compatible (messages API) |
 | OpenAI direct | `https://api.openai.com/v1/` | Works but not recommended | Leaks chat traffic off-device; `/api/airgap/verify` will mark `public-internet` |
 

@@ -964,7 +964,7 @@ Image characteristics:
 - **Config**: any `PalLLM:*` option can be overridden via the
   `PalLLM__*` environment variable convention (ASP.NET Core config
   double-underscore path separator). Example:
-  `-e PalLLM__Inference__Enabled=true -e PalLLM__Inference__BaseUrl=http://host.docker.internal:11434/v1/`.
+  `-e PalLLM__Inference__Enabled=true -e PalLLM__Inference__BaseUrl=http://host.docker.internal:8080/v1/`.
 
 Remote Lua bridge: the UE4SS Lua bridge on the Windows game machine
 writes to `%LOCALAPPDATA%\Pal\Saved\PalLLM\Bridge\*`. To let a

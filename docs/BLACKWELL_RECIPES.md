@@ -1,6 +1,6 @@
 # Blackwell + NVFP4 / MXFP4 recipes for PalLLM
 
-Last audited: `2026-05-22`
+Last audited: `2026-06-01`
 
 Concrete, copy-pastable recipes for PalLLM-style local companion work:
 Palworld companion dialogue, screenshot/vision review, world-state narration,
@@ -38,7 +38,7 @@ huggingface-cli download nvidia/Llama-3.3-70B-Instruct-FP4
 
 # 2. Boot vLLM (V1 engine, default since 0.8.x; APC and chunked prefill
 #    on by default; EAGLE-3 speculative decoding opt-in below)
-docker run --gpus all --rm -p 11434:8000 \
+docker run --gpus all --rm -p 8000:8000 \
   -v ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface \
   vllm/vllm-openai:latest \
   --model nvidia/Llama-3.3-70B-Instruct-FP4 \
@@ -55,7 +55,7 @@ docker run --gpus all --rm -p 11434:8000 \
 #    --speculative-config '{"method":"eagle3","model":"nvidia/Llama-3.3-70B-EAGLE-Draft","num_speculative_tokens":4}'
 
 # 4. Verify the engine is using FP4 tensor cores
-curl -s http://localhost:11434/v1/models | jq '.data[].id'
+curl -s http://localhost:8000/v1/models | jq '.data[].id'
 ```
 
 For TensorRT-LLM proof instead of vLLM, start with the connector so the
@@ -168,7 +168,7 @@ The PalLLM-side configuration mirror is just three env vars:
 
 ```powershell
 $env:PalLLM__Inference__Enabled = "true"
-$env:PalLLM__Inference__BaseUrl = "http://127.0.0.1:11434/v1/"
+$env:PalLLM__Inference__BaseUrl = "http://127.0.0.1:8000/v1/"
 $env:PalLLM__Inference__Model   = "nvidia/Llama-3.3-70B-Instruct-FP4"
 ```
 
@@ -189,7 +189,7 @@ alive" and "feels broken" for a player.
 ### vLLM startup
 
 ```bash
-docker run --gpus all --rm -p 11434:8000 \
+docker run --gpus all --rm -p 8000:8000 \
   vllm/vllm-openai:latest \
   --model nvidia/Llama-3.3-70B-Instruct-FP4 \
   --quantization fp4 \
@@ -279,7 +279,7 @@ to be the ceiling.
 ### vLLM startup
 
 ```bash
-docker run --gpus all --rm -p 11434:8000 \
+docker run --gpus all --rm -p 8000:8000 \
   vllm/vllm-openai:latest \
   --model nvidia/Qwen3-Coder-480B-A35B-FP4 \
   --quantization fp4 \
@@ -416,7 +416,7 @@ hardware.
 ### vLLM startup
 
 ```bash
-docker run --gpus all --rm -p 11434:8000 \
+docker run --gpus all --rm -p 8000:8000 \
   vllm/vllm-openai:latest \
   --model nvidia/Llama-3.3-70B-Instruct-FP4 \
   --quantization fp4 \
@@ -458,7 +458,7 @@ vision feature maps benefit from outlier-friendly numerics.
 ### vLLM startup
 
 ```bash
-docker run --gpus all --rm -p 11434:8000 \
+docker run --gpus all --rm -p 8000:8000 \
   vllm/vllm-openai:latest \
   --model nvidia/Llama-3.2-90B-Vision-Instruct-FP4 \
   --quantization fp4 \
@@ -518,7 +518,7 @@ gives you 200+ narrations/second on a 5090.
 ### vLLM startup
 
 ```bash
-docker run --gpus all --rm -p 11434:8000 \
+docker run --gpus all --rm -p 8000:8000 \
   vllm/vllm-openai:latest \
   --model nvidia/Llama-3.1-8B-Instruct-FP4 \
   --quantization fp4 \
@@ -642,7 +642,7 @@ Drop-in benchmark before committing a quant choice:
 ```bash
 # 1. Baseline current quant for 100 representative prompts
 cat prompts.jsonl | while read line; do
-  curl -s -X POST http://localhost:11434/v1/chat/completions \
+  curl -s -X POST http://localhost:8000/v1/chat/completions \
     -H "Content-Type: application/json" -d "$line" \
     | jq '.choices[0].message.content'
 done > baseline.txt

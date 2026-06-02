@@ -11,7 +11,7 @@
       2. The first thing to try: pal hello (probe a running sidecar)
       3. The 30-second self-tour: pal demo
       4. Out-of-game moments: pal campfire (with /whisper /fortune /quest /tale)
-      5. Wire a real LLM: pal connect ollama (or llamacpp / vllm / foundry)
+      5. Wire a real LLM: pal connect llamacpp (or vllm / lmstudio / foundry)
       6. Where to go next: docs/INDEX.md and docs/HANDOFF.md
 
     Each beat waits for ENTER before continuing. The user can ABORT
@@ -149,7 +149,7 @@ Write-Pal ""
 Write-Pal "5. Wire a real LLM (optional):" 'Cyan'
 Write-Pal "   Pick the path that matches your local model server:" 'White'
 Write-Pal ""
-Write-Pal "       pal connect ollama   # local engine, any hardware" 'Yellow'
+Write-Pal "       pal install-llama-cpp -AutoLaunch  # download + launch the bundled engine" 'Yellow'
 Write-Pal "       pal connect llamacpp -ModelPath <model.gguf>  # raw GGUF llama-server lane" 'Yellow'
 Write-Pal "       pal connect lmstudio -Model <loaded-id>  # LM Studio desktop lane" 'Yellow'
 Write-Pal "       pal connect vllm     # Blackwell / Hopper / Ampere recipe" 'Yellow'

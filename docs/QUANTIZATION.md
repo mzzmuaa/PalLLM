@@ -1,6 +1,6 @@
 # Quantization — choosing the right format for your hardware
 
-Last audited: `2026-05-22`
+Last audited: `2026-06-01`
 
 PalLLM is an HTTP client; it sends chat requests to whatever
 inference server an operator configures. The model file format
@@ -385,14 +385,14 @@ vLLM+NVFP4 on a Blackwell box is purely an operator action:
 ```powershell
 # Stop your current llama-server
 # Start vLLM with an NVFP4 model:
-docker run --gpus all -p 11434:8000 vllm/vllm-openai:latest \
+docker run --gpus all -p 8000:8000 vllm/vllm-openai:latest \
     --model nvidia/Llama-3.3-70B-Instruct-FP4 \
     --quantization fp4 \
     --max-model-len 8192
 
 # Update PalLLM config — no PalLLM restart needed beyond a
 # normal config reload:
-$env:PalLLM__Inference__BaseUrl = "http://127.0.0.1:11434/v1/"
+$env:PalLLM__Inference__BaseUrl = "http://127.0.0.1:8000/v1/"
 $env:PalLLM__Inference__Model = "nvidia/Llama-3.3-70B-Instruct-FP4"
 $env:PalLLM__Inference__Enabled = "true"
 

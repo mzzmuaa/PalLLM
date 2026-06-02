@@ -1083,7 +1083,6 @@ function Run-Models {
         Write-Host ""
         Write-Host "Boot the sidecar first to get a hardware-specific recommendation:" -ForegroundColor White
         Write-Host "  pal play       # boots the sidecar and opens the dashboard" -ForegroundColor Cyan
-        Write-Host "  pal serve      # boots the sidecar without opening the dashboard" -ForegroundColor Cyan
         Write-Host ""
     }
 
@@ -1283,7 +1282,7 @@ switch ($Verb.ToLowerInvariant()) {
     'connect'       { Run-Connect }
     'install-llama-cpp' {
         & powershell -NoProfile -ExecutionPolicy Bypass `
-            -File (Join-Path $repoRoot 'scripts/install-llama-cpp.ps1') @rest
+            -File (Join-Path $repoRoot 'scripts/install-llama-cpp.ps1') @script:ForwardArgs
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     }
     'support'       { Invoke-PalVerb 'support' { Run-Support } 'pal play       # confirm the sidecar is reachable so the bundle has live evidence' }

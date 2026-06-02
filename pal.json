@@ -112,7 +112,7 @@
       { "command": "pwsh ./pal.ps1 aot-readiness", "what": "Static AOT/trim readiness scan before native publish experiments." },
       { "command": "pwsh ./pal.ps1 proof", "what": "Read-only native proof status and the exact next command." },
       { "command": "pwsh ./pal.ps1 demo", "what": "30-second self-running tour across six fallback families." },
-      { "command": "pwsh ./pal.ps1 connect ollama", "what": "Wire the local OpenAI-compatible engine in one command." },
+      { "command": "pwsh ./pal.ps1 install-llama-cpp -AutoLaunch", "what": "Install and launch the bundled local llama.cpp engine in one command." },
       { "command": "pwsh ./pal.ps1 connect llamacpp -ModelPath <model.gguf>", "what": "Print or wire a raw llama.cpp llama-server GGUF lane." },
       { "command": "pwsh ./pal.ps1 connect lmstudio -Model <loaded-id>", "what": "Print or wire a local LM Studio lane." },
       { "command": "pwsh ./pal.ps1 connect vllm", "what": "Pick and print the right Blackwell vLLM recipe." },
