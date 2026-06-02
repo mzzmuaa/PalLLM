@@ -484,6 +484,7 @@ public sealed class PalLlmOptionsValidator : IValidateOptions<PalLlmOptions>
         ValidateTtsRequestFormat(tts.RequestFormat, failures);
         ValidateTtsResponseFormat(tts.ResponseFormat, failures);
         RequireMaxLengthIfPresent(tts.Model, MaxTtsModelLength, "PalLLM:Tts:Model", failures);
+        RequireNullableFloatRange(tts.Speed, 0.25f, 4.0f, "PalLLM:Tts:Speed", failures);
         RequirePositive(tts.TimeoutSeconds, "PalLLM:Tts:TimeoutSeconds", failures);
         RequirePositive(tts.MaxCharacters, "PalLLM:Tts:MaxCharacters", failures);
         RequirePositive(tts.MaxResponseBytes, "PalLLM:Tts:MaxResponseBytes", failures);

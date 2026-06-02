@@ -35,29 +35,29 @@ D:\Coding\PalLLM\
 
 | File | Lines | What lives there |
 |---|---|---|
-| `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs` | `1104` | `ChatAsync` - THE hot path. Also TTS/ASR entry points, memory, vision description, relationships, and session persistence. |
-| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Helpers.cs` | `391` | Extracted pure static helpers for endpoint timing, MIME routing, bounded directory counts, receipt text sanitizing, and sorted bridge file enumeration. |
-| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Inference.cs` | `357` | Extracted inference partial: performance snapshots, circuit/model metadata, warmup, live-inference residency tracking, and operation receipts. |
-| `src/PalLLM.Domain/Runtime/PalLlmRuntime.UiProbe.cs` | `628` | Extracted `ui_probe` diagnostics partial: bounded metadata-keyed dump parse cache, dump parsing, HUD candidate ranking, UI-probe cloning, and local diagnostics retention. |
-| `src/PalLLM.Domain/Runtime/PalLlmRuntime.BridgeBoot.cs` | `482` | Extracted bridge-boot and native-readiness partial: heartbeat normalization, compat-signal parsing, native HUD readiness, and HUD bind recommendations. |
-| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Bridge.cs` | `912` | Extracted bridge-drain and activity partial: inbox events, bridge proof snapshots, delivery receipts, speech playback receipts, and action feedback. |
-| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Prompt.cs` | `312` | Extracted prompt-rendering partial: system prompt assembly, bounded text trimming, assistant-message/status formatting, and world/lore/memory context appenders. |
-| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Snapshot.cs` | `489` | Extracted snapshot/health partial: health/dashboard assembly, world-state reads, vision state application, character lookup, and event-driven snapshot mutation. |
-| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Outbox.cs` | `289` | Extracted outbox/archive partial: screenshot ingest queue, outbox listing/clearing/writing, and archive retention. |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs` | `1105` | `ChatAsync` - THE hot path. Also TTS/ASR entry points, memory, vision description, relationships, and session persistence. |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Helpers.cs` | `409` | Extracted pure static helpers for endpoint timing, MIME routing, bounded directory counts, receipt text sanitizing, and sorted bridge file enumeration. |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Inference.cs` | `377` | Extracted inference partial: performance snapshots, circuit/model metadata, warmup, live-inference residency tracking, and operation receipts. |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.UiProbe.cs` | `647` | Extracted `ui_probe` diagnostics partial: bounded metadata-keyed dump parse cache, dump parsing, HUD candidate ranking, UI-probe cloning, and local diagnostics retention. |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.BridgeBoot.cs` | `498` | Extracted bridge-boot and native-readiness partial: heartbeat normalization, compat-signal parsing, native HUD readiness, and HUD bind recommendations. |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Bridge.cs` | `929` | Extracted bridge-drain and activity partial: inbox events, bridge proof snapshots, delivery receipts, speech playback receipts, and action feedback. |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Prompt.cs` | `328` | Extracted prompt-rendering partial: system prompt assembly, bounded text trimming, assistant-message/status formatting, and world/lore/memory context appenders. |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Snapshot.cs` | `507` | Extracted snapshot/health partial: health/dashboard assembly, world-state reads, vision state application, character lookup, and event-driven snapshot mutation. |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Outbox.cs` | `305` | Extracted outbox/archive partial: screenshot ingest queue, outbox listing/clearing/writing, and archive retention. |
 | `src/PalLLM.Domain/Runtime/PresentationCuePlanner.cs` | `1427` | Deterministic visual/audio cue planner � pairs with every chat reply |
 | `src/PalLLM.Sidecar/Program.cs` | `336` | Host builder, middleware, static-asset manifest resolution, OpenAPI/MCP mapping, and route spine. Service registration lives in `Configuration/*.cs`; static assets and `/api` route domains live in `RouteRegistrations/*.cs`. |
-| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmStaticAssetRoutes.cs` | `125` | Extracted Field Console static-asset route companion: `/`, `/app.js`, `/styles.css`, `/index.html`, `/welcome.html`, `/favicon.svg`, and `/manifest.webmanifest`, with metadata-keyed weak content-hash ETags plus `If-Modified-Since` revalidation for the physical-file fallback. |
-| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmInferenceRoutes.cs` | `99` | Extracted inference/MCP-upstream route companion: `/api/inference/*` plus `/api/mcp/upstream`. |
-| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmBridgeRoutes.cs` | `32` | Extracted bridge/outbox route companion: `/api/bridge/drain`, `/api/bridge/outbox`, `/api/bridge/ui-probe`, and `/api/bridge/outbox/clear`. |
-| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmConversationRoutes.cs` | `358` | Extracted conversation route companion: `/api/chat/party`, `/api/chat`, `/api/chat/stream`, and `/api/chat/plan`. |
-| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmPlanningRoutes.cs` | `95` | Extracted deterministic planning/explanation route companion: `/api/directives/plan`, `/api/duo/plan`, `/api/disagreement/check`, and `/api/why`. |
-| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmMediaRoutes.cs` | `92` | Extracted multimodal media route companion: `/api/vision/*`, `/api/tts/synthesize`, and `/api/audio/transcribe`. |
-| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmHealthRoutes.cs` | `143` | Extracted health/manifest route companion: `/api/health`, `/api/dashboard`, `/api/features`, `/api/describe`, `/api/quickstart`, `/metrics`, `/health/live`, and `/health/ready`. |
-| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmInspectionRoutes.cs` | `200` | Extracted read-only inspection/advisory route companion: self-healing, air-gap, roles, hardware, degradation, budgets, narration, lifetime relationships, character mood, and privacy posture. |
-| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmStateRoutes.cs` | `65` | Extracted memory/relationship/session state route companion: `/api/memory/recall`, `/api/relationships*`, and `/api/session/*`. |
-| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmContentWorldRoutes.cs` | `127` | Extracted content/world route companion: narrative-pack listing/resolution/reload/validation, adapter logs, world-state reads, and snapshot updates. |
-| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmPromotionRoutes.cs` | `203` | Extracted promotion-loop route companion: observation recording, summaries, suggestions, editor-ready previews, and staging-only apply. |
-| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmProofReadinessRoutes.cs` | `91` | Extracted proof/readiness route companion: proof packets, release-readiness snapshots, and bridge-proof snapshots. |
+| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmStaticAssetRoutes.cs` | `139` | Extracted Field Console static-asset route companion: `/`, `/app.js`, `/styles.css`, `/index.html`, `/welcome.html`, `/favicon.svg`, and `/manifest.webmanifest`, with metadata-keyed weak content-hash ETags plus `If-Modified-Since` revalidation for the physical-file fallback. |
+| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmInferenceRoutes.cs` | `111` | Extracted inference/MCP-upstream route companion: `/api/inference/*` plus `/api/mcp/upstream`. |
+| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmBridgeRoutes.cs` | `44` | Extracted bridge/outbox route companion: `/api/bridge/drain`, `/api/bridge/outbox`, `/api/bridge/ui-probe`, and `/api/bridge/outbox/clear`. |
+| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmConversationRoutes.cs` | `370` | Extracted conversation route companion: `/api/chat/party`, `/api/chat`, `/api/chat/stream`, and `/api/chat/plan`. |
+| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmPlanningRoutes.cs` | `108` | Extracted deterministic planning/explanation route companion: `/api/directives/plan`, `/api/duo/plan`, `/api/disagreement/check`, and `/api/why`. |
+| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmMediaRoutes.cs` | `104` | Extracted multimodal media route companion: `/api/vision/*`, `/api/tts/synthesize`, and `/api/audio/transcribe`. |
+| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmHealthRoutes.cs` | `155` | Extracted health/manifest route companion: `/api/health`, `/api/dashboard`, `/api/features`, `/api/describe`, `/api/quickstart`, `/metrics`, `/health/live`, and `/health/ready`. |
+| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmInspectionRoutes.cs` | `212` | Extracted read-only inspection/advisory route companion: self-healing, air-gap, roles, hardware, degradation, budgets, narration, lifetime relationships, character mood, and privacy posture. |
+| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmStateRoutes.cs` | `77` | Extracted memory/relationship/session state route companion: `/api/memory/recall`, `/api/relationships*`, and `/api/session/*`. |
+| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmContentWorldRoutes.cs` | `139` | Extracted content/world route companion: narrative-pack listing/resolution/reload/validation, adapter logs, world-state reads, and snapshot updates. |
+| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmPromotionRoutes.cs` | `217` | Extracted promotion-loop route companion: observation recording, summaries, suggestions, editor-ready previews, and staging-only apply. |
+| `src/PalLLM.Sidecar/RouteRegistrations/PalLlmProofReadinessRoutes.cs` | `104` | Extracted proof/readiness route companion: proof packets, release-readiness snapshots, and bridge-proof snapshots. |
 
 If you're here to find the chat path: start at `PalLlmRuntime.ChatAsync`
 (`PalLlmRuntime.cs` around line 476). Upstream: `PalLlmConversationRoutes`

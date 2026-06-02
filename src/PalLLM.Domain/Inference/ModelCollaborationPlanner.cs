@@ -385,7 +385,7 @@ public sealed class ModelCollaborationPlanner
             : "openai-chat";
 
         string requestProtocol = isEmbedding ? "OpenAI-compatible /v1/embeddings or provider-native embedding endpoint"
-            : supportsAudioOutput ? "OpenAI-compatible /v1/chat/completions for text plus separate opt-in /v1/realtime for audio"
+            : supportsAudioOutput ? "OpenAI-compatible /v1/chat/completions for text plus separate opt-in /v1/audio/speech or /v1/realtime for audio"
             : "OpenAI-compatible /v1/chat/completions";
 
         string preferredRuntime = profileId switch
@@ -393,7 +393,7 @@ public sealed class ModelCollaborationPlanner
             "embedding-retrieval" => "local embedding server behind the retrieval lane",
             "gguf-libmtmd-multimodal" => "llama.cpp server with libmtmd and a matching mmproj, or vLLM when the GGUF path is not enough",
             "gguf-chat" => "llama.cpp, LM Studio, vLLM, or another local GGUF server",
-            "omni-realtime-opt-in" => "vLLM-Omni, transformers serve, or another isolated realtime-capable OpenAI-compatible server",
+            "omni-realtime-opt-in" => "vLLM-Omni, llama.cpp speech/talker, transformers serve, or another isolated audio-capable OpenAI-compatible server",
             _ when multimodal => "vLLM, SGLang, TensorRT-LLM, OpenVINO Model Server, transformers serve, or a Foundry Local REST lane when the selected catalog model supports the needed modality",
             _ => "vLLM, SGLang, TensorRT-LLM, OpenVINO Model Server, transformers serve, Foundry Local, or another OpenAI-compatible chat-completions server",
         };
@@ -537,6 +537,7 @@ public sealed class ModelCollaborationPlanner
         if (isQwenOmni)
         {
             startupHints.Add("Qwen Omni lane: qualify vLLM-Omni with vllm serve <model> --omni --port <port>, or transformers serve for chat-completions proof; keep the Talker/audio-output stage isolated from the text lane.");
+            startupHints.Add("llama.cpp Qwen Omni speech lane: for GGUF speech proof, launch llama-server with --talker-model <qwen3-omni-talker.gguf> and --code2wav-model <qwen3-omni-code2wav.gguf> to expose /v1/audio/speech, then keep that endpoint separate from the live text lane until p95 chat latency is re-proven.");
             startupHints.Add("Qwen Omni realtime lane: for vLLM-Omni /v1/realtime proof, record a deploy config with async_chunk disabled because current Qwen3-Omni serving docs mark realtime unsupported while async_chunk is enabled.");
             startupHints.Add("Qwen Omni streaming-video lane: treat /v1/video/chat/stream as a separate WebSocket proof route; record frame cadence, optional PCM16 audio chunks, chunk-size bounds, reconnect/stall behavior, and fallback to still-image/world-state before promotion.");
             startupHints.Add("vLLM-Omni video-generation lane: /v1/videos and /v1/videos/sync are async diffusion-job proof surfaces, not PalLLM companion chat, screenshot understanding, or live Palworld HUD routes.");
@@ -798,6 +799,7 @@ public sealed class ModelCollaborationPlanner
         if (supportsAudioOutput)
         {
             requestHints.Add("Use prompt-level InferencePrompt.Modalities and InferencePrompt.Audio only on isolated audio-output canaries; PalLLM forwards modalities/audio, preserves returned message.audio on InferenceResult.AudioJson, and keeps ordinary companion chat field-free.");
+            requestHints.Add("Use PalLLM:Tts:RequestFormat=openai_speech and optional PalLLM:Tts:Speed only for endpoint-proven /v1/audio/speech canaries; record the accepted speed, response_format, voice, output MIME, byte count, duration, p95 synthesis latency, and text fallback behavior before promoting speech playback.");
         }
 
         if (multimodal)
@@ -1006,6 +1008,7 @@ public sealed class ModelCollaborationPlanner
         if (supportsAudioOutput)
         {
             admissionControls.Add("Realtime audio runs on a separate opt-in lane and must never block text reply delivery.");
+            admissionControls.Add("Speech synthesis speed controls stay proof-only; reject promotion if non-1.0 speed values create artifacts, increase TTS p95, or degrade native playback receipts.");
             admissionControls.Add("For vLLM-Omni realtime audio, require async_chunk-off proof before any /v1/realtime voice profile is allowed to handle player-facing turns.");
         }
 
@@ -1400,8 +1403,10 @@ public sealed class ModelCollaborationPlanner
         if (supportsAudioOutput)
         {
             promotionReceipts.Add("Realtime audio promotion receipt: isolated audio server/profile, text mirror, speaker/config stability, stalled-audio fallback, and proof that text chat still returns while audio is unhealthy.");
+            promotionReceipts.Add("Speech synthesis promotion receipt: /v1/audio/speech route, runtime and model ids, talker/code2wav or TTS model hashes when applicable, voice, response_format, speed, output MIME, duration/bytes, p95 latency, native playback receipt, and text fallback behavior.");
             verificationChecks.Add("For audio-output canaries, replay with and without InferencePrompt.Modalities / Audio on the exact endpoint and archive returned InferenceResult.AudioJson alongside text mirror, latency, response-size, and fallback counters.");
-            verificationChecks.Add("Smoke /v1/realtime or the vLLM-Omni speech endpoints with PCM16 mono 16 kHz chunks, verify audio delivery, and prove text chat still returns while realtime audio is stalled.");
+            verificationChecks.Add("Smoke /v1/audio/speech with and without PalLLM:Tts:Speed on vLLM-Omni or llama.cpp talker/code2wav endpoints, verify output MIME/playback receipts, and prove /api/chat still returns while speech synthesis is stalled or unhealthy.");
+            verificationChecks.Add("Smoke /v1/realtime with PCM16 mono 16 kHz chunks, verify audio delivery, and prove text chat still returns while realtime audio is stalled.");
         }
 
         if (isQwenOmni && supportsVideo)

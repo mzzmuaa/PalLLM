@@ -327,9 +327,15 @@ public sealed class InferenceOptions
 {
     public bool Enabled { get; set; }
 
-    public string BaseUrl { get; set; } = "http://127.0.0.1:11434/v1/";
+    // Pass 426: default to the bundled llama.cpp engine's loopback endpoint
+    // and curated model id, matching src/PalLLM.Sidecar/appsettings.json. The
+    // previous default pointed at the Ollama port (11434), which was removed
+    // repo-wide in Pass 339; keeping it here left a dead default for anyone
+    // running the portable adapter without a config file. See
+    // docs/LLAMA_CPP_BUNDLED.md and docs/LOCAL_MODELS_INVENTORY.md.
+    public string BaseUrl { get; set; } = "http://127.0.0.1:8080/v1/";
 
-    public string Model { get; set; } = "qwen3.6:35b-a3b";
+    public string Model { get; set; } = "Qwen3.6-35B-A3B-UD-Q8_K_XL";
 
     public string? ApiKey { get; set; }
 
@@ -1555,6 +1561,11 @@ public sealed class TtsOptions
     /// Ignored by the default <c>simple</c> adapter shape.
     public string ResponseFormat { get; set; } = TtsResponseFormats.Wav;
 
+    /// Optional playback speed sent only by the <c>openai_speech</c> request
+    /// shape. Leave unset for strict local endpoints unless the exact speech
+    /// server has accepted the field in a proof canary.
+    public float? Speed { get; set; }
+
     /// Optional softer voice used for cozy, companion, or reassurance-forward
     /// cue plans when the backing TTS server exposes multiple voices.
     public string? WarmVoice { get; set; }
@@ -1759,14 +1770,19 @@ public sealed class VisionOptions
     public bool Enabled { get; set; }
 
     /// HTTP-reachable multimodal endpoint following the chat-completions JSON
-    /// schema with <c>image_url</c> content parts. Defaults to the same host
-    /// PalLLM uses for text so a single server can cover both models.
-    public string BaseUrl { get; set; } = "http://127.0.0.1:11434/v1/";
+    /// schema with <c>image_url</c> content parts. Defaults to the same
+    /// bundled llama.cpp loopback host PalLLM uses for text so a single
+    /// server (with an mmproj projector) can cover both models. Matches
+    /// src/PalLLM.Sidecar/appsettings.json. (Pass 426: was the removed
+    /// Ollama port 11434.)
+    public string BaseUrl { get; set; } = "http://127.0.0.1:8080/v1/";
 
-    /// Default model tag is an illustrative placeholder pointing at a small
-    /// edge-class multimodal model suitable for low-latency scene analysis.
-    /// Replace with any tag your configured HTTP endpoint recognises.
-    public string Model { get; set; } = "gemma4:e2b";
+    /// Default model id matches the chat tier (the curated Qwen3.6-A3B GGUF
+    /// is MTP-capable and ships with an mmproj projector, so one loaded model
+    /// serves both text and vision). Matches appsettings.json; replace with
+    /// any id your configured HTTP endpoint recognises. (Pass 426: was the
+    /// illustrative Ollama-style tag gemma4:e2b.)
+    public string Model { get; set; } = "Qwen3.6-35B-A3B-UD-Q8_K_XL";
 
     public string? ApiKey { get; set; }
 

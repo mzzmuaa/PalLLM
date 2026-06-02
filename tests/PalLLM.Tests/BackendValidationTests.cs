@@ -586,6 +586,7 @@ public sealed class BackendValidationTests
                 RequestFormat = "openai-audio",
                 ResponseFormat = "wav24",
                 Model = new string('m', 257),
+                Speed = 0.1f,
             },
         };
 
@@ -595,6 +596,7 @@ public sealed class BackendValidationTests
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Tts:RequestFormat"));
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Tts:ResponseFormat"));
         Assert.That(result.Failures, Has.Some.Contains("PalLLM:Tts:Model"));
+        Assert.That(result.Failures, Has.Some.Contains("PalLLM:Tts:Speed"));
     }
 
     [Test]

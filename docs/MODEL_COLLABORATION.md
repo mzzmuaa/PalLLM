@@ -1,6 +1,6 @@
 # Local Model Collaboration
 
-Last audited: `2026-05-28`
+Last audited: `2026-06-01`
 
 > **Quantization choice → see [`QUANTIZATION.md`](QUANTIZATION.md)** for
 > the full NVFP4 / MXFP4 / FP8 / Q4_K_M / Q8_0 matrix with community
@@ -63,6 +63,10 @@ Use it as a routing sanity check:
 - Qwen Omni streaming video remains a proof-only lane; `/v1/video/chat/stream`
   evidence must include frame cadence, duration caps, optional PCM16 chunk
   policy, reconnect/stall behavior, and still-image or world-state fallback.
+- Qwen Omni speech synthesis remains a separate TTS proof lane: vLLM-Omni and
+  llama.cpp talker/code2wav `/v1/audio/speech` endpoints must prove voice,
+  response format, optional `PalLLM:Tts:Speed`, output MIME, duration, latency,
+  playback receipts, and text fallback before promotion.
 - Newer OpenAI-compatible `/v1/responses` surfaces stay proof-only for
   PalLLM until their stateful response ids, SSE event names, tool events,
   usage receipts, cleanup behavior, and fallback counters are replayed route by
@@ -230,7 +234,8 @@ leaving them as prose. It includes:
   provider proof, and optional `/v1/audio/transcriptions` ASR proof lanes),
   Gemma 3n edge-memory checks (PLE caching, conditional parameter loading,
   and text-only parameter skipping), Qwen Omni `vllm serve <model> --omni`
-  voice proof lanes,
+  voice proof lanes plus llama.cpp `--talker-model` / `--code2wav-model`
+  `/v1/audio/speech` proof lanes,
   concrete n-gram speculative-decoding config for qualified text lanes,
   guarded draft/EAGLE speculative-decoding config where appropriate,
   model-native Qwen3.6 / Gemma 4 MTP hints after per-route proof, Qwen3
@@ -925,6 +930,15 @@ For realtime WebSocket proof on vLLM-Omni, record the deploy config and keep
 `async_chunk` disabled. Current Qwen3-Omni serving docs explicitly warn that
 `/v1/realtime` is unsupported while `async_chunk` is enabled, so a generic
 "server started" receipt is not enough for PalLLM voice promotion.
+
+For speech-synthesis proof on vLLM-Omni or llama.cpp, keep `/v1/audio/speech`
+as a TTS lane, not the normal chat lane. vLLM-Omni accepts OpenAI-compatible
+`input`, `voice`, `response_format`, and `speed`; current llama.cpp server docs
+also expose Qwen3-Omni talker/code2wav flags via `--talker-model` and
+`--code2wav-model`. PalLLM forwards `speed` only when `PalLLM:Tts:Speed` is
+configured, and promotion needs a 1.0-vs-candidate-speed replay with output
+MIME, duration, p95 synthesis latency, playback receipt, and text fallback
+evidence.
 
 For streaming video proof on vLLM-Omni, keep `/v1/video/chat/stream` separate
 from `/api/chat` and from the realtime voice lane. The receipt must include

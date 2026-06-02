@@ -1,6 +1,6 @@
 # Environment variables
 
-Last audited: `2026-05-28`
+Last audited: `2026-06-01`
 
 Every environment variable that affects PalLLM, with default,
 effect, and example. PalLLM follows the standard ASP.NET Core +
@@ -80,8 +80,8 @@ Common overrides:
 | Variable | Effect |
 |---|---|
 | `PalLLM__Inference__Enabled` | `true` / `false` — turn live inference on / off |
-| `PalLLM__Inference__BaseUrl` | Inference HTTP endpoint (e.g. Ollama at `http://127.0.0.1:11434/v1/`) |
-| `PalLLM__Inference__Model` | Model name passed to the inference API (e.g. `qwen3.6:0.6b`) |
+| `PalLLM__Inference__BaseUrl` | Inference HTTP endpoint (default: bundled llama.cpp at `http://127.0.0.1:8080/v1/`) |
+| `PalLLM__Inference__Model` | Model id passed to the inference API (default `Qwen3.6-35B-A3B-UD-Q8_K_XL`) |
 | `PalLLM__Inference__ApiKey` | Bearer token for the inference endpoint, if it requires one |
 | `PalLLM__Inference__PrefixCacheSalt` | Optional vLLM `cache_salt` trust-domain value for isolating prefix-cache reuse on shared endpoints |
 | `PalLLM__Inference__PromptCacheKey` | Optional OpenAI-compatible `prompt_cache_key` for hosted prompt-cache routing; omitted unless explicitly configured |
@@ -119,7 +119,7 @@ Common overrides:
 | `PalLLM__Inference__ModelCatalogMaxResponseBytes` | Cap on OpenAI-compatible model catalogs (`/v1/models` or OpenVINO `/v3/models`), Foundry Local `/openai/models`, and `/api/tags` discovery payloads in bytes (default `262144`, 256 KB) |
 | `PalLLM__Vision__Enabled` | `true` / `false` — vision describe on / off |
 | `PalLLM__Vision__BaseUrl` | Vision HTTP endpoint |
-| `PalLLM__Vision__Model` | Vision model id sent to the configured multimodal endpoint (default `gemma4:e2b`) |
+| `PalLLM__Vision__Model` | Vision model id sent to the configured multimodal endpoint (default `Qwen3.6-35B-A3B-UD-Q8_K_XL`) |
 | `PalLLM__Vision__ApiKey` | Bearer token for the vision endpoint, if it requires one |
 | `PalLLM__Vision__Temperature` | Vision-lane temperature (`0` to `2`), defaulting low for extraction-style calls |
 | `PalLLM__Vision__MaxResponseBytes` | Cap on vision response size in bytes (default `65536`, 64 KB) |
@@ -134,6 +134,7 @@ Common overrides:
 | `PalLLM__Tts__RequestFormat` | TTS request body shape: `simple` (`{ text, voice }`) or `openai_speech` (`/v1/audio/speech` style `input`, `voice`, `response_format`) |
 | `PalLLM__Tts__Model` | Optional model id sent only for `RequestFormat=openai_speech`; leave empty when the local server infers the loaded speech model |
 | `PalLLM__Tts__ResponseFormat` | Audio container requested for `RequestFormat=openai_speech`: `wav`, `mp3`, `opus`, `aac`, `flac`, or `pcm`; also the MIME fallback for missing/generic speech response content types |
+| `PalLLM__Tts__Speed` | Optional `/v1/audio/speech` playback speed (`0.25` to `4.0`); omitted unless explicitly configured |
 | `PalLLM__Tts__MaxResponseBytes` | Cap on TTS response size in bytes (default `16777216`, 16 MB) |
 | `PalLLM__Asr__Enabled` | `true` / `false` - audio transcription on / off |
 | `PalLLM__Asr__BaseUrl` | OpenAI-compatible transcription endpoint (default `http://127.0.0.1:8000/v1/audio/transcriptions`) |
@@ -182,7 +183,7 @@ Arrays use a numeric index after a double underscore:
 # Allowlist three action types
 $env:PalLLM__Automation__AllowedActions__0 = "waypoint_suggest"
 $env:PalLLM__Automation__AllowedActions__1 = "recall_pals"
-$env:PalLLM__Automation__AllowedActions__2 = "craft_queue"
+$env:PalLLM__Automation__AllowedActions__2 = "request_craft_queue"
 
 # Add endpoint-proven stop delimiters for strict canary routes
 $env:PalLLM__Inference__StopSequences__0 = "</pal-action>"

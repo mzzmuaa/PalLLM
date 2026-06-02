@@ -2,7 +2,7 @@
 
 Audience: someone already comfortable with the runtime who now has to keep it healthy in production.
 
-Last audited: `2026-05-28`
+Last audited: `2026-06-01`
 
 This is a how-to guide in the [Diataxis](https://diataxis.fr/) sense - each section answers a specific operational question. Skim the table of contents and skip to what you need.
 
@@ -714,6 +714,9 @@ Other model families may want different values - tune
    omits `Content-Type` or sends generic `application/octet-stream`, PalLLM uses
    that requested format to choose the MIME type, file extension, and playback
    hint.
+   Set `Tts:Speed` only after the exact `/v1/audio/speech` endpoint accepts the
+   field and the replay proves acceptable latency, artifacts, and playback
+   receipts; it is omitted by default.
 3. A chat reply now attaches a `Speech` artifact (file under
    `runtime-root/TTS`) when text is produced.
 4. Retention is capped by `Tts:MaxStoredFiles=128` and
@@ -1459,6 +1462,7 @@ for localhost-bound servers.
 | `palllm_companion_chat` | Open a companion chat with world + character context pre-injected |
 | `palllm_threat_analysis` | Tactical analysis of the current situation with vitals + hostiles pre-filled |
 | `palllm_base_status` | Review the known base inventory and flag what needs attention |
+| `palllm_model_collaboration_orchestrator` | Reusable JSON orchestration scaffold built from the live model-collaboration snapshot |
 
 ### PalLLM as MCP client (upstream discovery)
 

@@ -151,6 +151,7 @@ public sealed class HttpTtsClient : ITtsClient
                     Input = text,
                     Voice = voice,
                     ResponseFormat = TtsResponseFormats.Normalize(tts.ResponseFormat),
+                    Speed = tts.Speed,
                 },
                 PalLlmDomainJsonSerializerContext.Default.OpenAiSpeechTtsHttpRequestBody);
         }
@@ -212,6 +213,10 @@ internal sealed class OpenAiSpeechTtsHttpRequestBody
 
     [JsonPropertyName("response_format")]
     public string ResponseFormat { get; init; } = TtsResponseFormats.Wav;
+
+    [JsonPropertyName("speed")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public float? Speed { get; init; }
 }
 
 public sealed class TtsResult

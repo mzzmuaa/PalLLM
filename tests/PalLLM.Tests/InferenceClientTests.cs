@@ -1868,6 +1868,7 @@ public sealed class InferenceClientTests
         options.Tts.Model = "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice";
         options.Tts.DefaultVoice = "vivian";
         options.Tts.ResponseFormat = "pcm";
+        options.Tts.Speed = 1.15f;
 
         var client = new HttpTtsClient(httpClient, options);
 
@@ -1884,6 +1885,7 @@ public sealed class InferenceClientTests
         Assert.That(body.RootElement.GetProperty("input").GetString(), Is.EqualTo("Hello there."));
         Assert.That(body.RootElement.GetProperty("voice").GetString(), Is.EqualTo("vivian"));
         Assert.That(body.RootElement.GetProperty("response_format").GetString(), Is.EqualTo("pcm"));
+        Assert.That(body.RootElement.GetProperty("speed").GetSingle(), Is.EqualTo(1.15f).Within(0.0001f));
         Assert.That(body.RootElement.TryGetProperty("text", out _), Is.False);
     }
 
@@ -1906,6 +1908,8 @@ public sealed class InferenceClientTests
         using JsonDocument body = JsonDocument.Parse(handler.LastRequestBody);
         Assert.That(body.RootElement.TryGetProperty("model", out _), Is.False,
             "Local vLLM-Omni speech endpoints can infer the served model from the server; omit blank model ids instead of serializing empty strings.");
+        Assert.That(body.RootElement.TryGetProperty("speed", out _), Is.False,
+            "Strict local speech endpoints should not see the speed field unless the operator configures it.");
         Assert.That(body.RootElement.GetProperty("response_format").GetString(), Is.EqualTo("wav"));
     }
 

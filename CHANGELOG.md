@@ -18,6 +18,88 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 426 - Proof-gated speech speed + Qwen Omni talker guidance (2026-06-01)
+
+**Context.** Current vLLM-Omni speech docs expose `speed` on
+OpenAI-compatible `/v1/audio/speech`, and current llama.cpp server docs expose
+Qwen3-Omni `--talker-model` / `--code2wav-model` flags for speech proof lanes.
+PalLLM already supported bounded TTS, but it could not forward speech speed or
+surface the llama.cpp talker path in model-collaboration receipts.
+
+**Changes.**
+- Added optional `PalLLM:Tts:Speed` (`0.25` to `4.0`). It is startup-validated
+  and serialized as JSON `speed` only for `Tts.RequestFormat=openai_speech`
+  when explicitly configured. The legacy `{ text, voice }` adapter and strict
+  unproven speech endpoints stay field-free by default.
+- Extended `ModelCollaborationPlanner` Qwen Omni speech guidance with
+  `/v1/audio/speech`, vLLM-Omni or llama.cpp talker/code2wav proof lanes,
+  speed/output/playback receipts, and an explicit text-fallback guard.
+- Updated TTS/operator/model-collaboration docs plus the feature catalog and
+  dated research notes with the new proof rules.
+
+**Verification.** Focused inference/backend/model-tier tests passed
+`121 / 121`; full audit passes `16 / 16` with `0` build warnings at
+`artifacts/full-audit/20260601-011912/RESULTS.md`. Test count stays
+`1315 / 1315`.
+
+### Pass 426 - Code↔doc semantic-accuracy audit + fixes (2026-06-02)
+
+**Context.** The 16 drift gates verify cross-document *count*
+consistency, but not *semantic* accuracy — whether each doc actually
+describes what the code does. After another agent's 43-pass run
+(Passes 375-417), a five-domain parallel audit (HTTP routes, feature
+catalog, MCP surface, config/env, architecture/code-map) found real
+drift the gates structurally cannot catch.
+
+**Code root cause (the important one).** `PalLlmOptions.cs` still
+initialised the inference + vision `BaseUrl` to the **Ollama port
+`11434`** and the model ids to Ollama-style tags (`qwen3.6:35b-a3b`,
+`gemma4:e2b`) — even though Ollama was removed repo-wide in Pass 339
+and `appsettings.json` migrated to the bundled llama.cpp
+(`http://127.0.0.1:8080/v1/`, `Qwen3.6-35B-A3B-UD-Q8_K_XL`). The
+running sidecar always overrides via `appsettings.json`, so this was
+invisible in practice — but anyone harvesting the portable adapter or
+running without a config file got a dead default pointing at a
+service that no longer exists. Updated all four initializers
+(`InferenceOptions.BaseUrl/Model`, `VisionOptions.BaseUrl/Model`) to
+the llama.cpp shipping values so **code == config == docs**.
+`1315 / 1315` tests still pass — the test fixtures that referenced the
+old tags set them explicitly, so none depended on the defaults.
+
+**Doc fixes.**
+- `docs/API.md`: added the missing `GET /api/packs/resolve` row (the
+  surface table enumerated 56 routes while correctly claiming 57);
+  corrected two validation blocks documenting HTTP `422` where the
+  code returns `400` (`/api/vision/describe`,
+  `/api/inference/collaboration/plan`).
+- `docs/TUNING.md` + `docs/ENV_VARS.md`: corrected the inference +
+  vision `BaseUrl` / `Model` documented defaults to match the
+  (now-aligned) code + `appsettings.json`; removed the stale "Ollama
+  at 11434" example; fixed an `AllowedActions` env-var example
+  (`craft_queue` -> `request_craft_queue`); annotated the shipped
+  `TopK=20` / `MinP=0.0` Qwen3.6 sampler profile.
+- `docs/ARCHITECTURE.md`: fixed a stale legacy bullet (`59` ready ->
+  `119` ready — a leftover from the ~62-entry era).
+- `docs/OPERATIONS.md`: added the missing 4th MCP prompt
+  (`palllm_model_collaboration_orchestrator`) to the prompts table.
+- `docs/CODE_MAP.md`: refreshed `21` stale line-count cells for the
+  extracted `PalLlmRuntime.*.cs` partials and `RouteRegistrations/*.cs`
+  companions (the extraction agent recorded counts before file
+  headers/usings landed; most cells sit outside the 3-file
+  `Drift_Hot_file_line_count` gate, so they shipped silently).
+
+**Verified accurate (no change needed).** MCP counts (38 tools /
+6 resources + 1 template / 4 prompts) across MCP_QUICKSTART.md,
+README.md, agents.json; feature status split (119 ready / 2
+scaffolded / 1 deferred) and the three gating features
+(`native-hud-attachment`, `production-sampler`, `autopilot-port`)
+across ROADMAP/COMPLETION/IMPLEMENTATION_QUEUE; the navigation docs'
+description of the post-extraction partial-class + `Configuration/` +
+`RouteRegistrations/` layout.
+
+**Verification.** `dotnet test` `1315 / 1315`; full audit `16 / 16` at
+`artifacts/full-audit/20260602-003918/RESULTS.md`.
+
 ### Pass 425 - Build-determinism + structural 0-warning enforcement (2026-05-31)
 
 **Context.** Two reproducible-build best-practice gaps in an

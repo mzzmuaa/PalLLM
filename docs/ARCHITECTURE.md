@@ -1,6 +1,6 @@
 # PalLLM Architecture
 
-Last audited: `2026-05-28`
+Last audited: `2026-06-01`
 
 ## Core posture
 
@@ -305,7 +305,8 @@ surface changes:
   response. The default request body stays `{ text, voice }`, and
   `Tts.RequestFormat=openai_speech` switches to the current
   OpenAI-compatible `/v1/audio/speech` body (`input`, `voice`, optional
-  `model`, `response_format`) for vLLM-Omni/Qwen3-TTS-style lanes. Concrete
+  `model`, `response_format`, and proof-gated `speed`) for
+  vLLM-Omni/Qwen3-TTS-style lanes. Concrete
   upstream audio `Content-Type` wins; missing or generic binary content types
   fall back to the requested `Tts.ResponseFormat`, including `.pcm` +
   `PlaybackHint=raw_pcm` for raw-audio canaries. The C# runtime and UE4SS Lua
@@ -1033,7 +1034,10 @@ Current shipped defaults in `appsettings.json`:
   budgets (`25` tokens/sec for Gemma 4, `6.25` for Gemma 3n), cascaded-ASR
   comparison, privacy evidence, typed-text fallback behavior, and an
   `async_chunk`-disabled vLLM-Omni deploy receipt before any Qwen Omni
-  `/v1/realtime` voice path becomes trusted. For Qwen Omni streaming video,
+  `/v1/realtime` voice path becomes trusted. Qwen Omni `/v1/audio/speech`
+  proof may use vLLM-Omni or llama.cpp talker/code2wav endpoints, but speed,
+  voice, output-MIME, duration, p95 synthesis latency, native playback, and
+  text-fallback receipts are required before promotion. For Qwen Omni streaming video,
   promotion also requires `/v1/video/chat/stream` frame-cadence, duration-cap,
   optional PCM16 chunk, reconnect/stall, still-image/world-state fallback, and
   ordinary `/api/chat` health receipts. vLLM-Omni `/v1/videos` and
@@ -1256,7 +1260,7 @@ Not deferred anymore:
 
 Legacy bullet summary retained for breakdown compatibility:
 
-- `59` with status `ready`
+- `119` with status `ready`
 - `2` with status `scaffolded` (`native-hud-attachment`, `production-sampler`)
 - `1` with status `deferred` (`autopilot-port`)
 

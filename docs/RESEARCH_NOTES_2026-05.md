@@ -1,6 +1,6 @@
 # Research notes — 2026-05 model implementation pass
 
-Last audited: `2026-05-28`
+Last audited: `2026-06-01`
 
 This doc captures the implementation-grade research that drove
 Pass 112's multimodal recipes + the 2026 Blackwell defaults.
@@ -15,6 +15,39 @@ without redoing the survey.
 > pitfalls will already be fixed upstream. The doc shape is meant to be
 > re-runnable: replace the version pins, re-cite, and the rest of the
 > structure stays.
+
+## 0.99k. 2026-06-01 refresh: speech speed and llama.cpp talker stay proof-only
+
+Current vLLM-Omni speech docs list `speed` as an OpenAI-compatible
+`/v1/audio/speech` request parameter with a `0.25` to `4.0` range. That makes
+speech-rate canaries useful for in-game companion timing, but not a default:
+some strict local speech endpoints will reject the extra field, and faster
+speech can add artifacts or playback failures. Current llama.cpp server docs
+also expose Qwen3-Omni speech-stage flags (`--talker-model` and
+`--code2wav-model`) that can back a local `/v1/audio/speech` proof lane without
+turning the ordinary chat server into a realtime voice dependency.
+
+Implementation impact: Pass 426 adds optional `PalLLM:Tts:Speed`, validates it
+at startup, and forwards JSON `speed` only for `Tts.RequestFormat=openai_speech`
+when the operator explicitly configures it. The model-collaboration serving
+profile now names llama.cpp Qwen Omni talker/code2wav speech proof alongside
+vLLM-Omni speech proof, with receipts for accepted request shape, voice,
+response format, speed, output MIME, duration/bytes, p95 synthesis latency,
+native playback receipt, and text fallback behavior. Ordinary companion chat,
+the legacy `{ text, voice }` TTS adapter, and strict unproven speech endpoints
+remain field-free.
+
+Focused sibling scan impact: active sibling workspaces reinforced the generic
+pattern of speech-speed replay receipts and audio-output fallback checks, but
+PalLLM lifted no sibling code, names, prompts, assets, branding, product
+identity, or unrelated IP.
+
+Primary sources:
+
+- vLLM-Omni Text to Speech API:
+  https://docs.vllm.ai/projects/vllm-omni/en/stable/serving/speech_api/
+- llama.cpp server README:
+  https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
 
 ## 0.99j. 2026-05-28 refresh: ASR seeds stay replay-only
 

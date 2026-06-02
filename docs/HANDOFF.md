@@ -1,6 +1,6 @@
 # PalLLM Handoff
 
-Last audited: `2026-05-28`
+Last audited: `2026-06-01`
 
 This is the shortest safe starting point for a temporary coding handoff,
 including Claude, Codex, or any other replacement agent. It is meant to
@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 417)
+## Codex handoff (read first — Pass 426)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260531-233325/RESULTS.md`](../artifacts/full-audit/20260531-233325/RESULTS.md)
+  [`../artifacts/full-audit/20260601-011912/RESULTS.md`](../artifacts/full-audit/20260601-011912/RESULTS.md)
 - committed OpenAPI snapshot:
   [`openapi/palllm-sidecar-v1.json`](openapi/palllm-sidecar-v1.json)
 
@@ -159,6 +159,62 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
+
+- **Pass 426 - Proof-gated speech speed + Qwen Omni talker guidance.**
+  Researched current vLLM-Omni speech and llama.cpp server docs, then added
+  omitted-by-default `PalLLM:Tts:Speed` for OpenAI-compatible
+  `/v1/audio/speech` endpoints. Startup validation clamps it to the documented
+  `0.25` to `4.0` range, `HttpTtsClient` serializes JSON `speed` only when
+  `Tts.RequestFormat=openai_speech` and the operator explicitly configures the
+  value, and the legacy `{ text, voice }` TTS adapter stays unchanged. Model
+  collaboration now names Qwen Omni speech synthesis as a separate proof lane
+  with vLLM-Omni or llama.cpp `--talker-model` / `--code2wav-model` receipts,
+  speed/output-MIME/duration/latency/playback evidence, and text fallback
+  proof before promotion. Updated ENV_VARS, TUNING, API, OPERATIONS,
+  ARCHITECTURE, MODEL_COLLABORATION, RESEARCH_NOTES_2026-05, feature-catalog
+  notes, and CHANGELOG. Verified focused inference/backend/model-tier tests
+  `121 / 121`; full audit `16 / 16` with `0` build warnings at
+  `../artifacts/full-audit/20260601-011912/RESULTS.md`; tests stay
+  `1315 / 1315`.
+
+- **Pass 426 - Code↔doc semantic-accuracy audit + fixes (post-Codex).**
+  The drift gates verify cross-doc *count* consistency but not *semantic*
+  accuracy (does each doc describe what the code actually does). After
+  the other agent's 43-pass run, a 5-domain parallel audit (routes,
+  feature catalog, MCP, config, architecture) surfaced real drift the
+  gates can't catch. Fixed, code-first:
+  - **Code root cause (not just docs):** `PalLlmOptions.cs` still
+    initialised `Inference.BaseUrl` / `Vision.BaseUrl` to the **removed
+    Ollama port `11434`** and `Inference.Model` / `Vision.Model` to
+    Ollama-style tags (`qwen3.6:35b-a3b`, `gemma4:e2b`) even though
+    Ollama was ripped out in Pass 339 and `appsettings.json` migrated
+    to the bundled llama.cpp (`8080`, `Qwen3.6-35B-A3B-UD-Q8_K_XL`).
+    Anyone running the portable adapter without a config file got a
+    dead default. Updated all four initializers to the llama.cpp
+    shipping values so code == config == docs. `1315 / 1315` tests
+    still pass (the test fixtures that used the old tags set them
+    explicitly, so none broke).
+  - **API.md:** added the missing `GET /api/packs/resolve` row (table
+    enumerated 56 of the claimed 57 routes); corrected two validation
+    blocks that said HTTP `422` where the code returns `400`
+    (`/api/vision/describe`, `/api/inference/collaboration/plan`).
+  - **TUNING.md / ENV_VARS.md:** corrected the now-aligned inference +
+    vision `BaseUrl`/`Model` defaults; dropped the stale Ollama
+    example; fixed an `AllowedActions` example (`craft_queue` ->
+    `request_craft_queue`); noted the shipped `TopK=20` / `MinP=0.0`
+    Qwen3.6 sampler profile.
+  - **ARCHITECTURE.md:** fixed a stale legacy bullet (`59` ready ->
+    `119` ready).
+  - **OPERATIONS.md:** added the missing 4th MCP prompt
+    (`palllm_model_collaboration_orchestrator`) to the prompts table.
+  - **CODE_MAP.md:** refreshed `21` stale line-count cells for the
+    extracted `PalLlmRuntime.*.cs` partials + `RouteRegistrations/*.cs`
+    companions (Codex recorded counts before headers/usings landed;
+    most sit outside the 3-file `Drift_Hot_file_line_count` gate so they
+    shipped silently). MCP counts (38/6+1/4) and feature catalog
+    (119/2/1) were verified ACCURATE — no change needed.
+  Verification: `dotnet test` `1315 / 1315`; full audit `16 / 16` at
+  `../artifacts/full-audit/20260602-004140/RESULTS.md`.
 
 - **Pass 425 - Build-determinism + structural 0-warning enforcement
   (10/10 build hygiene).** Two reproducible-build best-practice gaps
@@ -176,7 +232,7 @@ once they reached the changelog):
   off), so the flip cannot surface a wall of style noise. Verified:
   SDK resolves to `10.0.202`; clean `dotnet build` is `0 warnings /
   0 errors`; full audit `16 / 16` at
-  `../artifacts/full-audit/20260531-233325/RESULTS.md`; tests stay
+  `../artifacts/full-audit/20260602-004140/RESULTS.md`; tests stay
   `1315 / 1315`.
 
 - **Pass 424 - Collapse CI's bash drift-counters into the canonical
