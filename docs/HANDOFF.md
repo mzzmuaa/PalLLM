@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 426)
+## Codex handoff (read first — Pass 427)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260601-011912/RESULTS.md`](../artifacts/full-audit/20260601-011912/RESULTS.md)
+  [`../artifacts/full-audit/20260602-010942/RESULTS.md`](../artifacts/full-audit/20260602-010942/RESULTS.md)
 - committed OpenAPI snapshot:
   [`openapi/palllm-sidecar-v1.json`](openapi/palllm-sidecar-v1.json)
 
@@ -159,6 +159,56 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
+
+- **Pass 427 - Second code↔doc semantic-accuracy audit wave (post-Codex).**
+  Pass 426 covered 5 doc domains; this wave swept the 5 that were left:
+  bridge event taxonomy, JSON schemas, state machines + dataflows,
+  invariants + conventions, and the fallback prompt cards. Five parallel
+  read-only audits found real drift the count-gates can't see — all
+  doc-side, the code was correct in every case:
+  - **STATE_MACHINES.md:** the chat decision tree advertised six
+    hyphenated `ResponsePath` values that do not exist in code
+    (`fallback-after-*`, `inference-completed`, `emergency-fallback`).
+    Rewrote the §5 diagram to the real snake_case literals
+    (`live_inference`, `rate_limited_fallback`, `fallback_policy_bypass`,
+    `fallback_inference_failed`/`_disabled`,
+    `inference_failed`/`_disabled_no_fallback`). Removed the dead
+    `force_inference: true` recovery knob (recovery is the automatic
+    Open->HalfOpen trial). Fixed `/api/promotion/suggest` ->
+    `suggestions` and the ledger bound (`1024-entry ring` ->
+    `PromotionLedger.PerTaskWindow = 200` per task class).
+  - **DATAFLOW.md:** `ChatDispatchPlanner.Decide` was drawn before
+    inference as if it routed the reply; it actually runs last and is
+    observational only — moved it to the end of the §1 sequence with a
+    note. Fixed memory method names (`Record` -> `Remember`,
+    `GetMutationVersion()` -> `MutationVersion`, memory `Snapshot()` ->
+    `Export()`).
+  - **INVARIANTS.md / HOT_PATH.md / EVENTS.md:** the autosave invariants
+    attributed dirty-skip + atomic write to a non-existent
+    `ConversationMemoryStore.PersistAsync`; the real owner is the
+    synchronous `SessionPersistence.SaveIfDirty` / `Save` (with `.bak`
+    rotation), enforced by `RuntimeTests.cs`. Also fixed HOT_PATH's
+    `ConversationMemoryStore.Record` -> `Remember`.
+  - **docs/schemas/outbox-envelope.schema.json:** `SpeechArtifact`
+    documented a phantom `DurationMs` and omitted the real fields;
+    replaced with the actual record shape (`RequestId`, `Delivery`,
+    `Voice`, `VoicePrint`, `SubtitleStyle`, `MimeType`, `PlaybackHint`,
+    `AudioBytes`, `FilePath`). `PresentationCuePlan` invented a `Family`
+    field and omitted `Source`/`StrategyId`/`Phase`/`Summary`/`Surface`;
+    aligned to the real type.
+  - **agents.json:** `docsCount` had drifted to `69` (unlike
+    `PROJECT_NUMBERS.json`, this file is not gated by a test); corrected
+    to the gated live value `63`.
+  - **PROMPT_CARDS.md:** card #16 (morale-rally) promised "quiet
+    acknowledgment, no plan-pushing, just sits with the player" but
+    `TryMoraleRally` emits a simplify-the-plan / hand-out-simple-jobs
+    reply; rewrote the card to match the code. The other 18 cards and the
+    full inbound/outbound bridge event taxonomy (EVENTS.md) verified
+    ACCURATE — no change.
+  Bumped the `Last audited` stamp on all six edited docs to `2026-06-01`.
+  Verification: `dotnet test` `1315 / 1315`; full audit `16 / 16` with
+  `0` build warnings at
+  `../artifacts/full-audit/20260602-010942/RESULTS.md`.
 
 - **Pass 426 - Proof-gated speech speed + Qwen Omni talker guidance.**
   Researched current vLLM-Omni speech and llama.cpp server docs, then added

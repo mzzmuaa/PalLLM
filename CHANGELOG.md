@@ -18,6 +18,60 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 427 - Second code↔doc semantic-accuracy audit wave (2026-06-01)
+
+**Context.** The 16 drift gates verify cross-doc *count* consistency,
+not *semantic* accuracy. Pass 426 hand-audited 5 doc domains for meaning;
+this pass swept the 5 that remained: the bridge event taxonomy, JSON
+schemas, state machines + dataflows, invariants + conventions, and the
+deterministic fallback prompt cards. Five parallel read-only audits
+surfaced real drift — every discrepancy was doc-side; the code was
+correct in each case.
+
+**Changes (all documentation — no code changed).**
+- **STATE_MACHINES.md** — rewrote the §5 chat decision tree, which
+  advertised six hyphenated `ResponsePath` values that exist nowhere in
+  code, to the real snake_case literals (`live_inference`,
+  `rate_limited_fallback`, `fallback_policy_bypass`,
+  `fallback_inference_failed`/`_disabled`,
+  `inference_failed`/`_disabled_no_fallback`). Removed the non-existent
+  `force_inference: true` recovery knob (recovery is the automatic
+  Open->HalfOpen trial after cooldown). Corrected `/api/promotion/suggest`
+  -> `/api/promotion/suggestions` and the promotion-ledger bound
+  (`1024-entry ring buffer` -> `PromotionLedger.PerTaskWindow = 200`
+  observations per task class).
+- **DATAFLOW.md** — `ChatDispatchPlanner.Decide` was drawn before
+  inference as though it routed the reply; in code it runs last and is
+  observational only, so it moved to the end of the §1 sequence with an
+  explanatory note + invariant bullet. Fixed memory method names
+  (`Record` -> `Remember`, `GetMutationVersion()` -> `MutationVersion`,
+  memory `Snapshot()` -> `Export()`).
+- **INVARIANTS.md / HOT_PATH.md / EVENTS.md** — the autosave invariants
+  attributed dirty-skip + atomic write to a non-existent
+  `ConversationMemoryStore.PersistAsync`; the real owner is the
+  synchronous `SessionPersistence.SaveIfDirty` / `Save` (with `.bak`
+  rotation via `File.Replace`), enforced by `RuntimeTests.cs`. Also fixed
+  HOT_PATH's `ConversationMemoryStore.Record` -> `Remember`.
+- **docs/schemas/outbox-envelope.schema.json** — `SpeechArtifact`
+  documented a phantom `DurationMs` and omitted the real fields; replaced
+  with the actual record shape (`RequestId`, `Delivery`, `Voice`,
+  `VoicePrint`, `SubtitleStyle`, `MimeType`, `PlaybackHint`, `AudioBytes`,
+  `FilePath`). `PresentationCuePlan` invented a `Family` field and omitted
+  `Source`/`StrategyId`/`Phase`/`Summary`/`Surface`; aligned to the type.
+- **agents.json** — `docsCount` had drifted to `69`; unlike
+  `PROJECT_NUMBERS.json` this manifest is not gated by a test, so it went
+  unnoticed. Corrected to the gated live value `63`.
+- **PROMPT_CARDS.md** — card #16 (morale-rally) promised "quiet
+  acknowledgment, no plan-pushing, just sits with the player," but
+  `TryMoraleRally` emits a simplify-the-plan / hand-out-simple-jobs reply;
+  rewrote the card to match the code. The other 18 cards and the full
+  inbound/outbound bridge event taxonomy (EVENTS.md) verified accurate.
+- Bumped the `Last audited` stamp on all six edited docs to `2026-06-01`.
+
+**Verification.** `dotnet test` `1315 / 1315`; full audit `16 / 16` with
+`0` build warnings at
+`artifacts/full-audit/20260602-010942/RESULTS.md`.
+
 ### Pass 426 - Proof-gated speech speed + Qwen Omni talker guidance (2026-06-01)
 
 **Context.** Current vLLM-Omni speech docs expose `speed` on

@@ -100,9 +100,15 @@
       "additionalProperties": true,
       "description": "Optional TTS artifact metadata. Present only when PalLLM:Tts:Enabled is true and the synthesis succeeded.",
       "properties": {
-        "FilePath": { "type": "string" },
-        "DurationMs": { "type": "integer", "minimum": 0 },
-        "Voice": { "type": "string" }
+        "RequestId": { "type": "string" },
+        "Delivery": { "type": "string", "description": "Delivery mode, e.g. local_file." },
+        "Voice": { "type": "string" },
+        "VoicePrint": { "type": "string" },
+        "SubtitleStyle": { "type": "string" },
+        "MimeType": { "type": "string" },
+        "PlaybackHint": { "type": "string" },
+        "AudioBytes": { "type": "integer", "minimum": 0 },
+        "FilePath": { "type": ["string", "null"] }
       }
     },
     "PresentationCuePlan": {
@@ -110,9 +116,13 @@
       "additionalProperties": true,
       "description": "Paired visual + audio cues for rendering the reply. See PresentationCuePlanner for the full surface.",
       "properties": {
-        "Visual": { "type": "object", "additionalProperties": true },
+        "Source": { "type": "string", "description": "Which strategy produced the cue plan." },
+        "StrategyId": { "type": "string" },
+        "Phase": { "type": "string" },
+        "Summary": { "type": "string" },
         "Audio": { "type": "object", "additionalProperties": true },
-        "Family": { "type": "string", "description": "Cue family classifier matching the fallback strategy." }
+        "Visual": { "type": "object", "additionalProperties": true },
+        "Surface": { "type": "object", "additionalProperties": true, "description": "Delivery surface routing (DeliverySurfacePlan)." }
       }
     }
   }

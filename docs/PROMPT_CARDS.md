@@ -1,6 +1,6 @@
 # Prompt cards — 19 demo moments that show the companion alive
 
-Last audited: `2026-05-10`
+Last audited: `2026-06-01`
 
 Nineteen curated prompt cards, one per deterministic fallback
 strategy. Each card is a tiny scene a player might find
@@ -233,14 +233,15 @@ when to fire and what scene cues it weights.
 ## 16. Morale rally — after a loss
 
 ```
-[scene]    Player just lost pals or a base. Wants to talk, not strategize.
+[scene]    Player just lost pals or a base. Wants steadying, not a complex new plan.
 [try this] "Lost two pals out there. I just need to sit by the fire for a minute."
-[expect]   Quiet acknowledgment, no plan-pushing, hint that the next move can wait.
+[expect]   Steadies the group with simple, low-pressure jobs and shrinks the plan to clean fundamentals so confidence can rebuild.
 [strategy] Try_MoraleRally
 [why it's fun]
-  This is the "I see you" moment. Most NPC dialogue would launch into
-  consolation-then-strategy. The morale-rally director just sits with
-  the player. Companion-AI gold.
+  This is the "I've got you" moment. Most NPC dialogue would launch into
+  consolation-then-strategy. The morale-rally director hands out obvious,
+  achievable work and lets a few solid wins lift the room before asking
+  for anything clever. Companion-AI gold.
 ```
 
 ## 17. Recover window — between fights

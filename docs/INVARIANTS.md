@@ -1,6 +1,6 @@
 # Invariants - what's guaranteed to be true at runtime
 
-Last audited: `2026-05-24`
+Last audited: `2026-06-01`
 
 [`ANTI_PATTERNS.md`](ANTI_PATTERNS.md) lists what NOT to do. This
 doc lists what IS GUARANTEED - the load-bearing invariants the
@@ -97,18 +97,20 @@ trace claim -> implementation.
 ## Persistence
 
 11. **Memory autosave skips zero-cost writes.**
-    `ConversationMemoryStore.PersistAsync` checks the
+    `SessionPersistence.SaveIfDirty` compares the live
     mutation version against the last-saved version and
     skips the file write when nothing changed. Idle turns
     cost zero I/O. **Enforced:**
-    `src/PalLLM.Domain/Memory/ConversationMemoryStore.cs`,
-    `tests/PalLLM.Tests/ConversationMemoryStoreTests.cs`.
+    `src/PalLLM.Domain/Runtime/SessionPersistence.cs`,
+    `tests/PalLLM.Tests/RuntimeTests.cs`.
 
 12. **`session.json` writes are atomic.** Write to
-    `session.json.tmp`, rename to `session.json`. A torn
-    write during shutdown can never happen - either the
-    full new state lands or the previous file is intact.
-    **Enforced:** `ConversationMemoryStore.PersistAsync`.
+    `session.json.tmp`, then `File.Replace` into
+    `session.json` keeping the prior file as
+    `session.json.bak`. A torn write during shutdown can
+    never happen - either the full new state lands or the
+    previous file is intact. **Enforced:**
+    `SessionPersistence.Save`, `tests/PalLLM.Tests/RuntimeTests.cs`.
 
 ## Observability
 

@@ -1,6 +1,6 @@
 # Data flows — sequence diagrams
 
-Last audited: `2026-05-21`
+Last audited: `2026-06-01`
 
 Mermaid sequence diagrams of the major runtime flows. Each one
 names the actors, the order of calls, and the optional opt-in
@@ -38,8 +38,6 @@ sequenceDiagram
     API->>Runtime: ChatAsync(request)<br/>linked to ChatRequestTimeoutSeconds
     Runtime->>Memory: Recall(characterId, userMessage)
     Memory-->>Runtime: top-K relevant memories
-    Runtime->>Planner: Decide(pattern, coverage)
-    Planner-->>Runtime: ChatDispatchDecision
     alt Inference enabled and breaker closed
         Runtime->>Inference: POST /v1/chat/completions
         alt Inference returns within timeout
@@ -54,9 +52,11 @@ sequenceDiagram
     end
     Runtime->>Director: Build(strategy, cueFamily, ...)
     Director-->>Runtime: PresentationCuePlan
-    Runtime->>Memory: Record(turn, importance)
+    Runtime->>Memory: Remember(turn, importance)
     Memory-->>Runtime: ack (mutation version bumped)
     Runtime->>Outbox: WriteOutboxReplyAsync(envelope)
+    Runtime->>Planner: Decide(pattern, coverage)<br/>(observational only)
+    Planner-->>Runtime: ChatDispatchDecision (recorded, not routed on)
     Runtime-->>API: ChatResponse
     API-->>Client: 200 OK { ... }
 ```
@@ -72,6 +72,10 @@ Key invariants:
   Lua bridge picks up the envelope.
 - The `PresentationCuePlan` is **always populated**. Every
   fallback strategy has a paired cue family.
+- The `Planner.Decide` step is **observational only** today. It
+  runs after the reply is built and the outbox is written; the
+  `ChatDispatchDecision` is recorded for future multi-lane routing
+  but never changes which reply the player receives.
 
 Performance: see [`HOT_PATH.md`](HOT_PATH.md) — deterministic
 path < 200 ms cold, with-inference < 2.5 s on a Standard tier.
@@ -130,14 +134,14 @@ sequenceDiagram
     participant Tracker as RelationshipTracker
     participant Disk as runtime-root/session.json
 
-    Runtime->>Memory: Record(turn)
+    Runtime->>Memory: Remember(turn)
     Memory-->>Runtime: mutation version bumped
     Runtime->>Tracker: RecordInteraction(...)
     Tracker-->>Runtime: mutation version bumped
-    Runtime->>Memory: GetMutationVersion()
+    Runtime->>Memory: MutationVersion
     Memory-->>Runtime: current version
     alt Version changed since last save
-        Runtime->>Memory: Snapshot()
+        Runtime->>Memory: Export()
         Memory-->>Runtime: serializable state
         Runtime->>Tracker: Snapshot()
         Tracker-->>Runtime: serializable state

@@ -1,6 +1,6 @@
 # Hot path — performance budgets
 
-Last audited: `2026-05-24`
+Last audited: `2026-06-01`
 
 PalLLM is a real-time companion runtime: a player asks a question,
 the companion replies. Anything that delays a reply is noticed. This
@@ -131,8 +131,8 @@ and will catch up across poll ticks).
 | Method | File | Cold | Warm | Notes |
 |---|---|---|---|---|
 | `ConversationMemoryStore.Recall` | `ConversationMemoryStore.cs` | < 10 ms | < 5 ms | Pooled snapshot recall + stack-bounded exact-token rerank |
-| `ConversationMemoryStore.Record` | `ConversationMemoryStore.cs` | < 5 ms | < 2 ms | Append + bump mutation version |
-| `ConversationMemoryStore.PersistAsync` (autosave) | `ConversationMemoryStore.cs` | < 30 ms | < 10 ms | Skips when mutation version unchanged |
+| `ConversationMemoryStore.Remember` | `ConversationMemoryStore.cs` | < 5 ms | < 2 ms | Append + bump mutation version |
+| `SessionPersistence.SaveIfDirty` (autosave) | `SessionPersistence.cs` | < 30 ms | < 10 ms | Skips when mutation version unchanged |
 | `RelationshipTracker.RecordInteraction` | `RelationshipTracker.cs` | < 5 ms | < 2 ms | Lock + dictionary update |
 | `MemoryImportanceCalculator.Score` | `MemoryImportance.cs` | < 1 ms | < 1 ms | Pure scoring |
 

@@ -1,6 +1,6 @@
 # Events — bridge events, traces, metrics
 
-Last audited: `2026-05-24`
+Last audited: `2026-06-01`
 
 Single-stop reference for every observable event PalLLM produces or
 consumes. Three categories:
@@ -89,7 +89,7 @@ when `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
 | Span | Started in | Tags |
 |---|---|---|
 | `Memory.Recall` | `ConversationMemoryStore.Recall` | `character.id`, `top_k`, `recall.strategy` |
-| `Memory.Persist` | `ConversationMemoryStore.PersistAsync` | `entries.written`, `mutation.version` (zero when skipped) |
+| `Memory.Persist` | `SessionPersistence.SaveIfDirty` | `entries.written`, `mutation.version` (zero when skipped) |
 
 ### Vision / TTS
 

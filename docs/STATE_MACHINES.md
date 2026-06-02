@@ -1,6 +1,6 @@
 # State machines
 
-Last audited: `2026-05-07`
+Last audited: `2026-06-01`
 
 Mermaid `stateDiagram-v2` views of the explicit state machines
 inside PalLLM. Each diagram is the canonical mental model — the
@@ -31,7 +31,8 @@ stateDiagram-v2
 
     note right of Open
         All chat turns route to deterministic
-        fallback. ResponsePath = 'fallback-after-breaker-open'.
+        fallback. The open breaker surfaces as an inference
+        failure, so ResponsePath = 'fallback_inference_failed'.
         InferenceCircuitOpen = true.
     end note
 
@@ -53,9 +54,11 @@ and a tag on the next `Chat.Inference` span. The breaker's
 current state is reported in `RuntimeHealth.InferenceCircuitOpen`
 and the dashboard's circuit-breaker chip.
 
-**Recovery without restart**: send a single chat through with
-`force_inference: true` after the cooldown — if the underlying
-endpoint is healthy, the trial succeeds and the breaker closes.
+**Recovery without restart**: no operator action is needed. Once
+the cooldown elapses the breaker self-transitions Open → HalfOpen,
+and the next ordinary chat turn becomes the trial inference — if the
+underlying endpoint is healthy the trial succeeds and the breaker
+closes.
 
 ## 2. Bridge inbox worker
 
@@ -95,7 +98,7 @@ stateDiagram-v2
 
 ## 3. Promotion ledger lifecycle
 
-A bounded in-memory ring buffer of observations. Each entry has
+A bounded in-memory window of observations kept per task class. Each entry has
 a class (`task class` like `fallback-director`, `live-inference`)
 and a pattern id. Suggestions read the top-N entries; apply
 optionally promotes one to staging artifacts.
@@ -105,7 +108,7 @@ stateDiagram-v2
     [*] --> Empty
     Empty --> Observed: feeder records first observation
     Observed --> Observed: feeder records additional observation
-    Observed --> Suggested: GET /api/promotion/suggest reads
+    Observed --> Suggested: GET /api/promotion/suggestions reads
     Suggested --> Suggested: same suggestion served from same data
     Suggested --> Staged: POST /api/promotion/apply (AllowApply=true)
     Staged --> Suggested: operator deletes staging files
@@ -117,9 +120,9 @@ stateDiagram-v2
     end note
 
     note right of Observed
-        In-memory only. Bounded ring buffer
-        (default 1024 entries) drops oldest
-        when full.
+        In-memory only. Bounded per task class
+        (PromotionLedger.PerTaskWindow = 200
+        observations); drops oldest when full.
     end note
 
     note right of Staged
@@ -172,22 +175,27 @@ Documenting it here because the choice tree is what produces the
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Inference_enabled?
+    [*] --> RateLimited?
+    RateLimited? --> Fallback_director: yes<br/>(ResponsePath: rate_limited_fallback)
+    RateLimited? --> PolicyBypass?: no
+
+    PolicyBypass? --> Fallback_director: fast-path match<br/>(ResponsePath: fallback_policy_bypass)
+    PolicyBypass? --> Inference_enabled?: no match
+
     Inference_enabled? --> Inference_attempted: yes
-    Inference_enabled? --> Fallback_director: no<br/>(ResponsePath: fallback-after-inference-disabled)
+    Inference_enabled? --> Disabled_fallback?: no
 
-    Inference_attempted --> Inference_completed: 2xx within timeout
-    Inference_attempted --> Fallback_director: timeout / 5xx<br/>(ResponsePath: fallback-after-inference-error)
-    Inference_attempted --> Fallback_director: breaker open<br/>(ResponsePath: fallback-after-breaker-open)
-    Inference_attempted --> Fallback_director: rate limit<br/>(ResponsePath: fallback-after-rate-limit)
-    Inference_attempted --> Fallback_director: thermal gate<br/>(ResponsePath: fallback-after-thermal-gate)
+    Disabled_fallback? --> Fallback_director: fallback on<br/>(ResponsePath: fallback_inference_disabled)
+    Disabled_fallback? --> [*]: fallback off<br/>(ResponsePath: inference_disabled_no_fallback)
 
-    Fallback_director --> Strategy_matched: a Try_* returned non-null
-    Fallback_director --> Emergency_tier: every Try_* returned null
+    Inference_attempted --> [*]: success<br/>(ResponsePath: live_inference)
+    Inference_attempted --> Failed_fallback?: timeout / 5xx / breaker open
 
-    Strategy_matched --> [*]: return reply<br/>(ResponsePath includes strategy name)
-    Emergency_tier --> [*]: return canned acknowledgement<br/>(ResponsePath: emergency-fallback)
-    Inference_completed --> [*]: return assistant message<br/>(ResponsePath: inference-completed)
+    Failed_fallback? --> Fallback_director: fallback on<br/>(ResponsePath: fallback_inference_failed)
+    Failed_fallback? --> [*]: fallback off<br/>(ResponsePath: inference_failed_no_fallback)
+
+    Fallback_director --> [*]: a Try_* matched<br/>(reply carries the fallback ResponsePath above)
+    Fallback_director --> [*]: every Try_* null → EmergencyFallback.Guard<br/>(canned acknowledgement, same ResponsePath)
 ```
 
 **Source of truth**: `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs`
