@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 430)
+## Codex handoff (read first — Pass 431)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260603-060112/RESULTS.md`](../artifacts/full-audit/20260603-060112/RESULTS.md)
+  [`../artifacts/full-audit/20260603-061529/RESULTS.md`](../artifacts/full-audit/20260603-061529/RESULTS.md)
 - committed OpenAPI snapshot:
   [`openapi/palllm-sidecar-v1.json`](openapi/palllm-sidecar-v1.json)
 
@@ -159,6 +159,21 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
+
+- **Pass 431 - HTTP-client wire-contract extraction (readability refactor).**
+  Continued the contracts-vs-logic separation to the two largest
+  OpenAI-compatible HTTP clients — pure relocation, behaviorally inert:
+  - `InferenceClient.cs` `1579` -> `885` (interfaces + `HttpJsonInferenceClient`);
+    the five wire DTOs (request body / chat message / template kwargs /
+    `InferencePrompt` / `InferenceResult`) -> `InferenceClient.Contracts.cs`.
+  - `VisionClient.cs` `625` -> `360` (`HttpVisionClient`); `VisionRequest` + the
+    multimodal request DTOs + `VisionResult` -> `VisionClient.Contracts.cs`.
+  A dedup check first confirmed the shared transport logic is already DRY
+  (`TransportFailureStatusBuilder`, `ChatCompletionsResponseReader`,
+  `GenAiTelemetry`, `HttpContentReadLimiter`); only per-client result
+  construction differs, correctly not abstracted. `AudioTranscriptionClient` /
+  `TtsClient` were left as-is (client-logic-dominated, small DTO tail).
+  Verification: `dotnet test` `1317 / 1317`; full audit `16 / 16`; `0` warnings.
 
 - **Pass 430 - God-file decomposition (readability refactor).**
   Continued the partial-extraction pattern to the three remaining source

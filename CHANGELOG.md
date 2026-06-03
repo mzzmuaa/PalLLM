@@ -18,6 +18,35 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 431 - HTTP-client wire-contract extraction (2026-06-03)
+
+**Context.** Two of the OpenAI-compatible HTTP clients still mixed their
+client logic with their request/response DTOs in a single file. Splitting the
+contracts out (same namespace, pure relocation — behaviorally inert) makes the
+client logic read cleanly and gives the wire shapes an obvious home. A
+duplication check first confirmed the genuinely-shared transport logic is
+already DRY: `TransportFailureStatusBuilder` (sanitized status text),
+`ChatCompletionsResponseReader` (response parsing), `GenAiTelemetry` (error
+marking), and `HttpContentReadLimiter` (bounded reads) are all shared. Only the
+per-client result construction differs, which is correctly *not* abstracted
+(forcing a generic base over source-gen JSON DTOs would add inheritance for no
+real gain).
+
+**Changes (no runtime behavior change).**
+- **InferenceClient.cs `1579` -> `885`** (the two interfaces +
+  `HttpJsonInferenceClient`), with the five wire-contract types — request body,
+  chat message, template kwargs, `InferencePrompt`, `InferenceResult` — moved
+  to `InferenceClient.Contracts.cs` (`710` lines).
+- **VisionClient.cs `625` -> `360`** (`HttpVisionClient`), with `VisionRequest`,
+  the multimodal request-body / message / content-part / image-url DTOs, and
+  `VisionResult` moved to `VisionClient.Contracts.cs` (`280` lines).
+- Left `AudioTranscriptionClient` and `TtsClient` as-is: their files are
+  dominated by client logic (the DTO tail is small), so a split there would be
+  low-value churn.
+
+**Verification.** `dotnet test` `1317 / 1317`; full audit `16 / 16` with `0`
+build warnings.
+
 ### Pass 430 - God-file decomposition (Contracts / Options / ModelCollaborationPlanner) (2026-06-03)
 
 **Context.** Three source files had grown into navigation-hostile monoliths:
