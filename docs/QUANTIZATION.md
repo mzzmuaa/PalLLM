@@ -1,20 +1,20 @@
 # Quantization — choosing the right format for your hardware
 
-Last audited: `2026-06-01`
+Last audited: `2026-06-03`
 
-PalLLM is an HTTP client; it sends chat requests to whatever
-inference server an operator configures. The model file format
-(GGUF / safetensors / TensorRT engine) and its quantization
-(NVFP4 / MXFP4 / FP8 / Q4_K_M / etc.) are entirely the inference
-server's concern. This doc is the operator-facing primer — what
-each format is, when to pick it, and what real users on Reddit /
-HuggingFace forums / NVIDIA blogs are reporting about each.
+PalLLM is an HTTP client. Its only local engine is the bundled llama.cpp
+`llama-server`, which loads **GGUF** model files; below-reference hardware can
+use the OpenAI-compatible cloud escape (`pal connect cloud`) instead. The model
+quantization (NVFP4 / MXFP4 / FP8 / Q4_K_M / etc.) is the inference server's
+concern. This doc is the operator-facing primer — what each format is, when to
+pick it, and what real users on Reddit / HuggingFace forums / NVIDIA blogs are
+reporting about each.
 
 If you're just looking for "what should I use?", jump to the
 [recommendation matrix](#recommendation-matrix) at the bottom.
 
 > **Source-of-truth note.** Numbers cited below are from public
-> NVIDIA papers, current vLLM and AMD ROCm documentation, the OCP
+> NVIDIA papers, current llama.cpp and AMD ROCm documentation, the OCP
 > Microscaling specification, and recurring themes from
 > r/LocalLLaMA threads through early 2026. Where the community is
 > split, the doc says so. Re-check current benchmarks before
@@ -23,20 +23,25 @@ If you're just looking for "what should I use?", jump to the
 
 ## The formats at a glance
 
-| Format | Bits | Hardware | Software | VRAM (70B) | Speed (Blackwell baseline = 1.0) |
+The **Runs on PalLLM** column shows how the format reaches PalLLM: as a local
+GGUF on the bundled llama.cpp engine, or only via the OpenAI-compatible cloud
+escape (`pal connect cloud`) because llama.cpp loads GGUF, not safetensors or
+other non-GGUF engine formats.
+
+| Format | Bits | Hardware | Runs on PalLLM | VRAM (70B) | Speed (Blackwell baseline = 1.0) |
 |---|---|---|---|---|---|
-| **FP16 / BF16** | 16 | Any | Anything | ~140 GB | 0.25 |
-| **FP8 (E4M3)** | 8 | Hopper / Ada / Blackwell | vLLM, TRT-LLM, SGLang | ~70 GB | 0.5 |
-| **NVFP4** | 4 | **Blackwell only** | vLLM, TRT-LLM, NIM | **~37 GB** | **1.0 (reference)** |
-| **MXFP4** | 4 | Blackwell + AMD MI300+/MI350+ | vLLM, TRT-LLM | ~37 GB | ~0.85 |
-| **Q8_0** (GGUF) | 8 | Any | llama.cpp, LM Studio | ~70 GB | 0.4 |
-| **Q4_K_M** (GGUF) | ~4.5 | Any | llama.cpp, LM Studio | ~40 GB | 0.55 (CPU-friendly) |
-| **unsloth UD-Q8_K_XL** (GGUF) | ~8.5 | Any | llama.cpp, LM Studio | ~75 GB | 0.4 (calibration-aware Q8_0) |
-| **unsloth UD-Q4_K_XL** (GGUF) | ~4.8 | Any | llama.cpp, LM Studio | ~42 GB | 0.55 (calibration-aware Q4_K_M) |
-| **unsloth UD-Q6_K_XL** (GGUF) | ~6.5 | Any | llama.cpp, LM Studio | ~56 GB | 0.5 (sharded for large models) |
-| **unsloth UD-IQ3_XXS / UD-IQ4_XS** | 3-4 | Any | llama.cpp | ~30-37 GB | 0.5 (frontier-large GGUF) |
-| **AWQ-INT4** | 4 | Ampere+ (any CUDA) | vLLM, TGI | ~37 GB | 0.6 |
-| **GPTQ-INT4** | 4 | Ampere+ | vLLM, TGI, ExLlama | ~37 GB | 0.6 |
+| **FP16 / BF16** | 16 | Any | GGUF (local) or cloud | ~140 GB | 0.25 |
+| **FP8 (E4M3)** | 8 | Hopper / Ada / Blackwell | GGUF (local) or cloud | ~70 GB | 0.5 |
+| **NVFP4** | 4 | **Blackwell only** | NVFP4 GGUF (local) or cloud | **~37 GB** | **1.0 (reference)** |
+| **MXFP4** | 4 | Blackwell + AMD MI300+/MI350+ | GGUF (local) or cloud | ~37 GB | ~0.85 |
+| **Q8_0** (GGUF) | 8 | Any | local llama.cpp | ~70 GB | 0.4 |
+| **Q4_K_M** (GGUF) | ~4.5 | Any | local llama.cpp | ~40 GB | 0.55 (CPU-friendly) |
+| **unsloth UD-Q8_K_XL** (GGUF) | ~8.5 | Any | local llama.cpp | ~75 GB | 0.4 (calibration-aware Q8_0) |
+| **unsloth UD-Q4_K_XL** (GGUF) | ~4.8 | Any | local llama.cpp | ~42 GB | 0.55 (calibration-aware Q4_K_M) |
+| **unsloth UD-Q6_K_XL** (GGUF) | ~6.5 | Any | local llama.cpp | ~56 GB | 0.5 (sharded for large models) |
+| **unsloth UD-IQ3_XXS / UD-IQ4_XS** | 3-4 | Any | local llama.cpp | ~30-37 GB | 0.5 (frontier-large GGUF) |
+| **AWQ-INT4** | 4 | Ampere+ (any CUDA) | cloud only (non-GGUF) | ~37 GB | 0.6 |
+| **GPTQ-INT4** | 4 | Ampere+ | cloud only (non-GGUF) | ~37 GB | 0.6 |
 
 Numbers are approximations — exact figures depend on the model,
 the calibration corpus, and the inference engine version.
@@ -87,7 +92,7 @@ and community reports converge on:
 **What people are saying (mid-to-late 2025):**
 
 The recurring r/LocalLLaMA take is "if you have a 5090 or B-series,
-NVFP4 + vLLM is the new default." Specific themes:
+an NVFP4 GGUF is the new default." Specific themes:
 
 - **Coding ability:** Most users report NVFP4 70B coding models
   (Qwen3-Coder, DeepSeek-Coder-V3, Llama-3.3-70B-Instruct-NVFP4)
@@ -113,16 +118,17 @@ NVFP4 + vLLM is the new default." Specific themes:
   have moved to FP4).
 
 **When to pick NVFP4:**
-- You have Blackwell hardware
-- You're using vLLM, TensorRT-LLM, SGLang, or an NVIDIA NIM container
+- You have Blackwell hardware and a Blackwell-class VRAM budget
+- You can load an NVFP4 GGUF on the bundled llama.cpp engine (or you point the
+  cloud escape at an NVFP4 endpoint)
 - You want the best speed/quality tradeoff for 13B-405B models
 - Long-context (>32K) is rare or you've validated the specific quant
 
 **When NOT to pick NVFP4:**
-- You're on Hopper / Ada / Ampere or earlier — use FP8 (Hopper/Ada)
-  or Q4_K_M (Ampere and older)
-- You're using llama.cpp / LM Studio — they don't
-  support NVFP4 (use Q4_K_M or Q8_0 instead)
+- You're on Hopper / Ada / Ampere or earlier — use FP8/Q8_0 (Hopper/Ada)
+  or UD-Q4_K_XL (Ampere and older)
+- Your llama.cpp build does not yet load NVFP4 GGUFs — use a UD-Q4_K_XL or
+  Q8_0 GGUF instead
 - You need cross-vendor portability — NVFP4 is NVIDIA-specific
 - You're on a model the community hasn't well-calibrated yet
 
@@ -138,7 +144,7 @@ spec.
 **Hardware requirement.** Blackwell tensor cores fully accelerate
 MXFP4 (it's a degenerate case of NVFP4 with macro-scale=1). AMD
 MI300X / MI325X have FP4 hardware support per the spec but the
-software path is less mature than vLLM-on-NVIDIA.
+software path is less mature than the NVIDIA FP4 GGUF path.
 
 **Accuracy vs NVFP4.** Slightly worse — typically 0.5-1.5 points
 behind NVFP4 on the same model + benchmarks. The single-level
@@ -150,21 +156,20 @@ small batch sizes) NVFP4 wins.
 **Speed.** Slightly faster than NVFP4 on Blackwell (no macro-scale
 multiply per tensor) but the difference is <5% in practice.
 
-**Software ecosystem.** Current vLLM docs expose MXFP4 on both CUDA
-and ROCm backends, and the ROCm platform docs now list `mxfp4`
-alongside the supported quantization families for MI300/MI350-class
-hosts. TensorRT-LLM has it natively. Exact kernel/model coverage
-still varies, so operators should validate their specific backend +
-model pairing before promoting MXFP4 to the default lane.
+**Software ecosystem.** MXFP4 is an OCP cross-vendor format; GGUF builds of it
+are emerging for llama.cpp on Blackwell and MI300/MI350-class ROCm hosts.
+Exact kernel/model coverage still varies, so operators should validate their
+specific llama.cpp build + GGUF pairing before promoting MXFP4 to the default
+lane (a UD-Q4_K_XL GGUF is the safe fallback).
 
 **What people are saying:**
 - The cross-vendor angle is the main draw for MXFP4 — same model
   weight file works on NVIDIA Blackwell and AMD MI300+.
 - Most threads conclude "if you're NVIDIA-only, NVFP4 wins; if you
   need to support both vendors, MXFP4 is the practical choice."
-- Open-source projects that want vendor-neutrality (vLLM upstream,
-  TGI, llama.cpp future support) are aligning around MXFP4 as the
-  long-term format.
+- Open-source projects that want vendor-neutrality (including llama.cpp's
+  evolving FP4 GGUF support) are aligning around MXFP4 as the
+  long-term cross-vendor format.
 
 **When to pick MXFP4:**
 - You need a single model file that runs on both NVIDIA and AMD
@@ -216,7 +221,7 @@ matches or beats NVFP4 because llama.cpp's K-quant calibration is
 extremely mature.
 
 **When to pick Q4_K_M:**
-- You're on llama.cpp / LM Studio (no choice anyway)
+- You're on llama.cpp (no choice anyway)
 - You want maximum cross-platform portability (the same file runs
   on every OS / GPU / CPU)
 - You're on pre-Hopper hardware
@@ -247,7 +252,7 @@ ride at the named bit budget.
 | `UD-IQ4_XS` | ~4.2 | Frontier-large lane with one bit of headroom over IQ3 |
 
 **Hardware requirement.** Any (it's a GGUF format). Runs on
-llama.cpp / LM Studio / kobold.cpp on CPU, CUDA, ROCm, Metal,
+llama.cpp on CPU, CUDA, ROCm, Metal,
 Vulkan, SYCL. Doesn't use FP4 tensor cores even on Blackwell —
 that's NVFP4's job. The UD-* family is the **local-first /
 cross-platform** answer to "I want this exact GGUF to run on every
@@ -276,7 +281,7 @@ params lane without any external draft model.
 **What people are saying:**
 
 - The UD-XL family is the dominant default on r/LocalLLaMA for
-  llama.cpp / LM Studio workflows through 2026. Unsloth's
+  llama.cpp workflows through 2026. Unsloth's
   calibration-aware approach is the recurring "if you have a choice
   between Bartowski's Q4_K_M and unsloth's UD-Q4_K_XL, take the
   unsloth one" advice.
@@ -292,7 +297,7 @@ params lane without any external draft model.
   player machines.
 
 **When to pick UD-XL:**
-- You're running llama.cpp / LM Studio with custom
+- You're running llama.cpp with custom
   GGUFs
 - You want one model file that works on any GPU (Blackwell down
   to Ampere) and any OS
@@ -303,9 +308,9 @@ params lane without any external draft model.
   [`LOCAL_MODELS_INVENTORY.md`](LOCAL_MODELS_INVENTORY.md))
 
 **When NOT to pick UD-XL:**
-- You're on Blackwell + vLLM and want maximum throughput — NVFP4
-  is 2× faster on this stack
-- You're on Hopper + vLLM — FP8 is faster on hardware with E4M3
+- You're on Blackwell and want maximum throughput — an NVFP4 GGUF
+  is ~2× faster on FP4 tensor cores
+- You're on Hopper — an FP8 / Q8_0 GGUF is faster on hardware with E4M3
   tensor cores
 - The model you want isn't published by unsloth and the upstream
   has only vanilla K-quants — use the upstream Q4_K_M / Q8_0
@@ -350,17 +355,22 @@ read, Linux RAM comes from bounded `/proc/meminfo`, and Windows uses
 `GlobalMemoryStatusEx` plus sanitized display-adapter registry strings under
 `HKLM\SYSTEM\CurrentControlSet\Control\Video`.
 
-| If your GPU is... | Then use... | Why |
+Every row runs on the bundled llama.cpp `llama-server` (the recommendation is
+which GGUF quant to load). Hardware that cannot serve a usable local GGUF uses
+the OpenAI-compatible cloud escape (`pal connect cloud`) instead.
+
+| If your GPU is... | Then load... | Why |
 |---|---|---|
-| Blackwell (RTX 50, B100/B200/B300, GB200) | **NVFP4** via vLLM / TensorRT-LLM | 2× speed of FP8 at near-FP16 accuracy |
-| Hopper (H100, H200, GH200) | **FP8** via vLLM / TensorRT-LLM | Native hardware support; near-FP16 quality |
-| Ada (RTX 40, L40, L4) | **FP8** via vLLM | Same as Hopper |
-| Ampere (RTX 30, A100, A40) | **unsloth UD-Q4_K_XL** via llama.cpp, or AWQ-INT4 via vLLM | No FP8/FP4 hardware; calibration-aware UD-XL beats vanilla Q4_K_M by 0.3-0.8 points at the same bit budget |
-| Older NVIDIA (Turing, Volta) | **unsloth UD-Q4_K_XL** | Same as Ampere; smaller models recommended |
-| AMD MI300+/MI350+ | **MXFP4** via vLLM-ROCm | Best cross-vendor 4-bit; validate exact backend/model coverage |
-| AMD RDNA (RX 7000, etc.) | **unsloth UD-Q4_K_XL** via llama.cpp ROCm | No matrix-FP4 hardware on consumer AMD; UD-XL ports cleanly |
-| Apple Silicon (M-series) | **unsloth UD-Q4_K_XL** via llama.cpp Metal | Excellent llama.cpp support; same file as CUDA/ROCm |
-| CPU only | **unsloth UD-Q4_K_XL** (small models) or deterministic-only | llama.cpp is the only practical CPU path |
+| Blackwell (RTX 50, B100/B200/B300, GB200) | **NVFP4 GGUF** | Blackwell FP4 tensor cores; ~2× speed of FP8 at near-FP16 accuracy |
+| Hopper (H100, H200, GH200) | **FP8 / Q8_0 GGUF** | Native FP8 hardware; near-FP16 quality |
+| Ada (RTX 40, L40, L4) | **FP8 / Q8_0 GGUF** | Same as Hopper |
+| Ampere (RTX 30, A100, A40) | **unsloth UD-Q4_K_XL GGUF** | No FP8/FP4 hardware; calibration-aware UD-XL beats vanilla Q4_K_M by 0.3-0.8 points at the same bit budget |
+| Older NVIDIA (Turing, Volta) | **unsloth UD-Q4_K_XL GGUF** | Same as Ampere; smaller models recommended |
+| AMD MI300+/MI350+ | **MXFP4 / UD-Q4_K_XL GGUF** | FP4-capable hardware; UD-XL ports cleanly if MXFP4 GGUF coverage is thin |
+| AMD RDNA (RX 7000, etc.) | **unsloth UD-Q4_K_XL GGUF** (ROCm) | No matrix-FP4 hardware on consumer AMD; UD-XL ports cleanly |
+| Apple Silicon (M-series) | **unsloth UD-Q4_K_XL GGUF** (Metal) | Excellent llama.cpp support; same file as CUDA/ROCm |
+| CPU only | **unsloth UD-Q4_K_XL GGUF** (small models) or deterministic-only | llama.cpp is the only practical CPU path |
+| Below reference rig | **cloud escape** (`pal connect cloud`) | Point PalLLM at an OpenAI-compatible cloud API when no usable local GGUF fits |
 
 ## What changes at the PalLLM layer
 
@@ -379,27 +389,20 @@ PalLLM code path. What does change:
    inference-server + quantization pairings the doctor can
    verify.
 
-Switching your inference server from llama-server+UD-Q4_K_XL to
-vLLM+NVFP4 on a Blackwell box is purely an operator action:
+Switching your local llama-server from a UD-Q4_K_XL GGUF to an NVFP4 GGUF on a
+Blackwell box is purely an operator action:
 
 ```powershell
-# Stop your current llama-server
-# Start vLLM with an NVFP4 model:
-docker run --gpus all -p 8000:8000 vllm/vllm-openai:latest \
-    --model nvidia/Llama-3.3-70B-Instruct-FP4 \
-    --quantization fp4 \
-    --max-model-len 8192
+# Re-launch the bundled llama-server pointing at an NVFP4 GGUF
+# (pal connect llamacpp prints and optionally wires the recipe):
+pwsh ./pal.ps1 connect llamacpp -ModelPath D:\Models\Qwen\Qwen3.6-35B-A3B-NVFP4.gguf -Model Qwen3.6-35B-A3B-NVFP4 -WriteConfig
 
-# Update PalLLM config — no PalLLM restart needed beyond a
-# normal config reload:
-$env:PalLLM__Inference__BaseUrl = "http://127.0.0.1:8000/v1/"
-$env:PalLLM__Inference__Model = "nvidia/Llama-3.3-70B-Instruct-FP4"
-$env:PalLLM__Inference__Enabled = "true"
-
+# Inference:Enabled / BaseUrl / Model are written for you; a normal
+# config reload picks up the new lane — no PalLLM code change.
 pwsh ./pal.ps1 play
 ```
 
-PalLLM sees a 2× speedup on every chat turn (the inference HTTP
+PalLLM sees a ~2× speedup on every chat turn (the inference HTTP
 client span emitted by `System.Net.Http.*` shrinks proportionally;
 the `pal.chat` parent span's `pal.inference_*` tags surface the
 new model identifier and lane) without any code change. See
@@ -460,7 +463,8 @@ This is the PalLLM version of the guidance:
    GPU architecture signal (the same `nvidia-smi` model parsing
    or env-var hint pattern PalLLM uses).
 2. **Don't hardcode the quantization choice.** Let the operator
-   pick -- but recommend NVFP4 + vLLM or TensorRT-LLM as a Blackwell default.
+   pick -- but recommend an NVFP4 GGUF on the bundled llama.cpp engine as a
+   Blackwell default.
 3. **Surface the quant in your privacy / posture surface.**
    PalLLM operators should be able to see what
    quant their model is running.
@@ -473,11 +477,10 @@ This is the PalLLM version of the guidance:
    `Inference:CircuitBreakerFailureThreshold` and the
    deterministic fallback are this in miniature.
 
-**Looking for concrete copy-pastable recipes** (vLLM and TensorRT-LLM startup
-snippets, prompt templates, monitoring patterns, failure-mode
-handlers) for Palworld companion dialogue, screenshot/vision proof,
-world-state narration, and release checks? See
-[`BLACKWELL_RECIPES.md`](BLACKWELL_RECIPES.md). It's the
+**Looking for concrete copy-pastable recipes** (llama-server startup snippets,
+prompt templates, monitoring patterns, failure-mode handlers) for Palworld
+companion dialogue, screenshot/vision proof, world-state narration, and release
+checks? See [`BLACKWELL_RECIPES.md`](BLACKWELL_RECIPES.md). It's the
 applied-engineering companion to this primer for PalLLM operators.
 
 ## Related
