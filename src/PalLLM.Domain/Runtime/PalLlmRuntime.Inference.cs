@@ -172,7 +172,6 @@ public sealed partial class PalLlmRuntime
             Stopwatch stopwatch = Stopwatch.StartNew();
             InferenceResult result;
             string warmupTransport = "chat_completions";
-            bool usedResidencyHint = false;
             try
             {
                 var warmupPrompt = new InferencePrompt
@@ -193,7 +192,6 @@ public sealed partial class PalLlmRuntime
                         .ConfigureAwait(false);
                     result = transportResult.Result;
                     warmupTransport = transportResult.Transport;
-                    usedResidencyHint = transportResult.ResidencyHintApplied;
                 }
                 else
                 {
@@ -225,14 +223,12 @@ public sealed partial class PalLlmRuntime
                         lastReason: normalizedReason,
                         lastWarmedModel: current.ActiveModel,
                         warmupTransport: warmupTransport,
-                        lastWarmupUsedResidencyHint: usedResidencyHint,
                         lastSuccessAtUtc: DateTimeOffset.UtcNow,
                         successCount: current.SuccessCount + 1,
                         lastLatencyMs: Math.Max(0, stopwatch.ElapsedMilliseconds),
                         statusMessage: BuildWarmupStatusMessage(
                             current.ActiveModel,
                             warmupTransport,
-                            usedResidencyHint,
                             success: true))
                     : BuildInferenceWarmupSnapshot(
                         current,
@@ -240,14 +236,12 @@ public sealed partial class PalLlmRuntime
                         lastReason: normalizedReason,
                         lastWarmedModel: current.ActiveModel,
                         warmupTransport: warmupTransport,
-                        lastWarmupUsedResidencyHint: usedResidencyHint,
                         lastFailureAtUtc: DateTimeOffset.UtcNow,
                         failureCount: current.FailureCount + 1,
                         lastLatencyMs: Math.Max(0, stopwatch.ElapsedMilliseconds),
                         statusMessage: BuildWarmupStatusMessage(
                             current.ActiveModel,
                             warmupTransport,
-                            usedResidencyHint,
                             success: false,
                             upstreamStatus: result.StatusMessage));
                 return _inferenceWarmup;
@@ -309,7 +303,6 @@ public sealed partial class PalLlmRuntime
         string? lastReason = null,
         string? lastWarmedModel = null,
         string? warmupTransport = null,
-        bool? lastWarmupUsedResidencyHint = null,
         string? statusMessage = null,
         DateTimeOffset? lastAttemptAtUtc = null,
         DateTimeOffset? lastSuccessAtUtc = null,
@@ -322,20 +315,16 @@ public sealed partial class PalLlmRuntime
         long? lastLatencyMs = null)
     {
         InferenceWarmupSnapshot baseline = current ?? new InferenceWarmupSnapshot();
-        ResolvedInferenceResidency residency = InferenceResidencyPolicy.Resolve(_options.Inference);
         return new InferenceWarmupSnapshot
         {
             Enabled = _options.Inference.EnableWarmup,
             Status = status ?? baseline.Status,
             ActiveModel = GetInferenceActiveModel(),
             ActiveTierId = GetInferenceActiveTierId(),
-            ResidencyProvider = residency.ProviderId,
-            ResidencyTtlSeconds = residency.TtlSeconds,
             LastSeenAvailableModels = GetInferenceLastSeenAvailableModels().ToArray(),
             LastWarmedModel = lastWarmedModel ?? baseline.LastWarmedModel,
             LastReason = lastReason ?? baseline.LastReason,
             WarmupTransport = warmupTransport ?? baseline.WarmupTransport,
-            LastWarmupUsedResidencyHint = lastWarmupUsedResidencyHint ?? baseline.LastWarmupUsedResidencyHint,
             StatusMessage = statusMessage ?? baseline.StatusMessage,
             LastAttemptAtUtc = lastAttemptAtUtc ?? baseline.LastAttemptAtUtc,
             LastSuccessAtUtc = lastSuccessAtUtc ?? baseline.LastSuccessAtUtc,
@@ -352,26 +341,20 @@ public sealed partial class PalLlmRuntime
     private string BuildWarmupStatusMessage(
         string activeModel,
         string warmupTransport,
-        bool usedResidencyHint,
         bool success,
         string? upstreamStatus = null)
     {
         string transport = string.IsNullOrWhiteSpace(warmupTransport) ? "chat_completions" : warmupTransport;
-        string residencyHint = InferenceResidencyPolicy.DescribeHint(InferenceResidencyPolicy.Resolve(_options.Inference));
 
         if (success)
         {
-            return usedResidencyHint && !string.IsNullOrWhiteSpace(residencyHint)
-                ? $"Warmup completed for '{activeModel}' via {transport} using {residencyHint}."
-                : $"Warmup completed for '{activeModel}' via {transport}.";
+            return $"Warmup completed for '{activeModel}' via {transport}.";
         }
 
         string detail = string.IsNullOrWhiteSpace(upstreamStatus)
             ? "Inference warmup failed."
             : upstreamStatus.Trim();
 
-        return usedResidencyHint && !string.IsNullOrWhiteSpace(residencyHint)
-            ? $"Warmup failed for '{activeModel}' via {transport} using {residencyHint}: {detail}"
-            : $"Warmup failed for '{activeModel}' via {transport}: {detail}";
+        return $"Warmup failed for '{activeModel}' via {transport}: {detail}";
     }
 }

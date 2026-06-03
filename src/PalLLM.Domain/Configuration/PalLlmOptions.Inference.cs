@@ -275,22 +275,6 @@ public sealed class InferenceOptions
     public int TransientRetryBackoffMs { get; set; } = 500;
 
     /// <summary>
-    /// Optional residency-control provider. <see cref="InferenceResidencyProvider.Auto"/>
-    /// detects compatible local runtimes from <see cref="BaseUrl"/> and only then
-    /// emits provider-specific residency hints; <see cref="InferenceResidencyProvider.Disabled"/>
-    /// suppresses them entirely.
-    /// </summary>
-    public InferenceResidencyProvider ResidencyProvider { get; set; } = InferenceResidencyProvider.Auto;
-
-    /// <summary>
-    /// Optional model-residency TTL in seconds for compatible local runtimes.
-    /// <c>0</c> disables residency hints. LM Studio OpenAI-compatible routes map
-    /// this to the documented <c>ttl</c> request field; Ollama native warmup maps
-    /// it to <c>keep_alive</c>.
-    /// </summary>
-    public int ResidencyTtlSeconds { get; set; } = 1_800;
-
-    /// <summary>
     /// Enables the bounded model-warmup pass. When true and inference is also
     /// enabled, PalLLM primes the currently active model on startup and after
     /// tier graduations so the first real player turn is less likely to pay the
@@ -881,38 +865,11 @@ public sealed class ThermalGateOptions
     public int CacheTtlSeconds { get; set; } = 5;
 }
 
-/// <summary>
-/// Selects which provider-specific residency-control hints PalLLM may emit for
-/// compatible local inference runtimes.
-/// </summary>
-public enum InferenceResidencyProvider
-{
-    /// <summary>
-    /// Detect the provider from <see cref="InferenceOptions.BaseUrl"/> and only
-    /// emit hints for known compatible runtimes.
-    /// </summary>
-    Auto = 0,
-
-    /// <summary>
-    /// Disable provider-specific residency hints even when the endpoint is a
-    /// known compatible runtime.
-    /// </summary>
-    Disabled = 1,
-
-    /// <summary>
-    /// Treat the endpoint as LM Studio-compatible and use TTL hints on
-    /// chat-completions requests when possible.
-    /// </summary>
-    LmStudio = 3,
-
-    // Pass 346: enum value 2 (Ollama) removed. The runtime no longer ships
-    // an Ollama-aware residency path; llama-server (PalLLM's bundled default)
-    // keeps the loaded model resident for the lifetime of the server process,
-    // so no per-request keep-alive hint is needed. Operators with
-    // ResidencyProvider:"Ollama" in their existing config will fall back to
-    // Auto detection at bind time; in practice this turns into Disabled
-    // unless the BaseUrl host matches the LM Studio pattern.
-}
+// Pass 436: the InferenceResidencyProvider enum + the per-request residency/ttl
+// feature were removed entirely. They only ever served LM Studio + Ollama (both
+// purged); llama.cpp's llama-server keeps the loaded model resident for the
+// lifetime of the server process (tune idle behaviour with --sleep-idle-seconds
+// server-side instead), and the cloud escape path manages residency provider-side.
 
 /// <summary>
 /// A single tier in the model-availability cascade. Tiers carry a priority —

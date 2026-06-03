@@ -107,10 +107,10 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs`
 - feature split: `119 ready`, `2 scaffolded`, `1 deferred`
 - `19` deterministic fallback strategies
-- `1330` passing tests from `dotnet test PalLLM.sln`
+- `1306` passing tests from `dotnet test PalLLM.sln`
 - `16 / 16` drift gates PASS on the latest audit
 - `1104` lines in `PalLlmRuntime.cs`, `391` lines in
-  `PalLlmRuntime.Helpers.cs`, `357` lines in
+  `PalLlmRuntime.Helpers.cs`, `360` lines in
   `PalLlmRuntime.Inference.cs`, `628` lines in
   `PalLlmRuntime.UiProbe.cs`, `482` lines in
   `PalLlmRuntime.BridgeBoot.cs`, `912` lines in
@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260603-141452/RESULTS.md`](../artifacts/full-audit/20260603-141452/RESULTS.md)
+  [`../artifacts/full-audit/20260603-143914/RESULTS.md`](../artifacts/full-audit/20260603-143914/RESULTS.md)
   (run dirs under `artifacts/` are git-ignored + auto-pruned to the newest
   `12` by the audit's retention cap, so this pointer is informational, not a
   clone-portable link)
@@ -189,36 +189,35 @@ once they reached the changelog):
   (llama.cpp / cloud escape, not vLLM/SGLang/TensorRT/LM Studio); the
   `QuickstartGuideBuilder` inference + Blackwell-quant steps; and the
   `HealthSuggestionBuilder` comment. Coupled tests updated; count unchanged.
-  **Still queued (436b tail + c/d), each a dedicated slice:**
-  (1) **remove the residency feature entirely** — `InferenceResidencyProvider`
-  (incl. `LmStudio`), the policy + hint code, the
-  `ResidencyProvider`/`ResidencyTtlSeconds` options + validator, the
+  **436b(5) (landed): removed the residency feature entirely.** Deleted
+  `InferenceResidencyProvider` (incl. `LmStudio`), `InferenceResidencyPolicy.cs`,
+  the `ResidencyProvider`/`ResidencyTtlSeconds` options + validator, the
   `InferenceWarmupSnapshot` residency fields, the `InferenceClient` TransportResult
-  residency fields, the warmup-status plumbing in `PalLlmRuntime.Inference`,
-  `connect-cloud.ps1`'s `ResidencyProvider=Disabled` write + its test, the
-  appsettings lines, and the ~22-case `InferenceResidencyPolicyTests.cs`. Only
-  ever served LM Studio + Ollama (both purged); llama.cpp uses server-side
-  `--sleep-idle-seconds`. Touches ~15 files, **regenerates the OpenAPI snapshot**
-  (`scripts/export-openapi.ps1`; residency is in the committed
-  `palllm-sidecar-v1.json`), and is a **test-count cascade** (`1330` minus the
-  deleted residency tests) across the ~24 mirror surfaces — do it as its own pass.
-  (2) `HardwareProfiler` Blackwell quant recommendation still names
+  residency fields + the request `ttl` field, the warmup-status residency plumbing
+  in `PalLlmRuntime.Inference`, both connect scripts' `ResidencyProvider=Disabled`
+  writes (+ `doctor.ps1`'s readout), the appsettings lines, and the 22-case
+  `InferenceResidencyPolicyTests.cs` + 2 obsolete `InferenceClientTests` ttl tests.
+  It only ever served LM Studio + Ollama (both purged); llama.cpp keeps the model
+  resident server-side (`--sleep-idle-seconds`). Regenerated the OpenAPI snapshot
+  and cascaded the test count `1330` -> `1306` across the ~24 mirror surfaces.
+  **Still queued (c/d), each a dedicated slice:**
+  (1) `HardwareProfiler` Blackwell quant recommendation still names
   `vLLM / TensorRT-LLM` (its `Recommendation` is asserted by `HardwareProfilerTests`
   to contain `NVFP4`/`MXFP4`/`Q4_K_M`, so reword keeps those quant tokens, drops the
   engines) + the `pal-model-probe.ps1` vLLM-metric guesser.
-  (3) **436c:** operator-doc sweep (`MODEL_COLLABORATION`, `QUANTIZATION`,
+  (2) **436c:** operator-doc sweep (`MODEL_COLLABORATION`, `QUANTIZATION`,
   `TUNING`, `MULTIMODAL_RECIPES`, `BLACKWELL_RECIPES`, etc.) + feature catalog
   (preserve append-only history).
-  (4) **436d:** fold the proven CUDA launch recipe from the external
+  (3) **436d:** fold the proven CUDA launch recipe from the external
   best-available llama.cpp build into `connect-llamacpp.ps1` +
   `LLAMA_CPP_BUNDLED.md` (the installer already fetches the latest release
   dynamically). Verification at this checkpoint: full audit `16 / 16`;
-  `1330 / 1330`; `0` warnings.
+  `1306 / 1306`; `0` warnings.
 
 - **Pass 435 - Local-repo hygiene: artifact retention cap + clone-safe link gate.**
   The local `artifacts/full-audit/` pile had grown unbounded to ~`922` run dirs
   / >`900` MB because the audit never pruned old runs. Pruned it back to the
-  active set, removed a stale `tests/PalLLM.Tests/TestResults/`, and reclaimed
+  active set, removed a stale `the test-project TestResults coverage directory`, and reclaimed
   `378` MB of regenerable `bin/obj`. To stop re-accumulation, added a retention
   cap to `scripts/run_full_audit.ps1`: each run keeps only the newest
   `$KeepAuditRuns` (default `12`) timestamped dirs (override via
@@ -4739,7 +4738,7 @@ once they reached the changelog):
   `ttl=` to an Ollama endpoint would silently break warmup residency
   and shipping latency.
   
-  New `tests/PalLLM.Tests/InferenceResidencyPolicyTests.cs` adds `27`
+  New `InferenceResidencyPolicyTests.cs` adds `27`
   focused cases pinning every branch: explicit provider selection
   (Ollama / LmStudio / Disabled), `Auto` detection (host substring +
   port-based for both providers, including case-insensitivity),

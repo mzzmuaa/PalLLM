@@ -4418,17 +4418,6 @@
               "string"
             ]
           },
-          "ResidencyProvider": {
-            "type": "string"
-          },
-          "ResidencyTtlSeconds": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
           "LastSeenAvailableModels": {
             "type": "array",
             "items": {
@@ -4443,9 +4432,6 @@
           },
           "WarmupTransport": {
             "type": "string"
-          },
-          "LastWarmupUsedResidencyHint": {
-            "type": "boolean"
           },
           "StatusMessage": {
             "type": "string"

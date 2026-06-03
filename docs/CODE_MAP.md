@@ -26,7 +26,7 @@ D:\Coding\PalLLM\
 |   |   +-- Mcp/                    -> MCP tools + resources + prompts (38 tools)
 |   |   +-- wwwroot/                -> Field Console dashboard (static HTML/JS/CSS)
 |   +-- mod/ue4ss/Mods/PalLLM/      -> Lua bridge (Windows-only, Palworld-specific)
-+-- tests/PalLLM.Tests/             -> NUnit, 1330 tests, one file per subsystem
++-- tests/PalLLM.Tests/             -> NUnit, 1306 tests, one file per subsystem
 +-- scripts/                        -> PowerShell: install, doctor, smoke, audit, package
 +-- docs/                           -> Di�taxis-organised documentation
 ```
@@ -37,7 +37,7 @@ D:\Coding\PalLLM\
 |---|---|---|
 | `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs` | `1105` | `ChatAsync` - THE hot path. Also TTS/ASR entry points, memory, vision description, relationships, and session persistence. |
 | `src/PalLLM.Domain/Runtime/PalLlmRuntime.Helpers.cs` | `409` | Extracted pure static helpers for endpoint timing, MIME routing, bounded directory counts, receipt text sanitizing, and sorted bridge file enumeration. |
-| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Inference.cs` | `377` | Extracted inference partial: performance snapshots, circuit/model metadata, warmup, live-inference residency tracking, and operation receipts. |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.Inference.cs` | `360` | Extracted inference partial: performance snapshots, circuit/model metadata, warmup, and operation receipts. |
 | `src/PalLLM.Domain/Runtime/PalLlmRuntime.UiProbe.cs` | `647` | Extracted `ui_probe` diagnostics partial: bounded metadata-keyed dump parse cache, dump parsing, HUD candidate ranking, UI-probe cloning, and local diagnostics retention. |
 | `src/PalLLM.Domain/Runtime/PalLlmRuntime.BridgeBoot.cs` | `498` | Extracted bridge-boot and native-readiness partial: heartbeat normalization, compat-signal parsing, native HUD readiness, and HUD bind recommendations. |
 | `src/PalLLM.Domain/Runtime/PalLlmRuntime.Bridge.cs` | `929` | Extracted bridge-drain and activity partial: inbox events, bridge proof snapshots, delivery receipts, speech playback receipts, and action feedback. |
@@ -111,7 +111,6 @@ outbox / session-persistence contracts).
 - **Circuit breaker** -> `Inference/InferenceCircuitBreaker.cs`
 - **Thermal gate** -> `Runtime/ThermalGate.cs`
 - **Execution-profile planner** -> `Inference/InferenceExecutionPlanner.cs`
-- **Residency hint policy** -> `Inference/InferenceResidencyPolicy.cs`
 - **Model availability probe** -> `Inference/ModelAvailabilityProbe.cs`
 - **Tier orchestrator (small-to-large model warm-up)** -> `Inference/ModelTierOrchestrator.cs`
 

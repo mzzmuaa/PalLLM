@@ -65,7 +65,7 @@ public sealed partial class ModelCollaborationPlanner
             startupHints.Add("llama.cpp state-cache canary lane: for SWA, hybrid, recurrent, or long-context GGUFs, test --swa-full / --slot-save-path / --cache-reuse on the exact server build before enabling host prompt-cache persistence.");
             startupHints.Add("llama.cpp idle-memory proof lane: use --sleep-idle-seconds only after wake latency, cold-after-wake cache behavior, and deterministic fallback behavior are recorded.");
             startupHints.Add("llama.cpp KV-memory proof lane: compare default f16 against -ctk q8_0 -ctv q8_0 before using longer contexts.");
-            startupHints.Add("llama.cpp connector lane: use pal connect llamacpp to print the llama-server command, probe /health and /v1/models, and wire PalLLM:Inference with residency hints disabled.");
+            startupHints.Add("llama.cpp connector lane: use pal connect llamacpp to print the llama-server command and probe /health and /v1/models before wiring PalLLM:Inference.");
             startupHints.Add("llama.cpp schema lane: qualify response_format json_schema or json_object through the server's grammar conversion with a PalLLM schema digest receipt before using it for actions, world-state, or proof packets.");
         }
 

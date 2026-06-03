@@ -2109,10 +2109,8 @@ public sealed class MetaTests
                 .And.Contain("--cache-reuse")
                 .And.Contain("-ctk")
                 .And.Contain("--sleep-idle-seconds")
-                .And.Contain("ResidencyProvider")
-                .And.Contain("Disabled")
                 .And.Contain("DryRun = $DryRun.IsPresent"),
-            "pal connect llamacpp should keep raw llama-server lanes local, metrics-visible, residency-neutral, and dry-run safe.");
+            "pal connect llamacpp should keep raw llama-server lanes local, metrics-visible, and dry-run safe.");
 
         string domainJsonContextPath = Path.Combine(RepoRoot, "src", "PalLLM.Domain", "PalLlmDomainJsonSerializerContext.cs");
         string domainJsonContext = File.ReadAllText(domainJsonContextPath);

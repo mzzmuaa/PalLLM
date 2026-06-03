@@ -215,11 +215,6 @@ $inference['BaseUrl'] = $BaseUrl
 $inference['Model'] = $Model
 $inference['ApiKey'] = $ApiKey
 $inference['Enabled'] = $true
-# Cloud providers have their own server-side residency; PalLLM should
-# not attempt the per-request ttl hint. Mirror connect-llamacpp's
-# Disabled posture.
-$inference['ResidencyProvider'] = 'Disabled'
-$inference['ResidencyTtlSeconds'] = 0
 
 $delta = @()
 if ($priorBaseUrl -ne $BaseUrl) { $delta += "  Inference.BaseUrl  : $priorBaseUrl -> $BaseUrl" }

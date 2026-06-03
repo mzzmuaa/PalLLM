@@ -1173,66 +1173,11 @@ public sealed class InferenceClientTests
         Assert.That(requestJson.RootElement.TryGetProperty("chat_template_kwargs", out _), Is.False);
     }
 
-    [Test]
-    public async Task CompleteAsync_WhenLmStudioCompatConfigured_SendsTtlResidencyHint()
-    {
-        using var handler = new RecordingHandler();
-        using var httpClient = new HttpClient(handler);
-        var options = new PalLlmOptions();
-        options.Inference.Enabled = true;
-        options.Inference.BaseUrl = "http://127.0.0.1:1234/v1/";
-        options.Inference.ResidencyTtlSeconds = 900;
-
-        var client = new HttpJsonInferenceClient(httpClient, options);
-
-        InferenceResult result = await client.CompleteAsync(new InferencePrompt
-        {
-            SystemPrompt = "system",
-            UserPrompt = "user",
-            Temperature = 0.7f,
-            MaxTokens = 128,
-        }, CancellationToken.None);
-
-        using JsonDocument requestJson = JsonDocument.Parse(handler.LastRequestBody);
-
-        Assert.That(result.Success, Is.True);
-        Assert.That(requestJson.RootElement.GetProperty("ttl").GetInt32(), Is.EqualTo(900));
-    }
-
-    [Test]
-    public async Task CompleteAsync_WhenResidencyProviderDisabled_SuppressesLmStudioTtlHint()
-    {
-        using var handler = new RecordingHandler();
-        using var httpClient = new HttpClient(handler);
-        var options = new PalLlmOptions();
-        options.Inference.Enabled = true;
-        options.Inference.BaseUrl = "http://127.0.0.1:1234/v1/";
-        options.Inference.ResidencyProvider = InferenceResidencyProvider.Disabled;
-        options.Inference.ResidencyTtlSeconds = 900;
-
-        var client = new HttpJsonInferenceClient(httpClient, options);
-
-        InferenceResult result = await client.CompleteAsync(new InferencePrompt
-        {
-            SystemPrompt = "system",
-            UserPrompt = "user",
-            Temperature = 0.7f,
-            MaxTokens = 128,
-        }, CancellationToken.None);
-
-        using JsonDocument requestJson = JsonDocument.Parse(handler.LastRequestBody);
-
-        Assert.That(result.Success, Is.True);
-        Assert.That(requestJson.RootElement.TryGetProperty("ttl", out _), Is.False);
-    }
-
-    // Pass 346: WarmAsync_WhenAutoDetectedOllama_UsesNativeChatPreloadWithKeepAlive
-    // deleted alongside the Ollama back-compat path. The dedicated
-    // /api/chat preload transport and Ollama keep_alive request body
-    // no longer exist — every supported runtime now warms via the
-    // generic OpenAI-compatible chat-completions path covered by
-    // WarmAsync_WhenLmStudioResidency_AppliesTtl and the negative
-    // WarmAsync_WhenResidencyDisabled_DoesNotApplyTtl tests above.
+    // Pass 436: the residency/ttl feature was removed entirely (it only ever
+    // served LM Studio + Ollama, both purged). The two tests that asserted the
+    // per-request `ttl` field was sent / suppressed were deleted with it;
+    // llama.cpp keeps the loaded model resident server-side, so there is no
+    // per-request keep-alive field to send.
 
     [Test]
     public async Task CompleteAsync_TransientFailure_IsRetriedAndSucceeds()

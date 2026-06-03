@@ -47,9 +47,7 @@ public interface IInferenceLaneMetadata
 
 public sealed record InferenceWarmupTransportResult(
     InferenceResult Result,
-    string Transport,
-    bool ResidencyHintApplied,
-    string ResidencyProvider);
+    string Transport);
 
 public sealed class HttpJsonInferenceClient : IInferenceClient, IInferenceLaneMetadata
 {
@@ -119,21 +117,14 @@ public sealed class HttpJsonInferenceClient : IInferenceClient, IInferenceLaneMe
     {
         ArgumentNullException.ThrowIfNull(prompt);
 
-        InferenceOptions inference = _options.Inference;
-        ResolvedInferenceResidency residency = InferenceResidencyPolicy.Resolve(inference);
-
-        // Pass 346: warmup now goes through the generic OpenAI-compatible
-        // chat-completions path for every supported engine (llama-server is
-        // PalLLM's bundled default; LM Studio can additionally carry the
-        // per-request `ttl` field surfaced by ResidencyHintApplied below).
-        // llama.cpp keeps the loaded model resident for the lifetime of the
-        // server process, so no per-request keep-alive hint is needed.
+        // Pass 436: warmup goes through the generic OpenAI-compatible
+        // chat-completions path. llama.cpp (PalLLM's only local engine) keeps
+        // the loaded model resident for the lifetime of the server process, so
+        // there is no per-request keep-alive hint to apply.
         InferenceResult genericResult = await CompleteAsync(prompt, cancellationToken).ConfigureAwait(false);
         return new InferenceWarmupTransportResult(
             Result: genericResult,
-            Transport: "chat_completions",
-            ResidencyHintApplied: residency.SupportsChatCompletionsTtl && residency.TtlSeconds > 0,
-            ResidencyProvider: residency.ProviderId);
+            Transport: "chat_completions");
     }
 
     public async Task<InferenceResult> CompleteAsync(InferencePrompt prompt, CancellationToken cancellationToken)
@@ -456,12 +447,10 @@ public sealed class HttpJsonInferenceClient : IInferenceClient, IInferenceLaneMe
     // Pass 346: the dedicated Ollama-native warmup transport (WarmOllama,
     // its endpoint+body builders, and the warmup request DTO) was
     // removed alongside the rest of the Ollama back-compat path. The
-    // runtime now warms every engine through the generic OpenAI-compatible
-    // chat-completions path (llama-server, vLLM, LM Studio, etc.).
-    // llama.cpp keeps the loaded model resident for the lifetime of the
-    // server process, so no per-request keep-alive hint is needed;
-    // LM Studio's per-request `ttl` is still carried via the generic
-    // request body when configured.
+    // runtime warms the engine through the generic OpenAI-compatible
+    // chat-completions path. llama.cpp (PalLLM's only local engine) keeps the
+    // loaded model resident for the lifetime of the server process, so there
+    // is no per-request keep-alive hint to send.
 
     private static int ComputeBackoffMs(int baseMs, int attempt)
     {
@@ -494,7 +483,6 @@ public sealed class HttpJsonInferenceClient : IInferenceClient, IInferenceLaneMe
         bool useFamilySamplingPresets = HasFamilySamplingPresets(activeModel);
         bool usesTemplateThinkingControls = HasTemplateThinkingControls(activeModel);
         bool usesRootThinkingControls = UsesRootThinkingControls(inference.BaseUrl);
-        ResolvedInferenceResidency residency = InferenceResidencyPolicy.Resolve(inference);
 
         float? topP = prompt.TopP ?? inference.TopP ?? (useFamilySamplingPresets ? DefaultTopP : (float?)null);
         float? presencePenalty = prompt.PresencePenalty ?? inference.PresencePenalty ?? (useFamilySamplingPresets ? DefaultPresencePenalty : (float?)null);
@@ -573,9 +561,6 @@ public sealed class HttpJsonInferenceClient : IInferenceClient, IInferenceLaneMe
             rootPreserveThinking = preserveThinking.Value;
         }
 
-        int? ttl = residency.SupportsChatCompletionsTtl && residency.TtlSeconds > 0
-            ? residency.TtlSeconds
-            : null;
         string? cacheSalt = string.IsNullOrWhiteSpace(inference.PrefixCacheSalt)
             ? null
             : inference.PrefixCacheSalt.Trim();
@@ -636,7 +621,6 @@ public sealed class HttpJsonInferenceClient : IInferenceClient, IInferenceLaneMe
             ChatTemplateKwargs = chatTemplateKwargs,
             EnableThinking = rootEnableThinking,
             PreserveThinking = rootPreserveThinking,
-            Ttl = ttl,
             CacheSalt = cacheSalt,
         };
     }

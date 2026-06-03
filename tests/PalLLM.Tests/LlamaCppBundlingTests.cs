@@ -945,8 +945,6 @@ public class LlamaCppBundlingTests
             "connect-cloud.ps1 must include the OpenAI base URL preset.");
         Assert.That(text, Does.Contain("https://api.groq.com/openai/v1/"),
             "connect-cloud.ps1 must include the Groq base URL preset.");
-        Assert.That(text, Does.Contain("ResidencyProvider"),
-            "connect-cloud.ps1 must set Inference.ResidencyProvider=Disabled (cloud providers manage residency server-side).");
         Assert.That(text, Does.Contain("$env:PalLLM__Inference__ApiKey"),
             "connect-cloud.ps1 must mention the env-var path as the preferred ApiKey delivery method.");
     }

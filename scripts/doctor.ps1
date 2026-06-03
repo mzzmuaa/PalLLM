@@ -219,8 +219,7 @@ try {
             $warmupDetail = @(
                 ("status=" + $warmupStatus),
                 ($(if (-not [string]::IsNullOrWhiteSpace([string]$inferenceWarmup.ActiveModel)) { "active model=" + ([string]$inferenceWarmup.ActiveModel) } else { "active model unavailable" })),
-                ($(if (-not [string]::IsNullOrWhiteSpace([string]$inferenceWarmup.WarmupTransport)) { "transport=" + ([string]$inferenceWarmup.WarmupTransport) } else { "transport unavailable" })),
-                ($(if (-not [string]::IsNullOrWhiteSpace([string]$inferenceWarmup.ResidencyProvider)) { "residency=" + ([string]$inferenceWarmup.ResidencyProvider) } else { "residency unavailable" }))
+                ($(if (-not [string]::IsNullOrWhiteSpace([string]$inferenceWarmup.WarmupTransport)) { "transport=" + ([string]$inferenceWarmup.WarmupTransport) } else { "transport unavailable" }))
             ) -join "; "
 
             if (-not $inferenceConfigured) {

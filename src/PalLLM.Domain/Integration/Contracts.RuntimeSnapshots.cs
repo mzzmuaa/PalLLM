@@ -398,10 +398,6 @@ public sealed class InferenceWarmupSnapshot
 
     public string? ActiveTierId { get; init; }
 
-    public string ResidencyProvider { get; init; } = string.Empty;
-
-    public int ResidencyTtlSeconds { get; init; }
-
     public IReadOnlyList<string> LastSeenAvailableModels { get; init; } =
         Array.Empty<string>();
 
@@ -410,8 +406,6 @@ public sealed class InferenceWarmupSnapshot
     public string LastReason { get; init; } = string.Empty;
 
     public string WarmupTransport { get; init; } = string.Empty;
-
-    public bool LastWarmupUsedResidencyHint { get; init; }
 
     public string StatusMessage { get; init; } = string.Empty;
 

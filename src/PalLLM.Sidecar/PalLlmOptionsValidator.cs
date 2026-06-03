@@ -86,7 +86,6 @@ public sealed class PalLlmOptionsValidator : IValidateOptions<PalLlmOptions>
         RequirePositive(inference.CircuitBreakerCooldownSeconds, "PalLLM:Inference:CircuitBreakerCooldownSeconds", failures);
         RequireNonNegative(inference.MaxTransientRetries, "PalLLM:Inference:MaxTransientRetries", failures);
         RequireNonNegative(inference.TransientRetryBackoffMs, "PalLLM:Inference:TransientRetryBackoffMs", failures);
-        RequireNonNegative(inference.ResidencyTtlSeconds, "PalLLM:Inference:ResidencyTtlSeconds", failures);
         RequirePositive(inference.WarmupMaxTokens, "PalLLM:Inference:WarmupMaxTokens", failures);
         RequireNonNegative(inference.WarmupIntervalSeconds, "PalLLM:Inference:WarmupIntervalSeconds", failures);
         RequirePositive(inference.TierProbeIntervalSeconds, "PalLLM:Inference:TierProbeIntervalSeconds", failures);

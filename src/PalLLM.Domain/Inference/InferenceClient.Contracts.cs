@@ -176,10 +176,6 @@ internal sealed class InferenceChatCompletionsRequestBody
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? PreserveThinking { get; init; }
 
-    [JsonPropertyName("ttl")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public int? Ttl { get; init; }
-
     [JsonPropertyName("cache_salt")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? CacheSalt { get; init; }

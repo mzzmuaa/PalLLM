@@ -8,7 +8,7 @@ All notable changes to PalLLM are documented here. Format follows
 First public-ready revision. Collapsed from multiple in-flight drafts
 dated `2026-04-18`, `2026-04-19`, `2026-04-22`, and `2026-04-23`.
 
-**Current baseline (rolling):** `1330` passing tests - `16/16` drift
+**Current baseline (rolling):** `1306` passing tests - `16/16` drift
 gates green - `122` feature-catalog entries (119 ready / 2 scaffolded
 / 1 deferred) - `57` `/api` routes - `38` MCP tools - `19`
 deterministic fallback strategies - `6` ADRs accepted - honest
@@ -48,13 +48,25 @@ history is preserved.
   plus a new `AssertLlamaCppOnlyServing` guard that fails if any purged backend
   token appears in any serving-profile array.
 
-**Still queued.** Residency/telemetry/availability-probe code still carries
-provider detection for the purged backends (`InferenceResidencyProvider.LmStudio`
-+ its test file, `GenAiTelemetry` host->provider branches, the Foundry
-`/openai/models` probe branch); the operator-doc sweep; and adopting the proven
-CUDA launch recipe + confirming the latest-release install path.
+- **436b(2)-(5)** — Purged the rest of the live alt-engine surface:
+  `GenAiTelemetry` provider detection (only `llama.cpp` / `openai_compatible`
+  remain), the `ModelAvailabilityProbe` Foundry `/openai/models` candidate,
+  `ModelCollaborationPlanner` RecommendedBackend + `QuickstartGuideBuilder` /
+  `HealthSuggestionBuilder` advisory strings, and finally the **entire residency
+  feature** (`InferenceResidencyProvider`, the policy, options, validator,
+  warmup-snapshot residency fields, request `ttl` field, both connect scripts'
+  `ResidencyProvider` writes, and the appsettings lines). It only ever served LM
+  Studio + Ollama; llama.cpp keeps the model resident server-side. Deleted
+  `InferenceResidencyPolicy.cs` + its 22-case test file + 2 obsolete ttl tests,
+  regenerated the OpenAPI snapshot, and cascaded the test count `1330` -> `1306`
+  across the mirror surfaces.
 
-**Verification (checkpoint).** `dotnet test` `1330 / 1330`; full audit `16 / 16`;
+**Still queued.** `HardwareProfiler`'s Blackwell quant recommendation +
+`pal-model-probe.ps1`'s vLLM-metric guesser; the operator-doc sweep
+(`MODEL_COLLABORATION`, `QUANTIZATION`, `TUNING`, `MULTIMODAL_RECIPES`,
+`BLACKWELL_RECIPES`, etc.); and adopting the proven CUDA launch recipe.
+
+**Verification (checkpoint).** `dotnet test` `1306 / 1306`; full audit `16 / 16`;
 `0` build warnings.
 
 ### Pass 435 - Local-repo hygiene: artifact retention cap + clone-safe link gate (2026-06-03)
@@ -4537,7 +4549,7 @@ llama.cpp" — the aggressive read. Pass 346 executes it.
    `BuildOllamaWarmupBody`, and the warmup request DTO removed.
    The runtime now warms every engine through the generic
    OpenAI-compatible chat-completions path.
-2. **`src/PalLLM.Domain/Inference/InferenceResidencyPolicy.cs`** —
+2. **`InferenceResidencyPolicy.cs`** —
    Ollama case dropped from both `Resolve` and `DescribeHint`;
    the auto-detection branch for port `11434` / host substring
    `ollama` removed. LM Studio detection (port `1234`) is the
@@ -4580,7 +4592,7 @@ llama.cpp" — the aggressive read. Pass 346 executes it.
 
 **Tests follow (5 files):**
 
-10. **`tests/PalLLM.Tests/InferenceResidencyPolicyTests.cs`** —
+10. **`InferenceResidencyPolicyTests.cs`** —
     4 dedicated Ollama tests deleted
     (`Resolve_ExplicitOllama_*`, `Resolve_Auto_DetectsOllamaFromUrl`,
     `DescribeHint_Ollama_PositiveTtl_*`,
@@ -7493,7 +7505,7 @@ emitting `ttl=` to an Ollama endpoint, or emitted `keep_alive=0`
 (which tells Ollama to evict immediately) when the operator's TTL was
 zero, would silently break warmup residency and shipping latency.
 
-**Tests added.** New `tests/PalLLM.Tests/InferenceResidencyPolicyTests.cs`
+**Tests added.** New `InferenceResidencyPolicyTests.cs`
 with `27` focused cases pinning every branch:
 
 - **Explicit provider** (`Ollama` / `LmStudio` / `Disabled`):

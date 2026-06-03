@@ -637,21 +637,15 @@ $inference = Ensure-ObjectKey -Container $pal -Key 'Inference'
 $priorBaseUrl = if (Test-ConfigKey $inference 'BaseUrl') { [string]$inference['BaseUrl'] } else { '' }
 $priorModel = if (Test-ConfigKey $inference 'Model') { [string]$inference['Model'] } else { '' }
 $priorEnabled = if (Test-ConfigKey $inference 'Enabled') { [bool]$inference['Enabled'] } else { $false }
-$priorResidencyProvider = if (Test-ConfigKey $inference 'ResidencyProvider') { [string]$inference['ResidencyProvider'] } else { '' }
-$priorResidencyTtl = if (Test-ConfigKey $inference 'ResidencyTtlSeconds') { [int]$inference['ResidencyTtlSeconds'] } else { 0 }
 
 $inference['BaseUrl'] = $baseUrl
 $inference['Model'] = $resolvedModel
 $inference['Enabled'] = $true
-$inference['ResidencyProvider'] = 'Disabled'
-$inference['ResidencyTtlSeconds'] = 0
 
 $delta = @()
 if ($priorBaseUrl -ne $baseUrl) { $delta += "  Inference.BaseUrl             : $priorBaseUrl -> $baseUrl" }
 if ($priorModel -ne $resolvedModel) { $delta += "  Inference.Model               : $priorModel -> $resolvedModel" }
 if ($priorEnabled -ne $true) { $delta += "  Inference.Enabled             : $priorEnabled -> True" }
-if ($priorResidencyProvider -ne 'Disabled') { $delta += "  Inference.ResidencyProvider   : $priorResidencyProvider -> Disabled" }
-if ($priorResidencyTtl -ne 0) { $delta += "  Inference.ResidencyTtlSeconds : $priorResidencyTtl -> 0" }
 
 # Pass 352: Per-family Unsloth canonical sampler now propagates into
 # PalLLM.Inference's Temperature/TopP/TopK/MinP/PresencePenalty when
@@ -746,6 +740,5 @@ Write-Host ""
     Model = $resolvedModel
     BaseUrl = $baseUrl
     WireVision = $WireVision.IsPresent
-    ResidencyProvider = 'Disabled'
     Backup = "$ConfigPath.bak"
 } | Write-Output
