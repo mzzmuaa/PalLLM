@@ -287,15 +287,12 @@ public sealed class MetaTests
             Match m = Regex.Match(command, @"\bpal(?:\.ps1)?\s+connect\s+(?<target>\S+)");
             if (!m.Success) continue;
             string target = m.Groups["target"].Value;
-            // Map MCP-friendly verb aliases back to their connect-*.ps1 stem
-            // so the comparison stays meaningful: `omni` routes to
-            // `connect-vllm-omni.ps1` per pal.ps1's Run-Connect switch.
-            string mapped = target switch
-            {
-                "omni" => "vllm-omni",
-                _ => target,
-            };
-            agentsInventory.Add(mapped);
+            // Pass 436/437: the connect surface is llama.cpp-only ('llamacpp')
+            // plus the cloud escape ('cloud' / 'openai'). The historical
+            // MCP-verb aliases that mapped onto alt-engine connect-*.ps1 stems
+            // (e.g. omni -> connect-vllm-omni.ps1) were removed, so each target
+            // word now maps to itself.
+            agentsInventory.Add(target);
         }
 
         Assert.That(agentsInventory.SetEquals(filesystem), Is.True,

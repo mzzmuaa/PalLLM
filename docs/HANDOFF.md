@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 436)
+## Codex handoff (read first — Pass 437)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260603-173533/RESULTS.md`](../artifacts/full-audit/20260603-173533/RESULTS.md)
+  [`../artifacts/full-audit/20260603-192406/RESULTS.md`](../artifacts/full-audit/20260603-192406/RESULTS.md)
   (run dirs under `artifacts/` are git-ignored + auto-pruned to the newest
   `12` by the audit's retention cap, so this pointer is informational, not a
   clone-portable link)
@@ -163,7 +163,30 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
-- **Pass 436 (in progress) - llama.cpp is the only local engine.** Began the
+- **Pass 437 (landed) - residual operator-surface purge; finishes the
+  llama.cpp-only campaign.** A follow-up audit found three un-gated surfaces the
+  436 passes missed (un-gated is why they survived green CI):
+  `scripts/compatibility.json` (stamped `2026-04-25`, untouched by 436c) still
+  listed `vllm`/`tensorrt-llm`/`sglang`/`tgi` as `"supported"` inference
+  endpoints and named them in the `quantizationFormats[].supportedEngines`
+  arrays; `pal.ps1`'s `connect` help still advertised the 7 deleted alt-engine
+  targets (the router already rejected them with "Unknown target", so the help
+  over-promised), its readiness scorecard said `Performance (Blackwell+vLLM+Omni)`
+  / "10/10 once vLLM is wired", and its `pal models` footer pointed at
+  `BLACKWELL_RECIPES.md` for "vLLM startup snippets" (a llama-server cookbook
+  since 436c); and a `pal-next.ps1` comment named Ollama. Reshaped the JSON to
+  the `llama-cpp` + `openai-compatible-cloud` vocabulary (mirroring the
+  already-swept `COMPATIBILITY.md` endpoint table), rewrote `pal connect` help to
+  the two real targets (`llamacpp` + `cloud`/`openai`), matched the scorecard
+  label to the already-correct `READINESS.md` row
+  (`Blackwell + NVFP4 GGUF on llama.cpp`), fixed the recipes pointer, and
+  de-Ollama'd the `pal-next` comment. Also removed the now-dead
+  `"omni" => "vllm-omni"` switch arm in `MetaTests` (unreachable since the
+  three-way connect-inventory set check forces `{cloud, llamacpp}`). No gated
+  count moved; the `ollama` deprecation handler, the brand-block regexes, and all
+  "Pass NNN removed X" history notes are intentional and preserved. `16/16`
+  audit, `1306/1306` tests, `0` warnings.
+- **Pass 436 (landed) - llama.cpp is the only local engine.** Began the
   "stick with just llama.cpp; no vLLM/Ollama/anything else" purge.
   **436a (landed):** deleted the six local alternative-engine connect scripts
   (`connect-vllm`, `connect-vllm-omni`, `connect-foundry`, `connect-lmstudio`,

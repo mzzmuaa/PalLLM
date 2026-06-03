@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastAudited": "2026-04-25",
+  "lastAudited": "2026-06-03",
   "palworld": {
     "supported": ["0.5.x", "0.4.x"],
     "unsupportedBelow": "0.4.0"
@@ -65,11 +65,8 @@
   ],
   "inferenceEndpoints": [
     { "id": "llama-cpp-loopback", "url": "http://127.0.0.1:8080/v1/", "status": "reference", "notes": "Pass 337 default; pairs with operator's curated D:\\Models library. See docs/LOCAL_MODELS_INVENTORY.md." },
-    { "id": "llama-cpp",          "url": "http://<host>:8080/v1/",    "status": "supported" },
-    { "id": "vllm",            "url": "http://<host>:8000/v1/",      "status": "supported", "notes": "Required for NVFP4 / FP8 / AWQ-INT4 inference. See docs/QUANTIZATION.md." },
-    { "id": "tensorrt-llm",    "url": "http://<host>:8000/v1/",      "status": "supported", "notes": "Lowest-latency Blackwell path. NVFP4 native. See docs/QUANTIZATION.md." },
-    { "id": "sglang",          "url": "http://<host>:30000/v1/",     "status": "supported", "notes": "Strong agent/tool-use support. NVFP4 + FP8 native on Blackwell/Hopper." },
-    { "id": "tgi",             "url": "http://<host>:3000/v1/",      "status": "supported" },
+    { "id": "llama-cpp",          "url": "http://<host>:8080/v1/",    "status": "supported", "notes": "The only local engine: the bundled llama-server. Install via pal install-llama-cpp; wire via pal connect llamacpp." },
+    { "id": "openai-compatible-cloud", "url": "https://<provider>/v1/", "status": "supported", "notes": "Below-reference-rig escape path via pal connect cloud; leaves the air-gap boundary. /api/airgap/verify will mark public-internet. Pass 436/437 replaced the removed vllm / tensorrt-llm / sglang / tgi local-engine rows with this generic cloud lane." },
     { "id": "openai-direct",   "url": "https://api.openai.com/v1/",  "status": "works-not-recommended", "notes": "Sends chat traffic off-device; /api/airgap/verify will mark public-internet." }
   ],
   "quantizationFormats": [
@@ -78,7 +75,7 @@
       "displayName": "NVFP4",
       "bitsPerWeight": 4,
       "hardwareRequirement": "blackwell",
-      "supportedEngines": ["vllm", "tensorrt-llm", "sglang", "nvidia-nim"],
+      "supportedEngines": ["llama-cpp", "openai-compatible-cloud"],
       "notes": "NVIDIA proprietary 4-bit FP. Two-level scaling (per-block FP8 micro-scale + per-tensor FP32 macro-scale). Best speed/quality on Blackwell."
     },
     {
@@ -86,7 +83,7 @@
       "displayName": "MXFP4 (OCP standard)",
       "bitsPerWeight": 4,
       "hardwareRequirement": "blackwell-or-mi300",
-      "supportedEngines": ["vllm", "tensorrt-llm"],
+      "supportedEngines": ["llama-cpp", "openai-compatible-cloud"],
       "notes": "OCP Microscaling 4-bit FP. Single-level per-block FP8 scale. Cross-vendor (NVIDIA + AMD)."
     },
     {
@@ -94,7 +91,7 @@
       "displayName": "FP8 (E4M3)",
       "bitsPerWeight": 8,
       "hardwareRequirement": "hopper-or-ada-or-blackwell",
-      "supportedEngines": ["vllm", "tensorrt-llm", "sglang"],
+      "supportedEngines": ["llama-cpp", "openai-compatible-cloud"],
       "notes": "Native 8-bit FP. Near-FP16 quality at half the memory."
     },
     {
@@ -102,7 +99,7 @@
       "displayName": "Q4_K_M (GGUF)",
       "bitsPerWeight": 4.5,
       "hardwareRequirement": "any",
-      "supportedEngines": ["llama-cpp", "lm-studio"],
+      "supportedEngines": ["llama-cpp"],
       "notes": "llama.cpp K-quant. Mature calibration; works on every CPU/GPU."
     },
     {
@@ -110,7 +107,7 @@
       "displayName": "Q8_0 (GGUF)",
       "bitsPerWeight": 8,
       "hardwareRequirement": "any",
-      "supportedEngines": ["llama-cpp", "lm-studio"],
+      "supportedEngines": ["llama-cpp"],
       "notes": "llama.cpp 8-bit. Within 0.3 points of FP16 on most benchmarks."
     },
     {
@@ -118,7 +115,7 @@
       "displayName": "AWQ-INT4",
       "bitsPerWeight": 4,
       "hardwareRequirement": "ampere-or-newer",
-      "supportedEngines": ["vllm", "tgi"],
+      "supportedEngines": ["openai-compatible-cloud"],
       "notes": "Activation-aware integer quantization. Good for pre-Hopper GPUs."
     }
   ]

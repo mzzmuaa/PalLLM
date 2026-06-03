@@ -154,7 +154,7 @@ function Run-List {
                 @{ Verb = 'benchmark';     Description = 'real-world latency measurement vs HOT_PATH.md per-tier budget' }
                 @{ Verb = 'mcp';           Description = 'wire PalLLM into an MCP client (claude-desktop / vscode / cursor)' }
                 @{ Verb = 'install-llama-cpp'; Description = 'download + verify the bundled llama-server release into runtime-root/Bundled/llama.cpp/ (the "bundled and default" engine)' }
-                @{ Verb = 'connect';       Description = 'wire PalLLM''s inference path to a local engine (llamacpp default / vllm high-config / lmstudio / omni / transformers / tensorrt / openvino / foundry)' }
+                @{ Verb = 'connect';       Description = 'wire PalLLM''s inference path: ''llamacpp'' (the only local engine) or ''cloud'' (the OpenAI-compatible below-reference-rig escape path)' }
                 @{ Verb = 'support';       Description = 'export an anonymized support bundle (privacy-redacted JSON + zip)' }
                 @{ Verb = 'health';        Description = 'write one Markdown + JSON health snapshot from local evidence' }
                 @{ Verb = 'proof';         Description = 'summarize live/native proof status and the exact next action' }
@@ -638,23 +638,20 @@ function Run-Explain {
 }
 
 function Run-Connect {
-    # Subcommand router: pal connect <target>. Today: ollama, llamacpp,
-    # vllm, omni, lmstudio, transformers, tensorrt, openvino, foundry.
-    # Future: llama-cpp, openai-direct, etc.
+    # Subcommand router: pal connect <target>. Live targets: 'llamacpp'
+    # (the only local engine; aliases llama-cpp / llama.cpp) and 'cloud' /
+    # 'openai' (the OpenAI-compatible below-reference-rig escape path). The
+    # legacy 'ollama' alias prints a deprecation pointer (Pass 339). Pass 436
+    # removed the vllm / omni / lmstudio / transformers / tensorrt / openvino /
+    # foundry connectors; PalLLM is llama.cpp-only for local inference.
     if (-not $script:ForwardArgs -or $script:ForwardArgs.Count -eq 0) {
         Write-Host ""
         Write-Host "pal connect <target> [args]" -ForegroundColor Cyan
         Write-Host ""
         Write-Host "Targets:"
-        Write-Host "  ollama      probe Ollama, recommend a model for your hardware, write the config"
-        Write-Host "  llamacpp    print or wire a raw llama.cpp llama-server GGUF lane"
-        Write-Host "  lmstudio    wire LM Studio's local OpenAI-compatible server with TTL proof"
-        Write-Host "  vllm        pick a Blackwell / Hopper / Ampere recipe + print the docker command"
-        Write-Host "  omni        multimodal-in / audio-out (Gemma 4 / Gemma 3n / Qwen3-Omni) via vLLM-Omni"
-        Write-Host "  transformers Hugging Face transformers serve with continuous batching"
-        Write-Host "  tensorrt   NVIDIA TensorRT-LLM /v1 lane with health + metrics proof"
-        Write-Host "  openvino   OpenVINO Model Server /v3 lane for Intel CPU, GPU, or NPU"
-        Write-Host "  foundry     Microsoft Foundry Local / Windows ML REST lane"
+        Write-Host "  llamacpp    print or wire the bundled llama.cpp llama-server GGUF lane (the only local engine)"
+        Write-Host "  cloud       wire an OpenAI-compatible cloud API (the below-reference-rig escape path)"
+        Write-Host "  openai      shortcut for 'cloud -Provider openai'"
         Write-Host ""
         Write-Host "Examples:" -ForegroundColor White
         Write-Host "  pal connect llamacpp -ModelPath C:\Models\qwen.gguf # print / wire raw llama-server"
@@ -845,7 +842,7 @@ function Run-Readiness {
     $scores = @(
         @{ Aspect = 'Privacy posture';                 Score = '10/10'; Color = 'Green'  }
         @{ Aspect = 'Security / supply chain';         Score = '10/10'; Color = 'Green'  }
-        @{ Aspect = 'Performance (Blackwell+vLLM+Omni)'; Score = '9.8/10'; Color = 'Green'  }
+        @{ Aspect = 'Performance (Blackwell + NVFP4 GGUF on llama.cpp)'; Score = '9.8/10'; Color = 'Green'  }
         @{ Aspect = 'Uninstall (one-click + manifest)'; Score = '9.5/10'; Color = 'Green'  }
         @{ Aspect = 'Install (one-click play.bat)';    Score = '9.5/10'; Color = 'Green'  }
         @{ Aspect = 'Diagnose / troubleshoot + logs';  Score = '9.7/10'; Color = 'Green'  }
@@ -877,7 +874,7 @@ function Run-Readiness {
     Write-Host ""
     Write-Host "Per-audience verdict:" -ForegroundColor White
     Write-Host "  Casual Palworld player on average hardware    : 6-7 / 10 today"
-    Write-Host "  Player on Blackwell hardware (5090 / B-series): 8 / 10 default, 10 / 10 once vLLM is wired"
+    Write-Host "  Player on Blackwell hardware (5090 / B-series): 8 / 10 default, 10 / 10 once an NVFP4 GGUF is wired on llama.cpp"
     Write-Host "  Operator (sidecar + dashboard, no game)       : 9 / 10 today"
     Write-Host "  Coding agent / harvester                      : 9.5 / 10 today"
     Write-Host "  Linux / macOS user                            : 6 / 10 (sidecar yes, mod no)"
@@ -1034,7 +1031,7 @@ function Run-Models {
 
     Write-Host "Full primer + community sentiment + recipes:" -ForegroundColor White
     Write-Host "  docs/QUANTIZATION.md          # vs Q4_K_M / Q8 / FP8 / NVFP4 / MXFP4"
-    Write-Host "  docs/BLACKWELL_RECIPES.md     # copy-pastable vLLM startup snippets"
+    Write-Host "  docs/BLACKWELL_RECIPES.md     # copy-pastable llama-server startup snippets"
     Write-Host "  docs/MODEL_COLLABORATION.md   # per-tier model pairings"
     Write-Host "  pal models serving            # live per-lane model-server checklist"
     Write-Host "  pal models probe              # live /v1/models + /metrics evidence artifact"

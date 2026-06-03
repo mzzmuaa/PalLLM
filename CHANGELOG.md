@@ -18,7 +18,52 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
-### Pass 436 - llama.cpp is the only local engine (in progress) (2026-06-03)
+### Pass 437 - residual operator-surface purge: finishing the llama.cpp-only campaign (2026-06-03)
+
+**Context.** Pass 436 (a-d) collapsed the local-engine surface to llama.cpp only,
+but a follow-up audit found three operator-facing surfaces it missed - none of
+them gated, which is exactly why they survived green CI. Pass 437 closes them so
+the purge is complete in fact, not just in the gated files. Append-only history
+("Pass NNN removed X" notes) and the intentional brand-block regexes are kept.
+
+**Changes.**
+- **`scripts/compatibility.json`** (was `lastAudited 2026-04-25`, untouched by
+  436c) - the `inferenceEndpoints` list still advertised `vllm` / `tensorrt-llm`
+  / `sglang` / `tgi` as `"supported"` local engines, and the
+  `quantizationFormats[].supportedEngines` arrays still named
+  `vllm`/`tensorrt-llm`/`sglang`/`nvidia-nim`/`tgi`/`lm-studio`. Reshaped to
+  mirror the already-swept `docs/COMPATIBILITY.md` "known-safe inference
+  endpoints" table: the only engines are now `llama-cpp` (the local engine) and
+  `openai-compatible-cloud` (the escape path); GGUF-capable formats map to
+  `llama-cpp` (+ cloud), and non-GGUF AWQ-INT4 maps to the cloud lane only.
+  Bumped `lastAudited` to `2026-06-03`. Behavior-neutral: no C# code or
+  `doctor.ps1` deserializes these sections, and `pal.ps1` reads only
+  id/displayName/bits/hardware.
+- **`pal.ps1`** - the `connect` verb help still listed `ollama` / `lmstudio` /
+  `vllm` / `omni` / `transformers` / `tensorrt` / `openvino` / `foundry` as live
+  targets, even though the `Run-Connect` switch already routed everything but
+  `llamacpp`/`cloud`/`openai`/`ollama` to "Unknown target". The readiness
+  scorecard advertised `Performance (Blackwell+vLLM+Omni)` and "10/10 once vLLM
+  is wired", and the `pal models` footer pointed at `BLACKWELL_RECIPES.md` for
+  "vLLM startup snippets" (that doc became a llama-server cookbook in 436c).
+  Rewrote the help to the two real targets, matched the scorecard label to the
+  already-correct `READINESS.md` row (`Blackwell + NVFP4 GGUF on llama.cpp`), and
+  fixed the recipes pointer. The `ollama` case stays as a deprecation redirect.
+- **`scripts/pal-next.ps1`** - a stale comment described the failure mode as
+  "config says enabled, Ollama isn't running"; now "the local llama-server isn't
+  running".
+- **`tests/PalLLM.Tests/MetaTests.cs`** - removed the vestigial
+  `"omni" => "vllm-omni"` switch arm in the connect-inventory test (dead since
+  the three-way set check forces `{cloud, llamacpp}`). No `[Test]` change; the
+  `1306` count is unchanged.
+
+**Verification.** `16/16` drift gates PASS
+(`artifacts/full-audit/20260603-192032`), `1306/1306` tests pass, `0` warnings.
+The brand-block regexes (`public_copy_policy.ps1` / `PalLLM.Tooling.ps1`), the
+`ollama` deprecation handler, and every "Pass NNN removed X" history note are
+intentional and were preserved.
+
+### Pass 436 - llama.cpp is the only local engine (landed) (2026-06-03)
 
 **Context.** Product direction: "stick with just llama.cpp since it has
 everything we need; use the latest; no vLLM or Ollama or anything else." PalLLM

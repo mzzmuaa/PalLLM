@@ -91,7 +91,7 @@ try {
 
 # Inference live? Distinct from "wired in config" -- this asks the sidecar's
 # health endpoint whether the configured inference backend is actually
-# reachable. Catches the painful "config says enabled, Ollama isn't running"
+# reachable. Catches the painful "config says enabled, the local llama-server isn't running"
 # case where pal next would otherwise report READY.
 $inferenceLive = $true
 $inferenceCircuit = $null
