@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 431)
+## Codex handoff (read first — Pass 432)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260603-061529/RESULTS.md`](../artifacts/full-audit/20260603-061529/RESULTS.md)
+  [`../artifacts/full-audit/20260603-102928/RESULTS.md`](../artifacts/full-audit/20260603-102928/RESULTS.md)
 - committed OpenAPI snapshot:
   [`openapi/palllm-sidecar-v1.json`](openapi/palllm-sidecar-v1.json)
 
@@ -159,6 +159,17 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
+
+- **Pass 432 - AudioTranscriptionClient concern split (readability refactor).**
+  `AudioTranscriptionClient.cs` `1082` -> `356` (interface + DisabledClient +
+  `HttpAudioTranscriptionClient` ctor/`TranscribeAsync`); the ~580-line
+  response-parsing concern (parse -> confidence/timing/quality receipts +
+  segment/word summaries + nested records) -> `AudioTranscriptionClient.Parsing.cs`
+  (`588`, a `partial class`); the DTOs -> `AudioTranscriptionClient.Contracts.cs`
+  (`161`). Pure relocation, behaviorally inert. Completes the "client logic
+  separated from contracts" pattern across the HTTP client family. `TtsClient`
+  (254 lines) left whole — too small to benefit.
+  Verification: `dotnet test` `1317 / 1317`; full audit `16 / 16`; `0` warnings.
 
 - **Pass 431 - HTTP-client wire-contract extraction (readability refactor).**
   Continued the contracts-vs-logic separation to the two largest

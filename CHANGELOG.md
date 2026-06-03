@@ -18,6 +18,31 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 432 - AudioTranscriptionClient concern split (2026-06-03)
+
+**Context.** `AudioTranscriptionClient.cs` (1082) bundled three concerns in one
+file: the client core, a ~580-line response-parsing concern (parse ->
+confidence/timing/quality receipts + segment/word summaries), and its DTOs.
+Splitting along the natural concern boundary (pure relocation;
+`HttpAudioTranscriptionClient` becomes `partial`) gives each part an obvious
+home. This completes the "client logic separated from contracts" pattern across
+the HTTP client family (InferenceClient + VisionClient landed in Pass 431).
+
+**Changes (no runtime behavior change).**
+- **AudioTranscriptionClient.cs `1082` -> `356`** — the interface,
+  `DisabledAudioTranscriptionClient`, and `HttpAudioTranscriptionClient`'s ctor
+  + `TranscribeAsync`.
+- **AudioTranscriptionClient.Parsing.cs (`588`)** — the response parse /
+  receipt-build / segment+word summarize helpers plus their nested record
+  structs, as a `partial class HttpAudioTranscriptionClient`.
+- **AudioTranscriptionClient.Contracts.cs (`161`)** —
+  `AudioTranscriptionRequest` + `AudioTranscriptionResult` (with the
+  Disabled / Failed / Succeeded factories).
+- `TtsClient` (254 lines) left whole — too small to benefit from a split.
+
+**Verification.** `dotnet test` `1317 / 1317`; full audit `16 / 16` with `0`
+build warnings.
+
 ### Pass 431 - HTTP-client wire-contract extraction (2026-06-03)
 
 **Context.** Two of the OpenAI-compatible HTTP clients still mixed their
