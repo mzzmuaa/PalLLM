@@ -18,6 +18,45 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 436 - llama.cpp is the only local engine (in progress) (2026-06-03)
+
+**Context.** Product direction: "stick with just llama.cpp since it has
+everything we need; use the latest; no vLLM or Ollama or anything else." PalLLM
+had accumulated connectors and a serving advisor for a zoo of local engines
+(vLLM, vLLM-Omni, Foundry Local, LM Studio, OpenVINO, TensorRT-LLM, transformers
+serve) alongside llama.cpp. This pass collapses the local-engine surface to
+llama.cpp only, keeping the OpenAI-compatible cloud API as the documented
+escape path for below-reference-rig hardware. Append-only CHANGELOG/research
+history is preserved.
+
+**Changes so far.**
+- **436a** — Deleted the six local alternative-engine connect scripts (seven
+  files incl. vLLM-Omni), leaving `connect-llamacpp.ps1` (the only local engine)
+  and `connect-cloud.ps1` (the escape path). Updated `pal.ps1` routing + help,
+  the `pal.json` and `agents.json` connect inventories (so the three-way
+  `ConnectInventory` set check holds), `docs/CODE_MAP.md`, and
+  `docs/QUICKREF.md`; de-prefixed the now-deleted scripts in append-only history
+  so the path-reference gate stays clone-portable.
+- **436b (partial)** — Rewrote `ModelCollaborationPlanner.Serving.cs`'s
+  `BuildServingProfile` from a 1247-line multi-backend advisor to a ~480-line
+  llama.cpp-only one: GGUF/llama-server guidance plus a cloud-escape lane, with
+  every vLLM/SGLang/transformers/Foundry/OpenVINO/TensorRT/LM Studio string
+  removed. profileId set is now `embedding-retrieval` / `omni-realtime-opt-in` /
+  `gguf-libmtmd-multimodal` / `gguf-chat` / `cloud-openai-chat`. Replaced ~600
+  per-backend string assertions in `ModelTierTests` and the
+  `/api/inference/collaboration` endpoint test with a compact positive contract
+  plus a new `AssertLlamaCppOnlyServing` guard that fails if any purged backend
+  token appears in any serving-profile array.
+
+**Still queued.** Residency/telemetry/availability-probe code still carries
+provider detection for the purged backends (`InferenceResidencyProvider.LmStudio`
++ its test file, `GenAiTelemetry` host->provider branches, the Foundry
+`/openai/models` probe branch); the operator-doc sweep; and adopting the proven
+CUDA launch recipe + confirming the latest-release install path.
+
+**Verification (checkpoint).** `dotnet test` `1330 / 1330`; full audit `16 / 16`;
+`0` build warnings.
+
 ### Pass 435 - Local-repo hygiene: artifact retention cap + clone-safe link gate (2026-06-03)
 
 **Context.** The on-disk `artifacts/full-audit/` tree had grown unbounded to

@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 435)
+## Codex handoff (read first — Pass 436)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260603-130403/RESULTS.md`](../artifacts/full-audit/20260603-130403/RESULTS.md)
+  [`../artifacts/full-audit/20260603-134725/RESULTS.md`](../artifacts/full-audit/20260603-134725/RESULTS.md)
   (run dirs under `artifacts/` are git-ignored + auto-pruned to the newest
   `12` by the audit's retention cap, so this pointer is informational, not a
   clone-portable link)
@@ -162,6 +162,35 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
+
+- **Pass 436 (in progress) - llama.cpp is the only local engine.** Began the
+  "stick with just llama.cpp; no vLLM/Ollama/anything else" purge.
+  **436a (landed):** deleted the six local alternative-engine connect scripts
+  (`connect-vllm`, `connect-vllm-omni`, `connect-foundry`, `connect-lmstudio`,
+  `connect-openvino`, `connect-tensorrt`, `connect-transformers`), leaving
+  `connect-llamacpp.ps1` (the one local engine) and `connect-cloud.ps1` (the
+  below-reference-rig escape path). Updated `pal.ps1` routing/help, `pal.json` +
+  `agents.json` inventories (so the `ConnectInventory` three-way set check
+  holds), `CODE_MAP`/`QUICKREF`, and de-prefixed the now-gone scripts in the
+  append-only CHANGELOG/HANDOFF history so the path gate stays clone-portable.
+  **436b (landed, partial):** rewrote `ModelCollaborationPlanner.Serving.cs`
+  from a 1247-line multi-backend serving advisor to a ~480-line llama.cpp-only
+  one (GGUF/llama-server hints + the cloud escape lane; all
+  vLLM/SGLang/transformers/Foundry/OpenVINO/TensorRT/LM Studio content gone).
+  Replaced ~600 brittle per-backend assertions in `ModelTierTests` +
+  `SidecarEndpointTests` with a compact llama.cpp-positive contract plus a new
+  `AssertLlamaCppOnlyServing` guard that rejects every purged backend token, so
+  the invariant is now enforced by the suite. Test count unchanged (`1330`).
+  **Still queued (436b tail + c/d):** the residency/telemetry/probe code still
+  carries provider-detection for the purged backends — note the
+  `InferenceResidencyProvider.LmStudio` value + its ~12-case test file and the
+  Foundry `/openai/models` probe branch are LM-Studio/Ollama/Foundry-specific
+  and become vestigial under llama.cpp-only (removing them is a test-count
+  cascade); plus the operator-doc sweep (`MODEL_COLLABORATION`, `QUANTIZATION`,
+  `TUNING`, `MULTIMODAL_RECIPES`, `BLACKWELL_RECIPES`, etc.) and adopting the
+  proven CUDA launch recipe from the external best-available llama.cpp build.
+  Verification at this checkpoint: full audit `16 / 16`; `1330 / 1330`; `0`
+  warnings.
 
 - **Pass 435 - Local-repo hygiene: artifact retention cap + clone-safe link gate.**
   The local `artifacts/full-audit/` pile had grown unbounded to ~`922` run dirs
