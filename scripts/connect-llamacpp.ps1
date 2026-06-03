@@ -229,6 +229,29 @@ param(
     [ValidateSet('layer', 'row', 'graph', 'none')]
     [string]$SplitMode = 'none',
 
+    # Pass 436d: CUDA launch-recipe knobs folded in from an external
+    # best-available portable llama.cpp build's proven dual-GPU co-load
+    # recipe. These are the genuinely CUDA-specific tunings not already
+    # covered by the Pass 348 perf knobs.
+    [int]$PrioBatch = 0,         # --prio-batch (0..3); pair with -Prio on a
+                                 # fully GPU-offloaded lane (the recipe runs
+                                 # --prio 2 --prio-batch 3).
+    [int]$Poll = -1,             # --poll <0..100> busy-wait percentage; -1
+                                 # leaves it unset. The recipe uses 100 for a
+                                 # latency-first single-player lane.
+    [int]$CtxCheckpoints = 0,    # --ctx-checkpoints N: keep N rolling prompt-
+                                 # cache checkpoints so a long (128K+) context
+                                 # survives partial edits without a full
+                                 # reprocess. The recipe uses 32.
+    [int]$CtxCheckpointTokens = 0, # --ctx-checkpoint-tokens N: tokens per
+                                   # checkpoint. The recipe uses 8192.
+    [string]$CudaDevices,        # CUDA_VISIBLE_DEVICES value (e.g. "0" or
+                                 # "0,1"). Emitted as a launch-environment
+                                 # prefix, not a llama-server flag, so a
+                                 # multi-GPU rig can pin which cards a lane
+                                 # uses before --tensor-split splits across
+                                 # them.
+
     # Pass 350: MoE partial-CPU offload. When > 0, emits --n-cpu-moe N
     # so deeper layers' expert FFN tensors live in RAM instead of VRAM.
     # Required to run Qwen3.6-35B-A3B / Qwen3-Coder-Next / MiniMax-M2.7
@@ -506,11 +529,28 @@ if ($ThreadsBatch -gt 0) {
 if ($Prio -gt 0) {
     $serverArgs += @('--prio', [string]$Prio)
 }
+# Pass 436d: --prio-batch pairs with --prio on a fully GPU-offloaded lane.
+if ($PrioBatch -gt 0) {
+    $serverArgs += @('--prio-batch', [string]$PrioBatch)
+}
+# Pass 436d: --poll busy-wait percentage (0..100); -1 leaves it unset.
+if ($Poll -ge 0) {
+    $serverArgs += @('--poll', [string]$Poll)
+}
 if ($Mlock.IsPresent) {
     $serverArgs += '--mlock'
 }
 if ($NoMmap.IsPresent) {
     $serverArgs += '--no-mmap'
+}
+# Pass 436d: rolling prompt-cache checkpoints keep a long (128K+) context
+# cheap to re-process after partial edits. From the external best-available
+# build's proven dual-GPU co-load recipe.
+if ($CtxCheckpoints -gt 0) {
+    $serverArgs += @('--ctx-checkpoints', [string]$CtxCheckpoints)
+}
+if ($CtxCheckpointTokens -gt 0) {
+    $serverArgs += @('--ctx-checkpoint-tokens', [string]$CtxCheckpointTokens)
 }
 
 # Pass 348: multi-GPU tensor split + split-mode.
@@ -569,6 +609,14 @@ if ($effectiveSpecType -ne 'none') {
 $setupCommands = @(
     (Join-CommandLine $serverArgs)
 )
+
+# Pass 436d: when -CudaDevices is set, prepend a launch-environment line that
+# pins which CUDA cards this lane sees (CUDA_VISIBLE_DEVICES is an env var, not
+# a llama-server flag). On a multi-GPU rig this is how a co-load recipe assigns
+# each model to specific cards before --tensor-split splits across them.
+if (-not [string]::IsNullOrWhiteSpace($CudaDevices)) {
+    $setupCommands = @("`$env:CUDA_VISIBLE_DEVICES = '$CudaDevices'") + $setupCommands
+}
 
 Write-Host ""
 Write-Host "PalLLM <- llama.cpp llama-server" -ForegroundColor Cyan

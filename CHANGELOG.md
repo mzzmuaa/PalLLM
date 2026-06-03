@@ -75,10 +75,19 @@ history is preserved.
   gate (which blocks `llama.cpp`/`OpenAI`/etc. in publication-facing files) holds.
   The feature catalog was already llama.cpp-only from 436b. No live alt-engine
   guidance remains in any current operator doc.
+- **436d** — Folded the proven CUDA launch recipe from an external
+  best-available portable llama.cpp build into `connect-llamacpp.ps1`: new
+  `-PrioBatch` (`--prio-batch`), `-Poll` (`--poll`), `-CtxCheckpoints`
+  (`--ctx-checkpoints`), `-CtxCheckpointTokens` (`--ctx-checkpoint-tokens`), and
+  `-CudaDevices` (emits a `$env:CUDA_VISIBLE_DEVICES` launch prefix for
+  multi-GPU card pinning). Documented the dual-GPU co-load recipe in
+  `LLAMA_CPP_BUNDLED.md` and confirmed `install-llama-cpp.ps1` already fetches
+  the latest upstream release via the GitHub Releases `tag_name`. Regression
+  assertions folded into the existing connect-script perf-knob test (count
+  stays `1306`).
 
-**Still queued.** **436d:** fold the proven external CUDA launch recipe into
-`connect-llamacpp.ps1` + `LLAMA_CPP_BUNDLED.md`. **Phase B:** refine the online
-GitHub repo surface (description, topics, README; $4/mo Pro only, no Actions).
+**Still queued.** **Phase B:** refine the online GitHub repo surface
+(description, topics, README; $4/mo Pro only, no Actions).
 
 **Verification (checkpoint).** `dotnet test` `1306 / 1306`; full audit `16 / 16`;
 `0` build warnings.

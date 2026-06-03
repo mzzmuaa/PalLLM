@@ -1,6 +1,6 @@
 # Bundled llama.cpp - hardware-aware install + launch recipes
 
-Last audited: `2026-05-22`
+Last audited: `2026-06-03`
 
 > **v1.0 shipping target (Pass 356).** PalLLM v1.0 ships configured
 > for a single reference rig: **NVIDIA RTX 3090 (24 GB VRAM) +
@@ -288,6 +288,52 @@ pwsh ./scripts/install-llama-cpp.ps1 -Backend cpu
     --chat-template-kwargs '{\"enable_thinking\":false}' `
     --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --presence-penalty 1.5
 ```
+
+## Dual-GPU CUDA co-load recipe (Pass 436d)
+
+These knobs were folded into `connect-llamacpp.ps1` from an external
+best-available portable llama.cpp build whose proven recipe keeps two large
+models warm on a multi-card rig simultaneously. They are the CUDA-specific
+tunings the Pass 348 perf knobs did not already cover:
+
+| Flag | `connect-llamacpp.ps1` param | What it does |
+|---|---|---|
+| `CUDA_VISIBLE_DEVICES` (env prefix) | `-CudaDevices "0,1"` | Pins which CUDA cards a lane sees **before** `--tensor-split` divides layers across them. Emitted as a `$env:` line, not a llama-server flag. |
+| `--prio-batch <0..3>` | `-PrioBatch 3` | Batch-thread priority; pair with `-Prio` on a fully GPU-offloaded lane (the recipe runs `--prio 2 --prio-batch 3`). |
+| `--poll <0..100>` | `-Poll 100` | Busy-wait percentage. `100` is a latency-first single-player setting; lower it to share CPU with other work. |
+| `--ctx-checkpoints <N>` | `-CtxCheckpoints 32` | Keep N rolling prompt-cache checkpoints so a long (128K+) context survives partial edits without a full reprocess. |
+| `--ctx-checkpoint-tokens <N>` | `-CtxCheckpointTokens 8192` | Tokens per checkpoint. |
+
+**The co-load pattern** (one big model per card, the spill-over model
+layer-split across both): run two `llama-server` processes on separate ports,
+pin each to its card(s), and give the model that needs spill a `--tensor-split`
+plus `--split-mode layer`. The smaller model that fits one card uses
+`--split-mode none`.
+
+```powershell
+# Card 0 only — the model that fits one GPU (latency-first):
+pwsh ./scripts/connect-llamacpp.ps1 `
+    -ModelPath D:\Models\Qwen\Qwen3.6-27B-UD-Q8_K_XL.gguf -Model qwen-3.6-27b `
+    -ContextSize 131072 -QuantizedKv -CudaDevices "0" -SplitMode none `
+    -Prio 2 -PrioBatch 3 -Poll 100 -CtxCheckpoints 32 -CtxCheckpointTokens 8192 `
+    -BatchSize 2048 -UBatchSize 2048
+
+# Cards 0+1 — the bigger model, layer-split with spill onto the second card:
+pwsh ./scripts/connect-llamacpp.ps1 `
+    -ModelPath D:\Models\Gemma\gemma-4-31B-it-UD-Q8_K_XL.gguf -Model gemma-4-31b `
+    -Mmproj D:\Models\mmproj\mmproj-gemma-4-31B-F16.gguf `
+    -ContextSize 131072 -QuantizedKv -CudaDevices "0,1" `
+    -TensorSplit "70,30" -SplitMode layer `
+    -Prio 2 -PrioBatch 3 -Poll 100 -CtxCheckpoints 32 -CtxCheckpointTokens 8192 `
+    -BatchSize 2048 -UBatchSize 2048
+```
+
+Size the `--tensor-split` ratio to the spill model's per-card VRAM headroom and
+prove it: warm both, then record `nvidia-smi` per-card memory, `/health`,
+`/metrics`, p50/p95, and deterministic fallback before promoting the co-load to
+a player rig. The bundled installer already fetches the **latest** upstream
+llama.cpp release (`install-llama-cpp.ps1` queries the GitHub Releases API for
+`tag_name`), so these flags ride whatever current build the operator pulled.
 
 ## Per-model recipes (Pass 348)
 

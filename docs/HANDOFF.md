@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260603-162635/RESULTS.md`](../artifacts/full-audit/20260603-162635/RESULTS.md)
+  [`../artifacts/full-audit/20260603-173533/RESULTS.md`](../artifacts/full-audit/20260603-173533/RESULTS.md)
   (run dirs under `artifacts/` are git-ignored + auto-pruned to the newest
   `12` by the audit's retention cap, so this pointer is informational, not a
   clone-portable link)
@@ -225,13 +225,18 @@ once they reached the changelog):
   …) in publication-facing files. The feature catalog was already llama.cpp-only
   from 436b. No live alt-engine guidance remains in any current operator doc;
   only intentional "Pass 436/339/346 removed X" history notes survive.
+  **436d (landed)** — folded the proven CUDA launch recipe from an external
+  best-available portable llama.cpp build into `connect-llamacpp.ps1` (new
+  `-PrioBatch` / `-Poll` / `-CtxCheckpoints` / `-CtxCheckpointTokens` /
+  `-CudaDevices` params; `-CudaDevices` emits a `$env:CUDA_VISIBLE_DEVICES`
+  launch prefix for multi-GPU pinning) and documented the dual-GPU co-load
+  recipe in `LLAMA_CPP_BUNDLED.md`. Confirmed the installer already fetches the
+  **latest** upstream release (`install-llama-cpp.ps1` queries the GitHub
+  Releases API for `tag_name`). Folded the regression assertions into the
+  existing connect-script perf-knob test, so the count stays `1306`.
   **Still queued — no code-behaviour change:**
-  (1) **436d:** fold the proven CUDA launch recipe from the external
-  best-available llama.cpp build into `connect-llamacpp.ps1` +
-  `LLAMA_CPP_BUNDLED.md` (the installer already fetches the latest release
-  dynamically).
-  (2) **Online repo refine (phase B):** after local is optimal, polish the
-  GitHub repo surface (description, topics, README) — $4/mo Pro only, no Actions.
+  (1) **Online repo refine (phase B):** polish the GitHub repo surface
+  (description, topics, README) — $4/mo Pro only, no Actions.
   Verification at this checkpoint: full audit `16 / 16`; `1306 / 1306`; `0` warnings.
 
 - **Pass 435 - Local-repo hygiene: artifact retention cap + clone-safe link gate.**

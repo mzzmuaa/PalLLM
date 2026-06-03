@@ -319,6 +319,27 @@ public class LlamaCppBundlingTests
         Assert.That(text, Does.Contain("'--no-mmap'"));
         Assert.That(text, Does.Contain("'--tensor-split',"));
         Assert.That(text, Does.Contain("'--split-mode',"));
+
+        // Pass 436d: CUDA launch-recipe knobs folded in from an external
+        // best-available portable llama.cpp build's proven dual-GPU co-load
+        // recipe — the CUDA-specific tunings the Pass 348 knobs did not cover.
+        Assert.That(text, Does.Contain("[int]$PrioBatch"),
+            "connect-llamacpp.ps1 must expose -PrioBatch for the GPU-offload --prio/--prio-batch pairing.");
+        Assert.That(text, Does.Contain("[int]$Poll"),
+            "connect-llamacpp.ps1 must expose -Poll for the busy-wait percentage knob.");
+        Assert.That(text, Does.Contain("[int]$CtxCheckpoints"),
+            "connect-llamacpp.ps1 must expose -CtxCheckpoints for long-context prompt-cache resilience.");
+        Assert.That(text, Does.Contain("[int]$CtxCheckpointTokens"),
+            "connect-llamacpp.ps1 must expose -CtxCheckpointTokens.");
+        Assert.That(text, Does.Contain("[string]$CudaDevices"),
+            "connect-llamacpp.ps1 must expose -CudaDevices for multi-GPU CUDA_VISIBLE_DEVICES pinning.");
+        Assert.That(text, Does.Contain("'--prio-batch',"));
+        Assert.That(text, Does.Contain("'--poll',"));
+        Assert.That(text, Does.Contain("'--ctx-checkpoints',"));
+        Assert.That(text, Does.Contain("'--ctx-checkpoint-tokens',"));
+        // CUDA_VISIBLE_DEVICES is an env-var prefix, not a llama-server flag.
+        Assert.That(text, Does.Contain("CUDA_VISIBLE_DEVICES"),
+            "connect-llamacpp.ps1 must emit a CUDA_VISIBLE_DEVICES launch-environment prefix when -CudaDevices is set.");
     }
 
     // ---------- Pass 349: zero-config / any-hardware setup ----------
