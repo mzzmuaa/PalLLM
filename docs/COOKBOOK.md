@@ -1,6 +1,6 @@
 # Cookbook - recipes for common changes
 
-Last audited: `2026-05-24`
+Last audited: `2026-06-03`
 
 Step-by-step recipes for the changes you'll most often want to
 make to PalLLM. Each recipe names the exact files, the exact
@@ -34,7 +34,7 @@ Before any recipe:
 
 ```powershell
 pwsh ./pal.ps1 fast-audit   # confirm 16 / 16 gates green
-pwsh ./pal.ps1 test         # confirm 1315 / 1315 tests
+pwsh ./pal.ps1 test         # confirm 1317 / 1317 tests
 ```
 
 If either is red, fix that *first*. Don't layer changes on a red

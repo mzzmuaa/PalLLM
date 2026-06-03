@@ -1,6 +1,6 @@
 # PalLLM Code Map
 
-Last audited: `2026-06-01`
+Last audited: `2026-06-03`
 
 "Where does X live?" � symbol-to-file navigation for coding agents and
 harvesters. Maintained alongside the code; freshness gated by the
@@ -12,7 +12,7 @@ harvesters. Maintained alongside the code; freshness gated by the
 D:\Coding\PalLLM\
 +-- src/
 |   +-- PalLLM.Domain/              -> portable runtime (NO ASP.NET, NO UE4SS)
-|   |   +-- Configuration/          -> PalLlmOptions + every sub-options class
+|   |   +-- Configuration/          -> PalLlmOptions (root + .Inference/.Surface/.Media/.Runtime partials) + sub-options
 |   |   +-- Inference/              -> LLM plumbing + role registry + Duo planner
 |   |   +-- Integration/            -> wire contracts (ChatRequest/Response, snapshots)
 |   |   +-- Memory/                 -> ConversationMemoryStore, MemoryImportance
@@ -26,7 +26,7 @@ D:\Coding\PalLLM\
 |   |   +-- Mcp/                    -> MCP tools + resources + prompts (38 tools)
 |   |   +-- wwwroot/                -> Field Console dashboard (static HTML/JS/CSS)
 |   +-- mod/ue4ss/Mods/PalLLM/      -> Lua bridge (Windows-only, Palworld-specific)
-+-- tests/PalLLM.Tests/             -> NUnit, 1315 tests, one file per subsystem
++-- tests/PalLLM.Tests/             -> NUnit, 1317 tests, one file per subsystem
 +-- scripts/                        -> PowerShell: install, doctor, smoke, audit, package
 +-- docs/                           -> Di�taxis-organised documentation
 ```
@@ -63,6 +63,14 @@ If you're here to find the chat path: start at `PalLlmRuntime.ChatAsync`
 (`PalLlmRuntime.cs` around line 476). Upstream: `PalLlmConversationRoutes`
 route `POST /api/chat`. Downstream: `ChatResponse` contract in
 `src/PalLLM.Domain/Integration/Contracts.cs`.
+
+The integration contracts are split across cohesive partials in the same
+`PalLLM.Domain.Integration` namespace: `Contracts.cs` (game/bridge-event/chat
+shapes), `Contracts.RuntimeSnapshots.cs` (bridge-runtime, dashboard, and
+inference-performance snapshots), `Contracts.ReleaseEvidence.cs` (release /
+native-proof / bridge-proof evidence), `Contracts.Health.cs` (runtime health +
+latency/fallback/tier metrics), and `Contracts.Media.cs` (TTS / ASR / vision /
+outbox / session-persistence contracts).
 
 ## "Where does X live?" � by concept
 
@@ -123,7 +131,7 @@ route `POST /api/chat`. Downstream: `ChatResponse` contract in
 ### Role mesh + observability
 - **Role registry (Edge/Worker/Judge/Media/Validator)** -> `Inference/ModelRoleRegistry.cs`
 - **Hardware profiler (auto-detect tier + quantization hint)** -> `Inference/HardwareProfiler.cs`
-- **Model collaboration + capability/serving/speculation profiles** -> `Inference/ModelCollaborationPlanner.cs`
+- **Model collaboration + capability/serving/speculation profiles** -> `Inference/ModelCollaborationPlanner.cs` (`partial class`: ctor + `GetSnapshot` here; serving-profile builders in `.Serving.cs`, recipes/routing/playbook in `.Recipes.cs`, snapshot DTO records in `.Records.cs`)
 - **Disagreement detector** -> `Runtime/DisagreementDetector.cs`
 - **Proof packet builder** -> `Runtime/ProofPacketBuilder.cs`
 - **Why engine (causal answers)** -> `Runtime/WhyEngine.cs`

@@ -1,6 +1,6 @@
 # PalLLM Architecture
 
-Last audited: `2026-06-01`
+Last audited: `2026-06-03`
 
 ## Core posture
 
@@ -25,7 +25,7 @@ Current solution shape:
 
 Audit-backed test status:
 
-- `1315` tests passed on `2026-05-25`
+- `1317` tests passed on `2026-06-03`
 
 HTTP ingress is bounded before and after JSON binding. The sidecar applies
 `PalLLM:Http:ApiRequestBodyMaxBytes` (`10 MiB` default) to `/api` and `/mcp`

@@ -1,6 +1,6 @@
 # PalLLM Roadmap
 
-Last audited: `2026-05-24`
+Last audited: `2026-06-03`
 
 This roadmap is derived from the live code, tests, Lua bridge, scripts, and
 operator docs in this repository. The official score is weighted by
@@ -23,7 +23,7 @@ Verified directly against the current tree and a fresh test run:
   - deferred: `autopilot-port`
 - `19` deterministic fallback strategies in
   `src/PalLLM.Domain/Runtime/FallbackBehaviorEngine.cs`
-- `1315` passing NUnit tests from `dotnet test PalLLM.sln`
+- `1317` passing NUnit tests from `dotnet test PalLLM.sln`
 - first-pass player/operator tooling in `scripts/install-mod.ps1`,
   `scripts/play-palllm.ps1`,
   `scripts/doctor.ps1`, `scripts/run-sidecar-smoke.ps1`,

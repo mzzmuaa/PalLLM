@@ -1,6 +1,6 @@
 # PalLLM monolith-extraction roadmap
 
-Last audited: `2026-05-24`
+Last audited: `2026-06-03`
 
 This is a **plan**, not a commitment. It captures the phased
 extraction strategy for the two largest files in the repo so that
@@ -140,7 +140,7 @@ after the queued `Program.cs` extraction.
       stay private).
 - [ ] `git log --stat` shows zero changes outside
       `src/PalLLM.Domain/Runtime/PalLlmRuntime*.cs`.
-- [ ] `dotnet test` passes exactly the same `1315` tests with the
+- [ ] `dotnet test` passes exactly the same `1317` tests with the
       same names.
 - [ ] Audit gate `Drift_Hot_file_line_count` passes — the *primary*
       `PalLlmRuntime.cs` is now well under its budget, and the

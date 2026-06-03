@@ -196,6 +196,50 @@ public sealed class ScriptExecutionTests
             "Empty -ApiKey must fail (non-zero exit).");
     }
 
+    [Test]
+    public void ConnectLlamaCpp_DraftMtpDryRun_UsesConservativeDraftBounds()
+    {
+        SkipIfNoPwsh();
+        string script = LocateRepoFile("scripts", "connect-llamacpp.ps1");
+
+        ProcessResult r = RunPwsh(script,
+            "-LlamaCppUrl", "http://127.0.0.1:9",
+            "-SpecType", "draft-mtp",
+            "-ModelProfile", "qwen36",
+            "-DryRun");
+
+        Assert.That(r.ExitCode, Is.EqualTo(0),
+            $"connect-llamacpp.ps1 draft-mtp dry run must exit 0. " +
+            $"stdout=<<<{r.Stdout}>>> stderr=<<<{r.Stderr}>>>");
+        Assert.That(r.Stdout, Does.Contain("--spec-type draft-mtp"),
+            "Draft-MTP proof lanes must still emit the requested spec type.");
+        Assert.That(r.Stdout, Does.Contain("--spec-draft-n-min 1 --spec-draft-n-max 2"),
+            "Draft-MTP must use conservative defaults instead of inheriting the n-gram 48/64 range.");
+        Assert.That(r.Stdout, Does.Not.Contain("--spec-draft-n-min 48 --spec-draft-n-max 64"),
+            "The old n-gram defaults are too wide for model-native MTP and should never be the implicit draft-mtp command.");
+    }
+
+    [Test]
+    public void ConnectLlamaCpp_Qwen3CoderWithSpecType_FailsBeforePrintingUnsafeCommand()
+    {
+        SkipIfNoPwsh();
+        string script = LocateRepoFile("scripts", "connect-llamacpp.ps1");
+
+        ProcessResult r = RunPwsh(script,
+            "-LlamaCppUrl", "http://127.0.0.1:9",
+            "-ModelProfile", "qwen3-coder",
+            "-SpecType", "draft-mtp",
+            "-DryRun");
+
+        string allOutput = r.Stdout + " " + r.Stderr;
+        Assert.That(r.ExitCode, Is.Not.EqualTo(0),
+            "Qwen3-Coder-Next speculative decode must fail fast until the lane has upstream and route-smoke proof.");
+        Assert.That(allOutput, Does.Contain("Qwen3-Coder-Next").And.Contain("-SpecType none"),
+            "Failure output must tell the operator to keep Qwen3-Coder-Next on the no-spec lane.");
+        Assert.That(allOutput, Does.Not.Contain("Copy-paste setup"),
+            "The connector must not print an unsafe launch command after rejecting the profile/spec combination.");
+    }
+
     // ---------- Pass 360: cold-start benchmark ----------
 
     [Test]

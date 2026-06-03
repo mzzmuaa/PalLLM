@@ -1724,8 +1724,12 @@ public sealed class MetaTests
         Assert.That(publishAudit, Does.Contain("artifacts\\publish-audit"),
             "Publish audit should persist timestamped artifacts for release review.");
 
-        string contractsPath = Path.Combine(RepoRoot, "src", "PalLLM.Domain", "Integration", "Contracts.cs");
-        string contracts = File.ReadAllText(contractsPath);
+        // Contracts are split across Contracts.cs + Contracts.*.cs partials
+        // (same namespace); read them all so this stays robust to where a
+        // given type lives.
+        string contractsDir = Path.Combine(RepoRoot, "src", "PalLLM.Domain", "Integration");
+        string contracts = string.Concat(
+            Directory.EnumerateFiles(contractsDir, "Contracts*.cs").Select(File.ReadAllText));
         Assert.That(contracts, Does.Contain("PublicationScanPassed"),
             "Release readiness contracts should expose whether package and portable-bundle publication scanning passed.");
         Assert.That(contracts, Does.Contain("PublicationScanViolations"),

@@ -3,7 +3,7 @@
   "$comment": "Machine-readable verb manifest - mirrors what 'pwsh ./pal.ps1 list' prints, but as JSON so any agent can discover the verb table without parsing PowerShell. Source of truth: pal.ps1's Run-List function. Drift-gated indirectly by scripts/run_full_audit.ps1 path-reference checks.",
 
   "schemaVersion": 1,
-  "lastAudited": "2026-05-24",
+  "lastAudited": "2026-06-03",
 
   "runner": {
     "shell": "pwsh ./pal.ps1 <verb> [args]",
@@ -29,7 +29,7 @@
       "tagline": "Day-to-day code + test + audit loop.",
       "verbs": [
         { "verb": "build", "summary": "dotnet build (Release)", "command": "dotnet build PalLLM.sln --configuration Release --nologo" },
-        { "verb": "test", "summary": "dotnet test (Release, quiet) -- expects 1315 / 1315", "command": "dotnet test PalLLM.sln --configuration Release --nologo --verbosity quiet" },
+        { "verb": "test", "summary": "dotnet test (Release, quiet) -- expects 1317 / 1317", "command": "dotnet test PalLLM.sln --configuration Release --nologo --verbosity quiet" },
         { "verb": "audit", "summary": "full drift audit -- build + tests + 16 gates", "script": "scripts/run_full_audit.ps1" },
         { "verb": "fast-audit", "summary": "drift gates only -- skip coverage / SBOM / packaging / tests", "script": "scripts/run_full_audit.ps1" },
         { "verb": "cleanup", "summary": "preview/remove generated audit coverage and build outputs (-Apply to delete)", "script": "scripts/pal-cleanup.ps1" },

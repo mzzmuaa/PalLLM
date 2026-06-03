@@ -8,7 +8,7 @@ All notable changes to PalLLM are documented here. Format follows
 First public-ready revision. Collapsed from multiple in-flight drafts
 dated `2026-04-18`, `2026-04-19`, `2026-04-22`, and `2026-04-23`.
 
-**Current baseline (rolling):** `1315` passing tests - `16/16` drift
+**Current baseline (rolling):** `1317` passing tests - `16/16` drift
 gates green - `122` feature-catalog entries (119 ready / 2 scaffolded
 / 1 deferred) - `57` `/api` routes - `38` MCP tools - `19`
 deterministic fallback strategies - `6` ADRs accepted - honest
@@ -17,6 +17,80 @@ roadmap `76.2%` - `0` build warnings.
 Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
+
+### Pass 430 - God-file decomposition (Contracts / Options / ModelCollaborationPlanner) (2026-06-03)
+
+**Context.** Three source files had grown into navigation-hostile monoliths:
+`Contracts.cs` (2795 lines / 93 DTO types, no section structure),
+`PalLlmOptions.cs` (2104 lines / 24 option classes), and
+`ModelCollaborationPlanner.cs` (2183 lines — one class plus a ~1080-line
+`BuildServingProfile` data method). The earlier monolith extraction split
+`PalLlmRuntime` / `Program.cs`; this pass continues that partial-extraction
+pattern to the remaining giants. Every move is pure relocation within the
+existing file-scoped namespace — behaviorally inert (identical IL), verified
+by the full suite.
+
+**Changes (readability/maintainability; no runtime behavior change).**
+- **Contracts.cs `2795` -> `810`**, with four cohesive sibling partials in the
+  same `PalLLM.Domain.Integration` namespace: `Contracts.RuntimeSnapshots.cs`
+  (bridge-runtime / dashboard / inference-perf), `Contracts.ReleaseEvidence.cs`
+  (release / native-proof / bridge-proof evidence), `Contracts.Health.cs`
+  (runtime health + latency/fallback/tier metrics), and `Contracts.Media.cs`
+  (TTS / ASR / vision / outbox / session-persistence). Fixed one brittle
+  meta-test that text-grepped `Contracts.cs` for field names — it now globs
+  `Contracts*.cs` so it is robust to where a type lives.
+- **PalLlmOptions.cs `2104` -> `324`**, with four partials: `.Inference.cs`
+  (inference / multimodal / thermal / residency / model-tier), `.Surface.cs`
+  (MCP-client / auth / HTTP-surface / automation), `.Media.cs`
+  (TTS / ASR / session / vision), and `.Runtime.cs`
+  (fallback / hardware / promotion / self-healing / model-role).
+- **ModelCollaborationPlanner.cs `2183` -> `349`**, split into a
+  `partial class` across `.Serving.cs` (the serving-profile builders including
+  `BuildServingProfile`), `.Recipes.cs` (recipes / routing / playbook /
+  staging), and `.Records.cs` (the 16 snapshot DTO records).
+  `BuildServingProfile` was deliberately left intact inside its now-focused
+  Serving partial: it is an inherently-long *data-construction* method (50+
+  independent conditional hint-appends building three string lists, pinned by
+  433 `ModelTierTests` assertions), and every clean way to split it (a 14+-
+  parameter helper, or a ~1000-line parameter-object rewrite) would be a net
+  readability loss. File-level isolation is the right altitude for it.
+- **Performance:** a hot-path scan (`ChatAsync`, the bridge drain loop, the
+  inference client, the fallback context) confirmed the runtime is already
+  optimised — 24 compiled static regex built once into `static readonly`
+  fields, source-generated JSON, a pooled `SocketsHttpHandler`, and minimal
+  hot-path allocation. No runtime change was warranted; the decomposition is
+  readability-only.
+- Refreshed `CODE_MAP.md` with the new partial maps.
+
+**Verification.** `dotnet test` `1317 / 1317`; full audit `16 / 16` with `0`
+build warnings.
+
+### Pass 429 - llama.cpp draft-MTP connector guardrails (2026-06-03)
+
+**Context.** Current llama.cpp speculative-decoding guidance keeps draft-MTP
+separate from n-gram speculation, and PalLLM's Qwen3-Coder-Next lane still
+documents that speculation is not proof-green for that profile. A read-only
+scan of active sibling workspaces reinforced the same rule: advanced
+model-server features need per-profile guardrails before they appear in
+copy-paste launch commands.
+
+**Changes.**
+- **`connect-llamacpp.ps1` draft-MTP defaults:** `-SpecType draft-mtp`
+  now gets conservative implicit draft bounds (`DraftMin=1`, `DraftMax=2`)
+  instead of inheriting the broad n-gram `48/64` defaults. Explicit operator
+  overrides still work, and all non-none speculative lanes now validate
+  non-negative `DraftMin`/`DraftMax` with `DraftMin <= DraftMax`.
+- **Qwen3-Coder-Next safety gate:** `-ModelProfile qwen3-coder` now fails
+  fast for any non-none `-SpecType`, before the helper prints a launch command,
+  until the upstream llama.cpp context support and PalLLM route-smoke proof are
+  green for that profile.
+- **Regression proof:** added two script-execution tests that dry-run the
+  draft-MTP command and the rejected Qwen3-Coder speculative lane, raising the
+  executable NUnit suite from `1315` to `1317` tests.
+
+**Verification.** Focused `ScriptExecutionTests` passed `12 / 12`;
+`dotnet test` passed `1317 / 1317`; full audit passed `16 / 16` with `0`
+build warnings at `artifacts/full-audit/20260603-023213/RESULTS.md`.
 
 ### Pass 428 - Third code↔doc semantic-accuracy audit wave (2026-06-01)
 
@@ -41,9 +115,9 @@ wave surfaced real code/script bugs, not only documentation drift.
   `scripts/pal-config-show.ps1` (the "compiled defaults" mirror)
   mis-reported the Inference/Vision BaseUrl default as `11434` (real:
   `8080`). Both repointed to the llama.cpp shipping defaults
-  (`8080` / `Qwen3.6-35B-A3B-UD-Q8_K_XL`). Removed the git-tracked
-  `src/PalLLM.Sidecar/appsettings.json.bak`, whose entire body was the
-  superseded pre-migration Ollama config.
+  (`8080` / `Qwen3.6-35B-A3B-UD-Q8_K_XL`). Removed the git-tracked backup
+  appsettings file, whose entire body was the superseded pre-migration
+  Ollama config.
 - **Stale `pal connect ollama` residue:** Pass 339 deprecated the
   `ollama` connector (the `connect` verb now prints a redirect and exits
   2; `connect-ollama.ps1` does not exist), but several surfaces still

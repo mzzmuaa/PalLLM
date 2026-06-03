@@ -81,9 +81,13 @@
     Net-negative on RTX 3090 + Qwen3.6-35B-A3B (post PR #19493 benchmark);
     net-positive on RTX PRO 6000 / RTX 5090 / Apple M3 Max / Strix Halo.
     Measure cold/warm replay on your own hardware before enabling.
-    NOTE (Pass 348): Qwen3-Coder-Next currently errors with "speculative
-    decoding not supported by this context" (upstream issue #21886);
-    leave at none for that model.
+    draft-mtp uses conservative defaults (DraftMin=1, DraftMax=2) unless
+    explicitly overridden; the n-gram defaults are much wider and are not safe
+    for model-native MTP.
+    NOTE (Pass 429): Qwen3-Coder-Next currently errors with "speculative
+    decoding not supported by this context" on the documented llama.cpp lane,
+    so this helper rejects non-none speculation for that profile until the
+    upstream/runtime proof is green.
 
 .PARAMETER ModelProfile
     Per-model Unsloth canonical sampler profile. Defaults to qwen36 to
@@ -386,6 +390,29 @@ function Join-CommandLine {
     return (($CommandArgs | ForEach-Object { Format-CommandArgument $_ }) -join ' ')
 }
 
+$effectiveSpecType = if ($SpecType -eq 'draft') { 'draft-simple' } else { $SpecType }
+if ($effectiveSpecType -ne 'none' -and $ModelProfile -eq 'qwen3-coder') {
+    throw "Qwen3-Coder-Next llama.cpp lanes must keep -SpecType none until upstream speculative decoding and hybrid-state proof pass for this profile."
+}
+
+if ($effectiveSpecType -eq 'draft-mtp') {
+    if (-not $PSBoundParameters.ContainsKey('DraftMin')) {
+        $DraftMin = 1
+    }
+    if (-not $PSBoundParameters.ContainsKey('DraftMax')) {
+        $DraftMax = 2
+    }
+}
+
+if ($effectiveSpecType -ne 'none') {
+    if ($DraftMin -lt 0 -or $DraftMax -lt 0) {
+        throw "Speculative decoding draft bounds must be non-negative."
+    }
+    if ($DraftMin -gt $DraftMax) {
+        throw "Speculative decoding requires DraftMin <= DraftMax."
+    }
+}
+
 if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
     $ConfigPath = Get-DefaultConfigPath
 }
@@ -516,8 +543,7 @@ if (-not [string]::IsNullOrWhiteSpace($Mmproj)) {
 if ($QuantizedKv.IsPresent) {
     $serverArgs += @('-ctk', 'q8_0', '-ctv', 'q8_0')
 }
-if ($SpecType -ne 'none') {
-    $effectiveSpecType = if ($SpecType -eq 'draft') { 'draft-simple' } else { $SpecType }
+if ($effectiveSpecType -ne 'none') {
     $serverArgs += @('--spec-type', $effectiveSpecType)
     if ($effectiveSpecType -eq 'draft-simple') {
         $serverArgs += @('--spec-draft-model', $DraftModelPath, '--spec-draft-n-min', [string]$DraftMin, '--spec-draft-n-max', [string]$DraftMax)

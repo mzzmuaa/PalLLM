@@ -3,7 +3,7 @@
 ![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)
 ![.NET 10](https://img.shields.io/badge/.NET-10.0--LTS-blueviolet.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Container-lightgrey.svg)
-![Tests](https://img.shields.io/badge/tests-1315%20passing-success.svg)
+![Tests](https://img.shields.io/badge/tests-1317%20passing-success.svg)
 ![MCP](https://img.shields.io/badge/MCP-2025--06--18-purple.svg)
 ![Coverage](https://img.shields.io/badge/coverage-86.9%25%20line%20%7C%2070.4%25%20branch-brightgreen.svg)
 ![Status](https://img.shields.io/badge/roadmap-76.2%25%20honest-blue.svg)
@@ -69,7 +69,7 @@ an LLM (see the "Is this ready to use?" section below).
 **Sidecar + dashboard + MCP surface: yes, today.** The packaged
 `PalLLM-v1.0.0.zip` installs via `install.bat`, launches via
 `play.bat`, and serves the Field Console at
-`http://localhost:5088`. 1315 NUnit tests pass. 16/16 drift gates
+`http://localhost:5088`. 1317 NUnit tests pass. 16/16 drift gates
 green. 57 `/api` routes + 38 MCP tools all respond on a cold-boot
 of the packaged single-file `.exe`.
 
@@ -156,7 +156,7 @@ into Palworld; the mod consumes outbox files at its own cadence.
 > production-ready; the
 > remaining ~24pp live in the UE4SS Lua mod (native HUD binding, native
 > audio playback, full action executor coverage).
-> `1315` tests passing. `57` `/api` routes + complete `MCP` server at `/mcp`
+> `1317` tests passing. `57` `/api` routes + complete `MCP` server at `/mcp`
 > (`38` tools, `6` direct resources + `1` template, `4` prompts). `122`
 > feature-catalog entries (`119 ready / 2 scaffolded / 1 deferred`).
 > `19` deterministic fallback strategies.
@@ -167,7 +167,7 @@ into Palworld; the mod consumes outbox files at its own cadence.
 > Machine-readable release posture at `/api/release/readiness`, including the latest durable `SmokeEvidence` snapshot from `Runtime/ReleaseEvidence/latest-smoke.json`, the latest live `NativeProofEvidence` snapshot from `Runtime/ReleaseEvidence/latest-native-proof.json`, the latest packaged `ProofBundleEvidence` manifest/archive from `Runtime/ReleaseEvidence/latest-proof-bundle.json` + `.zip` with compact inference-performance receipt counts for upstream request IDs, response identity, finish reasons, processing/phase timing, and tokens plus content-free TTS/ASR call-success, ASR endpointing, ASR confidence, and ASR timing evidence, the latest portable `SupportBundleEvidence` manifest/archive from `Runtime/SupportEvidence/latest-support-bundle.json` + `.zip`, the latest `PackageVerificationEvidence` snapshot from `Runtime/ReleaseEvidence/latest-package-verification.json`, the latest `ArtifactIntegrityEvidence` snapshot from `Runtime/ReleaseEvidence/latest-artifact-integrity.json`, the latest `FullAuditEvidence` snapshot from `Runtime/ReleaseEvidence/latest-full-audit.json`, and freshness markers so stale proof is visible before a release tag.
 > Machine-readable bridge proof at `/api/bridge/proof`, including a HUD-bind recommendation shortlist plus the live native-hud config source/path.
 > Committed contract snapshot at [`docs/openapi/palllm-sidecar-v1.json`](docs/openapi/palllm-sidecar-v1.json), regenerated and verified by `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/export-openapi.ps1`.
-> Last audit: **2026-05-17**.
+> Last audit: **2026-06-03**.
 > Full breakdown: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 > Change log: [`CHANGELOG.md`](CHANGELOG.md).
 > Release checklist: [`docs/RELEASE.md`](docs/RELEASE.md).
@@ -393,7 +393,7 @@ so monitoring and the public contract still reach the sidecar; flip
 
 ```powershell
 dotnet build D:\Coding\PalLLM\PalLLM.sln
-dotnet test  D:\Coding\PalLLM\PalLLM.sln      # 1315 passing
+dotnet test  D:\Coding\PalLLM\PalLLM.sln      # 1317 passing
 dotnet run   --project D:\Coding\PalLLM\src\PalLLM.Sidecar\PalLLM.Sidecar.csproj
 ```
 
@@ -444,7 +444,7 @@ Verified test status on `2026-05-17`:
 
 ```text
 $ dotnet test D:\Coding\PalLLM\PalLLM.sln
-Passed!  - Failed: 0, Passed: 1315, Skipped: 0, Total: 1315
+Passed!  - Failed: 0, Passed: 1317, Skipped: 0, Total: 1317
 ```
 
 ## Portable adapter surface

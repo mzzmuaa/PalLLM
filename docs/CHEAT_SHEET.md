@@ -1,6 +1,6 @@
 # PalLLM cheat sheet - one page
 
-Last audited: `2026-06-01`
+Last audited: `2026-06-03`
 
 The TL;DR-of-TL;DRs. Everything you need to operate the repo
 fits on one screen. For the full doc tour, see
@@ -12,7 +12,7 @@ fits on one screen. For the full doc tour, see
 pwsh ./pal.ps1 next           # "what should I do right now?" - context-aware single-action advisor
 pwsh ./pal.ps1 onboard        # first-time setup -- SDK + build + test + audit + dashboard
 pwsh ./pal.ps1 build          # dotnet build (Release)
-pwsh ./pal.ps1 test           # dotnet test  (Release, quiet) -- expects 1315 / 1315
+pwsh ./pal.ps1 test           # dotnet test  (Release, quiet) -- expects 1317 / 1317
 pwsh ./pal.ps1 audit          # full drift audit -- build + tests + 16 gates (~30 s)
 pwsh ./pal.ps1 fast-audit     # drift gates only -- skip coverage / SBOM / packaging
 pwsh ./pal.ps1 cleanup        # preview generated clutter; add -Apply to delete
@@ -86,7 +86,7 @@ DeepSeek), and launches `llama-server`. Deep-dive:
 | # | Gate | What it checks |
 |---|---|---|
 | 1 | `Build_Release` | `dotnet build` succeeds with zero warnings |
-| 2 | `Tests` | `dotnet test` all-green (1315 / 1315 currently) |
+| 2 | `Tests` | `dotnet test` all-green (1317 / 1317 currently) |
 | 3 | `Drift_Mojibake` | No UTF-8 corruption in tracked files |
 | 4 | `Drift_Api_route_count` | `api.Map*` calls in `Program.cs` + `RouteRegistrations/*.cs` agree with README / ROADMAP / ARCHITECTURE / API counts |
 | 5 | `Drift_Api_reference_surface` | `API.md` route list matches live route registrations |
@@ -133,7 +133,7 @@ D:\Coding\PalLLM\
 +-- src/
 |   +-- PalLLM.Domain/                   -> portable runtime (NO ASP.NET, NO UE4SS)
 |   +-- PalLLM.Sidecar/                  -> ASP.NET Core host
-+-- tests/PalLLM.Tests/                  -> NUnit, 1315 tests
++-- tests/PalLLM.Tests/                  -> NUnit, 1317 tests
 +-- mod/ue4ss/Mods/PalLLM/               -> Lua bridge
 +-- scripts/                             -> install / doctor / smoke / audit / package
 +-- docs/

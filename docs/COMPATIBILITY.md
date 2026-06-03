@@ -1,6 +1,6 @@
 # PalLLM Compatibility Matrix
 
-Last audited: `2026-06-01`
+Last audited: `2026-06-03`
 
 Known-compatible and known-conflicting setups for PalLLM. Consumed by
 `scripts/doctor.ps1` via [`scripts/compatibility.json`](../scripts/compatibility.json)
@@ -65,7 +65,7 @@ has no architecture gates beyond `<TargetFramework>net10.0</TargetFramework>`.
 
 To verify on your platform after a source build:
 ```powershell
-dotnet test PalLLM.sln --configuration Release    # 1315 / 1315 expected
+dotnet test PalLLM.sln --configuration Release    # 1317 / 1317 expected
 ```
 Tests use only platform-agnostic APIs (`HttpClient`, `JsonDocument`,
 `MemoryStream`); they pass on every supported RID.
@@ -215,5 +215,4 @@ machine-readable mirror of this table). At run time it:
 
 This way a new known issue can be added by patching the JSON - no
 code release required to surface the warning to operators.
-
 

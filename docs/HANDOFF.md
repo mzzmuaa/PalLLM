@@ -1,6 +1,6 @@
 # PalLLM Handoff
 
-Last audited: `2026-06-01`
+Last audited: `2026-06-03`
 
 This is the shortest safe starting point for a temporary coding handoff,
 including Claude, Codex, or any other replacement agent. It is meant to
@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 428)
+## Codex handoff (read first — Pass 430)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -107,7 +107,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs`
 - feature split: `119 ready`, `2 scaffolded`, `1 deferred`
 - `19` deterministic fallback strategies
-- `1315` passing tests from `dotnet test PalLLM.sln`
+- `1317` passing tests from `dotnet test PalLLM.sln`
 - `16 / 16` drift gates PASS on the latest audit
 - `1104` lines in `PalLlmRuntime.cs`, `391` lines in
   `PalLlmRuntime.Helpers.cs`, `357` lines in
@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260602-020435/RESULTS.md`](../artifacts/full-audit/20260602-020435/RESULTS.md)
+  [`../artifacts/full-audit/20260603-060112/RESULTS.md`](../artifacts/full-audit/20260603-060112/RESULTS.md)
 - committed OpenAPI snapshot:
   [`openapi/palllm-sidecar-v1.json`](openapi/palllm-sidecar-v1.json)
 
@@ -159,6 +159,52 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
+
+- **Pass 430 - God-file decomposition (readability refactor).**
+  Continued the partial-extraction pattern to the three remaining source
+  monoliths — all pure relocation within their file-scoped namespaces
+  (behaviorally inert, identical IL, full suite green):
+  - `Contracts.cs` `2795` -> `810` + 4 sibling partials (`.RuntimeSnapshots` /
+    `.ReleaseEvidence` / `.Health` / `.Media`).
+  - `PalLlmOptions.cs` `2104` -> `324` + 4 partials (`.Inference` / `.Surface`
+    / `.Media` / `.Runtime`).
+  - `ModelCollaborationPlanner.cs` `2183` -> `349` as a `partial class` across
+    `.Serving.cs` / `.Recipes.cs` / `.Records.cs`. The ~1080-line
+    `BuildServingProfile` was left intact in its now-focused Serving partial —
+    it is inherently-long *data construction* (50+ conditional hint-appends,
+    pinned by 433 `ModelTierTests` assertions) where every clean extraction (a
+    14+-parameter helper or a 1000-line parameter-object rewrite) would be a
+    net readability loss; file isolation is the right altitude.
+  - Fixed one brittle meta-test that text-grepped `Contracts.cs` for field
+    names — now globs `Contracts*.cs`.
+  - **Performance:** a hot-path scan (`ChatAsync`, bridge drain, inference
+    client, fallback context) confirmed the runtime is already optimal — 24
+    compiled static regex built once into `static readonly` fields, source-gen
+    JSON, pooled `SocketsHttpHandler`, minimal hot-path allocation. No runtime
+    change warranted; the refactor is readability-only.
+  Verification: `dotnet test` `1317 / 1317`; full audit `16 / 16`; `0` build
+  warnings.
+
+- **Pass 429 - llama.cpp draft-MTP connector guardrails (Codex).**
+  Researched the current llama.cpp speculative-decoding lane and did a
+  read-only sibling-workspace scan for transferable local-model guardrail
+  ideas. The useful finding was narrow and production-facing: do not let
+  advanced model-server flags turn into unsafe copy-paste commands for
+  profiles that are not proof-green.
+  - **Draft-MTP defaults:** `scripts/connect-llamacpp.ps1 -SpecType draft-mtp`
+    now uses conservative implicit bounds (`DraftMin=1`, `DraftMax=2`) instead
+    of inheriting the broad n-gram `48/64` defaults. Explicit operator
+    overrides are still allowed.
+  - **Qwen3-Coder-Next spec gate:** `-ModelProfile qwen3-coder` now rejects
+    every non-none `-SpecType` before printing a launch command, matching the
+    documented llama.cpp lane until upstream context support and PalLLM
+    route-smoke proof are green.
+  - **Regression coverage:** added two `ScriptExecutionTests` for the
+    draft-MTP dry run and the rejected Qwen3-Coder speculative lane. Test
+    count is now `1317`. Focused `ScriptExecutionTests` pass `12 / 12`;
+    `dotnet test` passes `1317 / 1317`; full audit passes `16 / 16` with
+    `0` build warnings at
+    `../artifacts/full-audit/20260603-023213/RESULTS.md`.
 
 - **Pass 428 - Third code↔doc semantic-accuracy audit wave (post-Codex).**
   Six parallel read-only audits over the domains Passes 426-427 left:
