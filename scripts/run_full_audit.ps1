@@ -79,6 +79,20 @@ $auditRoot = Join-Path $repoRoot "artifacts/full-audit/$timestamp"
 $stepsDir  = Join-Path $auditRoot "steps"
 New-Item -ItemType Directory -Force -Path $stepsDir | Out-Null
 
+# ---- Retention: bound the local artifact pile to the most recent runs ----
+# Every invocation drops a timestamped run dir; without a cap these accumulate
+# unbounded (one machine reached ~900 runs / >900 MB before this guard landed).
+# Keep the newest $KeepAuditRuns dirs (the "yyyyMMdd-HHmmss" names sort
+# chronologically, and the just-created run is always newest, so it is never
+# pruned). Local-only housekeeping: artifacts/ is git-ignored and skipped by the
+# path-reference gate, so this never touches tracked state. Override with
+# $env:PALLLM_KEEP_AUDIT_RUNS to retain more history on a given machine.
+$KeepAuditRuns = if ($env:PALLLM_KEEP_AUDIT_RUNS) { [int]$env:PALLLM_KEEP_AUDIT_RUNS } else { 12 }
+Get-ChildItem -Path (Join-Path $repoRoot "artifacts/full-audit") -Directory -ErrorAction SilentlyContinue |
+    Sort-Object Name -Descending |
+    Select-Object -Skip $KeepAuditRuns |
+    ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
+
 $resultsFile = Join-Path $auditRoot "RESULTS.md"
 $steps = New-Object System.Collections.Generic.List[object]
 
@@ -633,6 +647,11 @@ Record-Step -Name "Drift_Dangling_markdown_links" -Body {
             $target = ($match.Groups[1].Value -split '#')[0]
             if (-not $target) { continue }
             if ($target -match '^(https?|mailto):') { continue }
+            # artifacts/ is git-ignored + ephemeral: absent on any fresh clone
+            # and auto-pruned by the retention cap above, so links into it are
+            # evidence pointers, not navigable repo paths, and can't be
+            # validated. Mirrors path_reference_audit.ps1's $ignoredPrefixes.
+            if ($target -match '^artifacts[\\/]') { continue }
             $links[$target] = $true
         }
     }

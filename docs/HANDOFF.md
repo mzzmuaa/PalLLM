@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 434)
+## Codex handoff (read first — Pass 435)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -150,7 +150,10 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260603-123001/RESULTS.md`](../artifacts/full-audit/20260603-123001/RESULTS.md)
+  [`../artifacts/full-audit/20260603-130403/RESULTS.md`](../artifacts/full-audit/20260603-130403/RESULTS.md)
+  (run dirs under `artifacts/` are git-ignored + auto-pruned to the newest
+  `12` by the audit's retention cap, so this pointer is informational, not a
+  clone-portable link)
 - committed OpenAPI snapshot:
   [`openapi/palllm-sidecar-v1.json`](openapi/palllm-sidecar-v1.json)
 
@@ -159,6 +162,24 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
+
+- **Pass 435 - Local-repo hygiene: artifact retention cap + clone-safe link gate.**
+  The local `artifacts/full-audit/` pile had grown unbounded to ~`922` run dirs
+  / >`900` MB because the audit never pruned old runs. Pruned it back to the
+  active set, removed a stale `tests/PalLLM.Tests/TestResults/`, and reclaimed
+  `378` MB of regenerable `bin/obj`. To stop re-accumulation, added a retention
+  cap to `scripts/run_full_audit.ps1`: each run keeps only the newest
+  `$KeepAuditRuns` (default `12`) timestamped dirs (override via
+  `$env:PALLLM_KEEP_AUDIT_RUNS`); the just-created run is always newest, so it
+  is never pruned. Pruning surfaced a latent gate inconsistency — the
+  `Drift_Dangling_markdown_links` gate flagged `CHANGELOG.md`'s per-pass
+  evidence links into `artifacts/` as dangling, even though that tree is
+  git-ignored + ephemeral (those links were already dead on any fresh clone).
+  Made the gate exempt `artifacts/` targets, matching
+  `path_reference_audit.ps1`'s `$ignoredPrefixes`; the audit is now clone-safe
+  and the retention prune can't break it. No code/test behaviour changed (this
+  pass touches only local housekeeping + the audit harness). Verification:
+  full audit `16 / 16`; `dotnet test` `1330 / 1330`; `0` warnings.
 
 - **Pass 434 - Pure-logic coverage sweep (Quickstart + DecisionPlanner).**
   Continued the coverage work on two pure-logic surfaces the cobertura run

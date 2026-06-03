@@ -18,6 +18,41 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 435 - Local-repo hygiene: artifact retention cap + clone-safe link gate (2026-06-03)
+
+**Context.** The on-disk `artifacts/full-audit/` tree had grown unbounded to
+~`922` timestamped run dirs (>`900` MB) because `run_full_audit.ps1` created a
+new dir every invocation and never pruned old ones. Combined with a stale
+test-project `TestResults` coverage directory and `378` MB of regenerable
+`bin/obj`, the
+working tree carried roughly a gigabyte of dead local clutter — slow to scan,
+noisy to navigate, and easy to mistake for live state. None of it is tracked
+(all under git-ignored prefixes), so this is a local-hygiene + harness fix,
+not a content change.
+
+**Changes.**
+- Pruned the artifact pile back to the active set, removed the stale
+  `TestResults/` dir, and dropped `378` MB of regenerable `bin/obj` (rebuilt
+  lean by the verifying audit).
+- Added a **retention cap** to `scripts/run_full_audit.ps1`: after creating the
+  current run dir, it keeps only the newest `$KeepAuditRuns` (default `12`)
+  timestamped dirs and removes older ones. Names are `yyyyMMdd-HHmmss`, which
+  sort chronologically, so the just-created run is always newest and never
+  pruned. Tunable per machine via `$env:PALLLM_KEEP_AUDIT_RUNS`. This makes the
+  unbounded re-accumulation structurally impossible.
+- Fixed a latent inconsistency the prune exposed: the
+  `Drift_Dangling_markdown_links` gate treated `CHANGELOG.md`'s per-pass
+  evidence links into `artifacts/` as must-exist and failed when old runs were
+  pruned — yet that tree is git-ignored and ephemeral, so those links were
+  already dead on every fresh clone. The gate now exempts `artifacts/` link
+  targets, mirroring the `$ignoredPrefixes` policy already used by
+  `scripts/path_reference_audit.ps1`. The audit is now clone-portable and the
+  retention prune can no longer break it.
+
+**Verification.** `dotnet test` `1330 / 1330`; full audit `16 / 16`
+(`Drift_Dangling_markdown_links` now checks `212` unique link targets,
+`missing=0`); `0` build warnings. No production code or test behaviour changed.
+
 ### Pass 434 - Pure-logic coverage sweep (Quickstart + DecisionPlanner) (2026-06-03)
 
 **Context.** Continuing the coverage work, the cobertura run flagged two
