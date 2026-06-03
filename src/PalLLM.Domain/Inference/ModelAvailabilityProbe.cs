@@ -28,18 +28,15 @@ public sealed class NullModelAvailabilityProbe : IModelAvailabilityProbe
 
 /// <summary>
 /// HTTP probe that queries the configured inference endpoint for currently
-/// loaded or available models. Tries OpenAI-compatible <c>/v1/models</c>
-/// first (covers llama.cpp/llama-server — PalLLM's bundled default — plus
-/// vLLM, SGLang, OpenVINO Model Server when BaseUrl ends in <c>/v3/</c>,
-/// LM Studio, and OpenAI itself), then checks Foundry Local's
-/// <c>/openai/models</c> cached-model catalog. Any network failure returns
-/// an empty set; the orchestrator treats that as "no tier available yet"
-/// and keeps the current active tier.
+/// loaded or available models via the OpenAI-compatible <c>/v1/models</c>
+/// endpoint. llama.cpp/llama-server (PalLLM's only local engine, since b3500)
+/// and the OpenAI-compatible cloud escape path both expose it. Any network
+/// failure returns an empty set; the orchestrator treats that as "no tier
+/// available yet" and keeps the current active tier.
 ///
-/// Pass 346: the Ollama-native <c>/api/tags</c> fallback was removed along
-/// with the rest of the Ollama back-compat path. Every supported runtime
-/// now ships an OpenAI-compatible <c>/v1/models</c> endpoint (llama-server
-/// since b3500, vLLM, SGLang, LM Studio, OpenVINO Model Server).
+/// Pass 436: the Foundry Local <c>/openai/models</c> candidate was removed with
+/// the rest of the alt-engine purge; Pass 346 removed the Ollama-native
+/// <c>/api/tags</c> fallback before that. <c>/v1/models</c> is now the sole probe.
 /// </summary>
 public sealed class HttpModelAvailabilityProbe : IModelAvailabilityProbe
 {
@@ -97,19 +94,11 @@ public sealed class HttpModelAvailabilityProbe : IModelAvailabilityProbe
         string normalized = baseUrl.EndsWith('/') ? baseUrl : baseUrl + "/";
         Uri root = new(normalized);
 
-        // /v1/models - OpenAI-compat "list models" endpoint.
+        // /v1/models - the sole probe. llama.cpp llama-server (PalLLM's only
+        // local engine) and the OpenAI-compatible cloud escape path both expose
+        // it. Pass 436 removed the Foundry Local /openai/models candidate and
+        // Pass 346 removed the Ollama /api/tags fallback.
         yield return [new Uri(root, "models").ToString(), "openai"];
-
-        // /openai/models - Foundry Local cached-model endpoint. Resolve this
-        // off the server root because baseUrl may include a trailing /v1/.
-        if (Uri.TryCreate(root, "/openai/models", out Uri? foundryModelsUrl))
-        {
-            yield return [foundryModelsUrl.ToString(), "foundry"];
-        }
-
-        // Pass 346: /api/tags Ollama-native fallback removed. The bundled
-        // llama-server runtime exposes /v1/models, so no operator running
-        // a supported PalLLM stack should reach a probe miss here.
     }
 
     private async Task<IReadOnlySet<string>?> TryProbeAsync(
@@ -148,9 +137,6 @@ public sealed class HttpModelAvailabilityProbe : IModelAvailabilityProbe
             return parser switch
             {
                 "openai" => ParseOpenAiModels(document),
-                "foundry" => ParseFoundryModels(document),
-                // Pass 346: "ollama" dispatch branch removed alongside
-                // ParseOllamaTags. /api/tags is no longer probed.
                 _ => null,
             };
         }
@@ -214,32 +200,8 @@ public sealed class HttpModelAvailabilityProbe : IModelAvailabilityProbe
         return models;
     }
 
-    private static HashSet<string> ParseFoundryModels(JsonDocument document)
-    {
-        // Foundry Local shape: [ "Phi-4-mini-instruct-generic-cpu", ... ]
-        HashSet<string> models = new(StringComparer.Ordinal);
-        if (document.RootElement.ValueKind != JsonValueKind.Array)
-        {
-            return models;
-        }
-
-        foreach (JsonElement entry in document.RootElement.EnumerateArray())
-        {
-            if (entry.ValueKind == JsonValueKind.String)
-            {
-                string? name = entry.GetString();
-                if (!string.IsNullOrWhiteSpace(name))
-                {
-                    models.Add(name);
-                }
-            }
-        }
-
-        return models;
-    }
-
-    // Pass 346: ParseOllamaTags method removed alongside the rest of the
-    // Ollama back-compat path. Every supported runtime exposes
-    // /v1/models so ParseOpenAiModels covers them all; Foundry Local's
-    // bare-array shape is the only remaining outlier.
+    // Pass 436: ParseFoundryModels removed with the Foundry Local probe
+    // candidate; Pass 346 removed ParseOllamaTags. Every supported endpoint
+    // (llama-server + the OpenAI-compatible cloud escape) exposes /v1/models, so
+    // ParseOpenAiModels covers them all.
 }

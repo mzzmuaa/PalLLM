@@ -69,22 +69,17 @@ public sealed class ModelTierTests
     }
 
     // Pass 346: HttpProbe_WhenOpenAiEndpointMissing_FallsBackToOllamaTags
-    // deleted alongside the Ollama back-compat path. The /api/tags
-    // probe candidate was removed; every supported runtime
-    // (llama-server, vLLM, SGLang, LM Studio, OpenVINO) exposes
-    // /v1/models so the OpenAI-compatible branch is sufficient.
+    // deleted with the Ollama back-compat path. Pass 436: the Foundry Local
+    // /openai/models candidate was removed too — llama.cpp llama-server (the
+    // only local engine) and the OpenAI-compatible cloud escape path both
+    // expose /v1/models, so it is the sole probe.
 
     [Test]
-    public async Task HttpProbe_WhenBothEndpointsReturnData_MergesResults()
+    public async Task HttpProbe_OnlyProbesOpenAiV1Models_IgnoresRemovedFoundryRoute()
     {
-        // PalLLM supported deployments expose /v1/models (OpenAI-compat,
-        // covers llama-server, vLLM, SGLang, LM Studio, OpenVINO) and
-        // /openai/models (Foundry Local cached-model catalog). The
-        // probe should merge so a model only reachable via one route
-        // still counts as available.
-        //
-        // Pass 346: the /api/tags Ollama-native route was removed from
-        // the probe chain; this test no longer registers or asserts on it.
+        // Only /v1/models is probed now. A model reachable solely via the old
+        // Foundry Local /openai/models route must NOT appear, proving Pass 436
+        // dropped that candidate.
         const string openAiBody = "{\"data\":[{\"id\":\"gemma-4-E4B-it\"}]}";
         const string foundryBody = "[\"phi-4-mini-instruct-generic-cpu\"]";
         using var handler = new ScriptedProbeHandler(
@@ -98,7 +93,8 @@ public sealed class ModelTierTests
         var probe = new HttpModelAvailabilityProbe(httpClient, BuildOptionsWithBaseUrl("http://127.0.0.1:8080/v1/"));
         IReadOnlySet<string> models = await probe.GetAvailableModelsAsync(CancellationToken.None);
 
-        Assert.That(models, Is.EquivalentTo(new[] { "gemma-4-E4B-it", "phi-4-mini-instruct-generic-cpu" }));
+        Assert.That(models, Is.EquivalentTo(new[] { "gemma-4-E4B-it" }),
+            "Pass 436 removed the Foundry /openai/models probe; only /v1/models models should appear.");
     }
 
     [Test]
