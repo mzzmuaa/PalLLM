@@ -81,13 +81,9 @@ public sealed class HttpModelAvailabilityProbe : IModelAvailabilityProbe
     }
 
     /// <summary>
-    /// Yields candidate (url, parser-id) pairs in probe order. OpenAI-compat
-    /// stays first because it is the universal model-list shape — every
-    /// supported runtime (llama-server, vLLM, SGLang, LM Studio, OpenVINO,
-    /// OpenAI) exposes <c>/v1/models</c>. Foundry Local comes second because
-    /// its documented cached-model endpoint is rooted at /openai/models and
-    /// must be resolved off the server root in case BaseUrl carries a
-    /// trailing /v1/.
+    /// Yields the single (url, parser-id) probe pair. <c>/v1/models</c> is the
+    /// universal OpenAI-compatible model-list shape that llama-server (PalLLM's
+    /// only local engine) and any OpenAI-compatible cloud endpoint expose.
     /// </summary>
     private static IEnumerable<string[]> CandidateProbes(string baseUrl)
     {

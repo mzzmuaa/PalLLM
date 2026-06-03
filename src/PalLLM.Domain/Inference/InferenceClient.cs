@@ -11,9 +11,9 @@ using PalLLM.Domain.Runtime;
 
 // ---------------------------------------------------------------------------
 // AGENT-CARD:
-//   what:    The HTTP client that talks to whichever OpenAI-compatible
-//            inference engine the operator wired (local engine / vLLM /
-//            llama.cpp / TGI / SGLang / direct OpenAI). Owns timeout,
+//   what:    The HTTP client that talks to the OpenAI-compatible inference
+//            endpoint the operator wired -- the bundled llama.cpp llama-server
+//            (the only local engine) or an OpenAI-compatible cloud API. Owns timeout,
 //            circuit-breaker integration, response-bytes cap, structured
 //            response-path classification (live / fallback / circuit-open).
 //   surface: InferenceClient.ChatAsync (the call site of every model
@@ -23,7 +23,7 @@ using PalLLM.Domain.Runtime;
 //   adr:     0002-portable-adapter-seam.md (the HTTP surface PalLLM
 //            consumes; operator can swap engines without touching domain).
 //   docs:    docs/QUANTIZATION.md (which engine fits which quant),
-//            docs/BLACKWELL_RECIPES.md (vLLM + NVFP4 path),
+//            docs/BLACKWELL_RECIPES.md (Blackwell NVFP4 / Q4_K_M GGUF path),
 //            docs/HOT_PATH.md (timeout + budget),
 //            docs/RUNBOOK.md ("inference returns deterministic replies
 //            even with inference enabled").

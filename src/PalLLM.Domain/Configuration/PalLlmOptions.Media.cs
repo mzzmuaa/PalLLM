@@ -23,7 +23,7 @@ public sealed class TtsOptions
 
     /// Request JSON shape for the configured endpoint. Default <c>simple</c>
     /// preserves existing local adapters. Set to <c>openai_speech</c> for
-    /// OpenAI-compatible speech routes such as vLLM-Omni Qwen3-TTS.
+    /// OpenAI-compatible speech routes such as OpenAI-compatible omni Qwen3-TTS.
     public string RequestFormat { get; set; } = TtsRequestFormats.Simple;
 
     /// Optional model id sent only by the <c>openai_speech</c> request shape.
@@ -89,7 +89,7 @@ public sealed class AsrOptions
     public bool Enabled { get; set; }
 
     /// <summary>
-    /// Configured transcription endpoint. Current vLLM and transformers-serve
+    /// Configured transcription endpoint. Current OpenAI-compatible and transformers-serve
     /// ASR lanes use a multipart/form-data OpenAI-compatible route.
     /// </summary>
     public string BaseUrl { get; set; } = "http://127.0.0.1:8000/v1/audio/transcriptions";
@@ -157,7 +157,7 @@ public sealed class AsrOptions
 
     /// <summary>
     /// Optional transcription sampling seed forwarded as multipart
-    /// <c>seed</c> only when explicitly configured. This is a vLLM-compatible
+    /// <c>seed</c> only when explicitly configured. This is a OpenAI-compatible
     /// replay canary for local ASR endpoints; leave null for strict
     /// OpenAI-compatible transcription servers.
     /// </summary>
@@ -287,14 +287,14 @@ public sealed class VisionOptions
 
     /// <summary>
     /// Adds a stable content-hash <c>uuid</c> to outgoing vision <c>image_url</c>
-    /// parts. vLLM-compatible multimodal servers can use this as a media-cache
+    /// parts. OpenAI-compatible multimodal servers can use this as a media-cache
     /// key for repeated screenshots; strict endpoints that reject unknown content
     /// fields can disable it without changing the rest of the vision request.
     /// </summary>
     public bool UseMediaCacheIds { get; set; } = true;
 
     /// <summary>
-    /// Optional vLLM-style <c>mm_processor_kwargs</c> for screenshot/image
+    /// Optional OpenAI-compatible <c>mm_processor_kwargs</c> for screenshot/image
     /// requests. Use to cap pixels, frame rate, or soft-token budget on a
     /// proven local multimodal lane; omitted by default for strict endpoint
     /// portability.
@@ -330,8 +330,8 @@ public sealed class VisionOptions
     /// <summary>
     /// When true (default), world-state extraction requests include an
     /// OpenAI-style <c>response_format: { type: "json_schema", ... }</c> so
-    /// endpoints that support structured outputs (OpenAI, Ollama ≥ 0.5, LM
-    /// Studio, vLLM, and most current HTTP multimodal servers) constrain the
+    /// OpenAI-compatible endpoints that support structured outputs (including
+    /// llama.cpp and most current HTTP multimodal servers) constrain the
     /// model to the PalLLM world-state schema instead of returning prose.
     /// Endpoints that don't recognise the field silently ignore it. Flip off
     /// if your endpoint rejects unknown parameters strictly.

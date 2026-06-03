@@ -234,9 +234,9 @@ public sealed class InferencePrompt
     public string? ReasoningEffort { get; init; }
 
     /// <summary>
-    /// Optional vLLM-compatible <c>thinking_token_budget</c> cap forwarded only
+    /// Optional OpenAI-compatible <c>thinking_token_budget</c> cap forwarded only
     /// for route-specific reasoning-model canaries. Leave empty for normal
-    /// companion chat; set positive values only after the exact vLLM server was
+    /// companion chat; set positive values only after the exact OpenAI-compatible server was
     /// launched with a reasoning parser and accepted the request shape.
     /// </summary>
     public int? ThinkingTokenBudget { get; init; }
@@ -333,7 +333,7 @@ public sealed class InferencePrompt
     /// <summary>
     /// Optional raw chat-completions user <c>content</c> value forwarded
     /// verbatim for route-specific multimodal input canaries. Use this for
-    /// OpenAI/vLLM-style content-part arrays such as <c>text</c>,
+    /// OpenAI/OpenAI-compatible content-part arrays such as <c>text</c>,
     /// <c>image_url</c>, <c>video_url</c>, <c>input_audio</c>, or
     /// <c>audio_url</c>. Leave empty for normal companion chat so the hot path
     /// remains a plain text message.
@@ -363,7 +363,7 @@ public sealed class InferencePrompt
     public JsonElement? Prediction { get; init; }
 
     /// <summary>
-    /// Optional vLLM-compatible <c>structured_outputs</c> payload forwarded
+    /// Optional OpenAI-compatible <c>structured_outputs</c> payload forwarded
     /// verbatim for endpoint-specific choice, regex, grammar, JSON, or
     /// structural-tag canaries. Leave empty for normal companion chat and prefer
     /// <see cref="ResponseFormat"/> when a portable OpenAI-compatible schema is
@@ -386,7 +386,7 @@ public sealed class InferencePrompt
     public JsonElement? Audio { get; init; }
 
     /// <summary>
-    /// Optional vLLM-compatible <c>mm_processor_kwargs</c> payload for
+    /// Optional OpenAI-compatible <c>mm_processor_kwargs</c> payload for
     /// route-owned multimodal canaries. Overrides configured
     /// <c>PalLLM:Inference:MultimodalProcessor</c> when supplied.
     /// </summary>

@@ -22,7 +22,7 @@ public sealed class InferenceOptions
     public string? ApiKey { get; set; }
 
     /// <summary>
-    /// Optional vLLM-compatible prefix-cache trust-domain salt. When set,
+    /// Optional OpenAI-compatible prefix-cache trust-domain salt. When set,
     /// PalLLM forwards it as <c>cache_salt</c> on chat-completions requests so
     /// a shared model server can reuse cache inside one operator-approved
     /// trust domain without reusing cached prefixes across unrelated domains.
@@ -81,7 +81,7 @@ public sealed class InferenceOptions
     /// Optional outbound HTTP request-correlation header for compatible
     /// inference endpoints. Leave empty for maximum local-runtime portability.
     /// Set to <c>x-client-request-id</c> for hosted OpenAI-compatible support
-    /// traces or <c>x-request-id</c> for vLLM servers launched with request-id
+    /// traces or <c>x-request-id</c> for OpenAI-compatible servers launched with request-id
     /// header support; PalLLM forwards only the current bounded chat/proof
     /// request id, never prompt or save content.
     /// </summary>
@@ -112,14 +112,14 @@ public sealed class InferenceOptions
     /// <summary>
     /// Adds stable content-hash <c>uuid</c> fields to prompt-level
     /// <c>InferencePrompt.UserContent</c> media parts that carry local base64
-    /// image/video/audio data. This helps vLLM-compatible multimodal servers
+    /// image/video/audio data. This helps OpenAI-compatible multimodal servers
     /// reuse media preprocessing across replay/proof turns while leaving normal
     /// text chat as a plain string message.
     /// </summary>
     public bool UseMediaCacheIds { get; set; } = true;
 
     /// <summary>
-    /// Optional vLLM-style multimodal processor kwargs for route-owned
+    /// Optional OpenAI-compatible multimodal processor kwargs for route-owned
     /// <see cref="PalLLM.Domain.Inference.InferencePrompt.UserContent"/>
     /// canaries. Omitted unless a prompt supplies multimodal content so normal
     /// text chat and strict endpoints remain field-free.
@@ -191,7 +191,7 @@ public sealed class InferenceOptions
     public string? ReasoningEffort { get; set; }
 
     /// <summary>
-    /// Optional vLLM-compatible cap on reasoning/thinking tokens for models
+    /// Optional OpenAI-compatible cap on reasoning/thinking tokens for models
     /// launched with a reasoning parser. Leave empty for maximum endpoint
     /// portability; use <c>EnableThinking=false</c> instead of <c>0</c> when a
     /// route should avoid reasoning entirely.
@@ -206,7 +206,7 @@ public sealed class InferenceOptions
     public int? Seed { get; set; }
 
     /// <summary>
-    /// Optional vLLM-compatible request scheduling priority. Leave empty unless
+    /// Optional OpenAI-compatible request scheduling priority. Leave empty unless
     /// the exact endpoint is launched with priority scheduling; unsupported or
     /// FCFS-only servers may reject non-zero priority values.
     /// </summary>
@@ -247,9 +247,8 @@ public sealed class InferenceOptions
     public int MaxResponseBytes { get; set; } = 64 * 1024;
 
     /// <summary>
-    /// Hard cap on model-catalog probe payloads such as <c>/v1/models</c>,
-    /// Foundry Local <c>/openai/models</c>, and <c>/api/tags</c>. These lists
-    /// are larger than normal chat replies but still need a bound so tier
+    /// Hard cap on the <c>/v1/models</c> model-catalog probe payload. The list
+    /// is larger than normal chat replies but still needs a bound so tier
     /// discovery cannot buffer arbitrarily large JSON bodies when a local
     /// endpoint misbehaves.
     /// </summary>
@@ -525,7 +524,7 @@ public static class InferenceRequestMetadataLimits
 }
 
 /// <summary>
-/// Optional vLLM-compatible <c>mm_processor_kwargs</c> request controls for
+/// Optional OpenAI-compatible <c>mm_processor_kwargs</c> request controls for
 /// multimodal proof lanes. The object is omitted unless at least one value is
 /// configured, so strict OpenAI-compatible endpoints never see these
 /// non-standard fields by default.
@@ -613,7 +612,7 @@ public static class InferenceVerbosities
 /// <see cref="PalLLM.Domain.Inference.HttpTtsClient"/>. The default legacy
 /// shape stays tiny and broadly compatible, while <see cref="OpenAiSpeech"/>
 /// targets OpenAI-compatible <c>/v1/audio/speech</c> endpoints such as current
-/// vLLM-Omni TTS lanes.
+/// OpenAI-compatible omni TTS lanes.
 /// </summary>
 public static class TtsRequestFormats
 {
@@ -876,7 +875,7 @@ public sealed class ThermalGateOptions
 /// the orchestrator picks the highest-priority tier whose <see cref="Model"/>
 /// tag is reported as available by the inference endpoint. Ties are broken
 /// by list order (earlier wins). A typical two-tier config for a local
-/// Ollama deployment pairs a ~4B parameter instant-start model (<c>small</c>,
+/// llama.cpp deployment pairs a ~4B parameter instant-start model (<c>small</c>,
 /// priority 1) with a ~35B quality model (<c>large</c>, priority 10): the
 /// sidecar uses the small one while the large one is still being pulled,
 /// then graduates to the large one once it is pulled and loaded.
@@ -888,11 +887,9 @@ public sealed class ModelTierOptions
     /// operators can see which tier a reply came from.</summary>
     public string Id { get; set; } = string.Empty;
 
-    /// <summary>The exact model tag the inference endpoint expects. For
-    /// Ollama this is the <c>name:tag</c> identifier; for other OpenAI-
-    /// compatible servers this is the <c>id</c> surfaced on <c>/v1/models</c>.
-    /// For Foundry Local lanes this is the loaded alias or <c>/openai/models</c>
-    /// id.</summary>
+    /// <summary>The exact model id the inference endpoint expects. For
+    /// llama-server and other OpenAI-compatible servers this is the <c>id</c>
+    /// surfaced on <c>/v1/models</c> (the GGUF model name for llama.cpp).</summary>
     public string Model { get; set; } = string.Empty;
 
     /// <summary>Higher = preferred. The orchestrator picks the highest-priority

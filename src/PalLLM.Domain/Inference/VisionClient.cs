@@ -351,10 +351,10 @@ public sealed class HttpVisionClient : IVisionClient
             MmProcessorKwargs = vision.MultimodalProcessor.HasAny ? vision.MultimodalProcessor : null,
         };
 
-        // Structured outputs are an opt-in per-request hint. Endpoints that
-        // understand the OpenAI json_schema wrapper (OpenAI, llama.cpp,
-        // LM Studio, vLLM, SGLang) constrain the model to the schema;
-        // endpoints that don't silently ignore the unknown field.
+        // Structured outputs are an opt-in per-request hint. OpenAI-compatible
+        // endpoints that understand the json_schema wrapper (including
+        // llama.cpp) constrain the model to the schema; endpoints that don't
+        // silently ignore the unknown field.
     }
 }
 

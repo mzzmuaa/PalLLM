@@ -30,8 +30,8 @@ public sealed class VisionRequest
     /// <summary>
     /// Optional OpenAI-style <c>response_format</c> value forwarded verbatim to
     /// the chat-completions body. When set to a <c>json_schema</c> wrapper,
-    /// endpoints that support structured outputs (OpenAI, llama.cpp,
-    /// LM Studio, vLLM, SGLang) constrain the model's output to the
+    /// OpenAI-compatible endpoints that support structured outputs (including
+    /// llama.cpp) constrain the model's output to the
     /// supplied schema. Endpoints that do not recognise the field
     /// silently ignore it; the orchestrator's graceful-fail JSON parser
     /// still handles either case.
