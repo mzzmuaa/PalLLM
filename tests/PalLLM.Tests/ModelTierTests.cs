@@ -13,6 +13,44 @@ public sealed class ModelTierTests
     // HttpModelAvailabilityProbe
     // ---------------------------------------------------------------------
 
+    // Pass 436: llama.cpp is the only local engine (cloud API is the escape
+    // path for below-reference hardware). The serving advisor must never
+    // recommend a purged backend, so this guard rejects every removed token.
+    private static readonly string[] PurgedBackendTokens =
+    {
+        "vLLM", "vllm", "SGLang", "sglang", "Ollama", "ollama", "OLLAMA",
+        "LM Studio", "LmStudio", "lmstudio", "lms server", "OpenVINO", "openvino",
+        "TensorRT", "tensorrt", "trtllm", "Foundry", "foundry", "Mooncake",
+        "MoRIIO", "PegaFlow", "FlexKV", "LMCache", "HiCache", "EAGLE",
+        "transformers serve", "Responses API", "/v1/responses", "/v1/videos",
+        "/v1/video/chat",
+    };
+
+    private static void AssertLlamaCppOnlyServing(ModelServingProfile profile)
+    {
+        string blob = string.Join(
+            "\n",
+            profile.StartupHints
+                .Concat(profile.RequestHints)
+                .Concat(profile.CacheHints)
+                .Concat(profile.AdmissionControls)
+                .Concat(profile.SecurityControls)
+                .Concat(profile.PromotionReceipts)
+                .Concat(profile.MetricReceipts)
+                .Concat(profile.VerificationChecks)
+                .Append(profile.ProfileId)
+                .Append(profile.PreferredRuntime)
+                .Append(profile.RequestProtocol));
+
+        foreach (string banned in PurgedBackendTokens)
+        {
+            Assert.That(
+                blob,
+                Does.Not.Contain(banned),
+                $"Pass 436: ServingProfile must be llama.cpp-only; found purged backend token '{banned}'.");
+        }
+    }
+
     [Test]
     public async Task HttpProbe_WhenOpenAiV1ModelsReturnsList_ExtractsIds()
     {
@@ -343,255 +381,18 @@ public sealed class ModelTierTests
         Assert.That(fastModel.Capability.ServingOptimizations, Has.Some.Contains("stable media UUIDs"));
         Assert.That(fastModel.Capability.ServingProfile.ProfileId, Is.EqualTo("gguf-libmtmd-multimodal"));
         Assert.That(fastModel.Capability.ServingProfile.RequestProtocol, Does.Contain("/v1/chat/completions"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--enable-chunked-prefill"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("vLLM artifact provenance lane"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--performance-mode interactivity"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--prefix-caching-hash-algo sha256_cbor"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("Responses API proof lane"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--kv-cache-metrics-sample"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--kv-cache-dtype fp8"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--max-num-batched-tokens"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--max-long-partial-prefills"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("disaggregated prefill/decode proof lane"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("MoRIIOConnector"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--generation-config vllm"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--enable-sleep-mode"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--enable-lora"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--fully-sharded-loras"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("Mooncake Store proof lane"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("KV-event proof lane"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("PegaFlow"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("kv_connector_module_path"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("FlexKVConnectorV1"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--enable-dbo"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--dbo-decode-token-threshold"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("SGLang alternative lane"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("SGLang attention-backend proof lane"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("fp4_e2m1"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("EAGLE-3/adaptive speculation"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("SGLang HiCache proof lane"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--enable-deterministic-inference"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--enable-metrics"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("request dump/replay"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--grammar-backend xgrammar"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("SGLang Model Gateway lane"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--reasoning-parser qwen3"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("qwen3_next_mtp"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("num_speculative_tokens\":1"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--no-enable-prefix-caching"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--language-model-only"));
+        Assert.That(fastModel.Capability.ServingProfile.PreferredRuntime, Does.Contain("llama.cpp llama-server"));
+        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("llama.cpp local lane"));
+        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--mmproj <matching-mmproj.gguf>"));
         Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--spec-type draft-mtp"));
         Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("MTP/multimodal split-lane guard"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("hybrid-GDN proof lane"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("context-identity lane"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--mmproj <matching-mmproj.gguf>"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("LMCacheECConnector"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("remote-media safety lane"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--enable-mm-embeds"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--disable-chunked-mm-input"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--enable-tower-connector-lora"));
-        Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--limit-mm-per-prompt.video 1"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("model-card license metadata"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("stable OpenAI-compatible media uuid"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("image_embeds"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("LoRA adapter"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("model-native speculation"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("MTP-1 with prefix caching disabled"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("llama.cpp draft-MTP proof"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("text-only MTP proof"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("text-only MTP endpoint"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("primary-source capability receipt"));
         Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("262K default context"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("1,010,000-token extension"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("thinking-preservation"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("short companion turns still win the queue"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("operation name and latency budget"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("/v1/responses"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("schema digest"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("grammar/backend id"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("PresencePenalty"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("FrequencyPenalty"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("TopK"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("MinP"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("parallel_tool_calls=false"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("StopSequences"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("TopLogprobs"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("InferencePrompt.UserContent"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("On SGLang"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("request-id propagation"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("auto-tuned topk"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("external KV cache daemons"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("Dual Batch Overlap"));
+        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("model-card license metadata"));
         Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("staged artifact store"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("canonical schema digest"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("disaggregated prefill"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("encoder cache"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("embedding-only lane"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("sha256_cbor"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("performance-mode interactivity"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("KV-cache compression"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("KV-block residency"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("KV cache-aware routing"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("LMCacheConnectorV1"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("MoRIIOConnector proof"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("MooncakeStoreConnector"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("PegaFlow-style external KV cache services"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("BlockStored extra_keys"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("cold-cache boundary"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("LoRA-adapter id"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("modality-isolated"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("text MTP KV cache"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("radix cache enabled"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("page size, KV dtype"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("SGLang FP4 KV cache"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("hierarchical KV offload proof"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("cache_hit_rate"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("sanitized replay templates"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("--max-num-batched-tokens"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("cache-aware worker selection"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("MTP-1 latency proof separate"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("Gated DeltaNet/Mamba state"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("separate cache namespaces"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("media-hash/KV-overlap"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("route/cache proof indexes"));
-        Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("DBO evidence separate"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("lora_count<=1"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("--max-num-seqs"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("--max-num-partial-prefills 2"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("p95 TTFT"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("MoRIIOConnector read/write"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("Mooncake Store"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("external KV cache daemons"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("--max-running-requests"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("attention-backend pinning"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("SpecV2 requires topk=1"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("HiCache storage"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("token-bucket queue depth"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("speculative decoding disabled"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("Do not co-schedule model-native MTP"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("262,144+ local"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("video_count<=1"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("image_embeds"));
-        Assert.That(fastModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("vLLM DBO"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("VLLM_MEDIA_URL_ALLOW_REDIRECTS=0"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("SSRF-sensitive"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("VLLM_MAX_N_SEQUENCES"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("cache_salt"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("response ids"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("sleep/wake dev endpoints"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("VLLM_ALLOW_RUNTIME_LORA_UPDATING"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("KV-transfer ports"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("MoRIIO proxy"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("Mooncake master"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("KV-event ZMQ"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("PEGAFLOW_HOST"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("HiCache storage backends"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("redistribute downloaded model weights"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("--api-key"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("--enable-mm-embeds lanes"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("worker health"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("draft-model paths/revisions"));
-        Assert.That(fastModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("DBO data/expert-parallel"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Route replay receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Runtime capability handshake receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Model artifact provenance receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Publication receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Structured-output portability receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("vLLM scheduler/cache promotion receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("SGLang promotion receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("SGLang attention/precision promotion receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("SGLang speculative promotion receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("SGLang HiCache promotion receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("GGUF prompt/state-cache receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Qwen3.6 context receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Speculation promotion receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Multimodal media-admission receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Mooncake Store promotion receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("External KV cache process-boundary receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("KV-event promotion receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("disaggregated prefill/decode promotion receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("vLLM MoRIIO P/D promotion receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("vLLM DBO sparse-MoE promotion receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("palllm_chat_duration_seconds"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("vllm:num_requests_running"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("vllm:time_to_first_token_seconds"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("vllm:prefix_cache_queries"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("vllm:external_prefix_cache_queries"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("vLLM KV-event receipts"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("vllm:engine_sleep_state"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("sglang:num_queue_reqs"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("SGLang attention/precision receipts"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("SGLang speculation receipts"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("SGLang HiCache receipts"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("SGLang replay receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("vllm:mm_cache_hits"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("Model artifact provenance receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("media-admission receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("route replay receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("Runtime capability handshake receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("Structured-output proof receipts"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("vLLM pressure receipts"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("P/D topology receipts"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("vLLM MoRIIO receipts"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("Mooncake Store receipts"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("External KV cache receipts"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("FlexKV offload receipts"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("Qwen3.6 hybrid-GDN receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("vLLM DBO receipts"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("media UUIDs"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("libmtmd"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("encoder-cache"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("cache_salt"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("performance-mode interactivity"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("RequestPriority"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("service_tier"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("StopSequences"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("/v1/responses"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("--kv-cache-dtype fp8"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("multi-replica vLLM pools"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("GPU memory reclaimed"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("malformed shapes"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("LoRA personality-adapter lane"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("vLLM scheduler caps"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("split P/D topology"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("MoRIIOConnector P/D"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("model-repo sampling defaults"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("frequency_penalty"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("RepetitionPenalty"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("parallel_tool_calls=false"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("logprob confidence canaries"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("UserContent canaries"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("SGLang lanes"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("SGLang attention backend lanes"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("SGLang FP4/FP8 KV lanes"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("SGLang EAGLE-3"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("SGLang HiCache lanes"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("HiCache failure proof"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("radix-cache determinism"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("structural_tag"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("schema-echo portability canary"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("schema mismatch"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("worker-scoped circuit-breaker transitions"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("modality-isolated speculative replay"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("Qwen3.6 or Gemma 4 MTP"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("same-process negative canary"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("--no-enable-prefix-caching replay"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("route class separately"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("preempts or recomputes"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("request dump/replay"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("KV-block residency sampling"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("vLLM KV events"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("vLLM Mooncake Store"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("Mooncake Store failure proof"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("external KV cache daemons"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("PegaFlow or FlexKV"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("primary-source capability receipt"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("model-artifact provenance receipt"));
         Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("state-cache canary"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("hybrid-GDN lanes"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("Qwen3.6 context promotion"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("negative SSRF replay"));
-        Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("vLLM DBO sparse-MoE lanes"));
+        Assert.That(fastModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("GGUF prompt/state-cache receipt"));
+        Assert.That(fastModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("palllm_chat_duration_seconds"));
+        AssertLlamaCppOnlyServing(fastModel.Capability.ServingProfile);
         Assert.That(fastModel.Capability.Speculation.SupportsNgramSpeculation, Is.True);
         Assert.That(fastModel.Capability.Speculation.SupportsDraftModelSpeculation, Is.True);
         Assert.That(fastModel.Capability.Speculation.SupportsModelNativeMtp, Is.True);
@@ -609,39 +410,14 @@ public sealed class ModelTierTests
         Assert.That(edgeModel.Capability.SupportsToolCalls, Is.True);
         Assert.That(edgeModel.Capability.SupportsSpeculativeDecoding, Is.True);
         Assert.That(edgeModel.Capability.RecommendedBackend, Does.Contain("multimodal"));
-        Assert.That(edgeModel.Capability.ServingProfile.ProfileId, Is.EqualTo("vllm-openai-multimodal"));
-        Assert.That(edgeModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("Gemma 4 MTP drafter"));
-        Assert.That(edgeModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("generic draft_model"));
-        Assert.That(edgeModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("MTP/multimodal split-lane guard"));
-        Assert.That(edgeModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("OpenVINO VLM lane"));
-        Assert.That(edgeModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("TensorRT-LLM multimodal lane"));
-        Assert.That(edgeModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--limit-mm-per-prompt.audio 1"));
+        Assert.That(edgeModel.Capability.ServingProfile.ProfileId, Is.EqualTo("cloud-openai-chat"));
+        Assert.That(edgeModel.Capability.ServingProfile.PreferredRuntime, Does.Contain("cloud API"));
+        Assert.That(edgeModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("Cloud escape lane"));
         Assert.That(edgeModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("audio-token budget lane"));
-        Assert.That(edgeModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--max-num-batched-tokens"));
-        Assert.That(edgeModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--media-io-kwargs"));
-        Assert.That(edgeModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("model-native speculation"));
-        Assert.That(edgeModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("Gemma 4 MTP benchmarking"));
-        Assert.That(edgeModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("rather than generic draft models"));
         Assert.That(edgeModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("25 audio-token-per-second"));
-        Assert.That(edgeModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("text-only MTP proof"));
-        Assert.That(edgeModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("text-only MTP endpoint"));
-        Assert.That(edgeModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("multimodal processor cache memory"));
-        Assert.That(edgeModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("audio-token cost estimate"));
-        Assert.That(edgeModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("text MTP KV cache"));
-        Assert.That(edgeModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("LMCache EC"));
-        Assert.That(edgeModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("speculative decoding disabled"));
-        Assert.That(edgeModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("Do not co-schedule model-native MTP"));
-        Assert.That(edgeModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("25-tokens-per-second audio estimate"));
-        Assert.That(edgeModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Audio-in promotion receipt"));
         Assert.That(edgeModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Gemma 4 audio budget receipt"));
         Assert.That(edgeModel.Capability.ServingOptimizations, Has.Some.Contains("route-scoped"));
-        Assert.That(edgeModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("Qwen3.6 or Gemma 4 MTP"));
-        Assert.That(edgeModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("modality-isolated speculative replay"));
-        Assert.That(edgeModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("same-process negative canary"));
-        Assert.That(edgeModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("prefix-cache-disabled benchmark"));
-        Assert.That(edgeModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("assistant checkpoint id/hash"));
-        Assert.That(edgeModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("Gemma audio-token budget proof"));
-        Assert.That(edgeModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("cascaded ASR-to-text"));
+        AssertLlamaCppOnlyServing(edgeModel.Capability.ServingProfile);
         Assert.That(edgeModel.Capability.Speculation.SupportsModelNativeMtp, Is.True);
         Assert.That(edgeModel.Capability.Speculation.RequiresModalityIsolatedProof, Is.True);
         Assert.That(edgeModel.Capability.Speculation.RequiresPrefixCacheOffForLatencyMtp, Is.False);
@@ -652,11 +428,12 @@ public sealed class ModelTierTests
         Assert.That(gemmaDenseModel.Capability.Family, Is.EqualTo("gemma4"));
         Assert.That(gemmaDenseModel.Capability.InputModalities, Is.SupersetOf(new[] { "text", "image", "video", "audio" }));
         Assert.That(gemmaDenseModel.Capability.SupportsAudioInput, Is.True);
-        Assert.That(gemmaDenseModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--limit-mm-per-prompt.audio 1"));
+        Assert.That(gemmaDenseModel.Capability.ServingProfile.ProfileId, Is.EqualTo("cloud-openai-chat"));
         Assert.That(gemmaDenseModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("25 audio tokens per second"));
         Assert.That(gemmaDenseModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("Gemma 4 audio-in"));
         Assert.That(gemmaDenseModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Gemma 4 audio budget receipt"));
         Assert.That(gemmaDenseModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("exact size/runtime accepts input_audio"));
+        AssertLlamaCppOnlyServing(gemmaDenseModel.Capability.ServingProfile);
 
         ModelCollaborationModelDescriptor gemma3nModel = snapshot.ConfiguredModels
             .Single(model => model.ModelId.Equals("google/gemma-3n-E4B-it", StringComparison.Ordinal));
@@ -665,18 +442,14 @@ public sealed class ModelTierTests
         Assert.That(gemma3nModel.Capability.OutputModalities, Is.EqualTo(new[] { "text" }));
         Assert.That(gemma3nModel.Capability.SupportsAudioInput, Is.True);
         Assert.That(gemma3nModel.Capability.SupportsAudioOutput, Is.False);
-        Assert.That(gemma3nModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("Gemma 3n edge lane"));
-        Assert.That(gemma3nModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("OpenVINO ASR proof lane"));
-        Assert.That(gemma3nModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("Audio ingress normalization"));
+        Assert.That(gemma3nModel.Capability.ServingProfile.ProfileId, Is.EqualTo("cloud-openai-chat"));
+        Assert.That(gemma3nModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("Cloud escape lane"));
         Assert.That(gemma3nModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("6.25 audio tokens per second"));
-        Assert.That(gemma3nModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("input_audio"));
         Assert.That(gemma3nModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("modalities needed"));
         Assert.That(gemma3nModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("6.25 audio-token-per-second"));
         Assert.That(gemma3nModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("PLE cache"));
-        Assert.That(gemma3nModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("<=30 seconds"));
-        Assert.That(gemma3nModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("6.25-tokens-per-second audio estimate"));
         Assert.That(gemma3nModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Gemma 3n audio budget receipt"));
-        Assert.That(gemma3nModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("parameter skipping"));
+        AssertLlamaCppOnlyServing(gemma3nModel.Capability.ServingProfile);
 
         ModelCollaborationModelDescriptor qwenOmniModel = snapshot.ConfiguredModels
             .Single(model => model.ModelId.Equals("Qwen/Qwen3-Omni-30B-A3B-Instruct", StringComparison.Ordinal));
@@ -686,39 +459,15 @@ public sealed class ModelTierTests
         Assert.That(qwenOmniModel.Capability.SupportsAudioInput, Is.True);
         Assert.That(qwenOmniModel.Capability.SupportsAudioOutput, Is.True);
         Assert.That(qwenOmniModel.Capability.ServingProfile.ProfileId, Is.EqualTo("omni-realtime-opt-in"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.PreferredRuntime, Does.Contain("vLLM-Omni"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.PreferredRuntime, Does.Contain("llama.cpp speech/talker"));
         Assert.That(qwenOmniModel.Capability.ServingProfile.RequestProtocol, Does.Contain("/v1/audio/speech"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("vllm serve <model> --omni"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--talker-model"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--code2wav-model"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("async_chunk disabled"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("/v1/video/chat/stream"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("/v1/videos"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("modalities [\"text\",\"audio\"]"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("text mirror"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("streaming video"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("/v1/videos jobs"));
+        Assert.That(qwenOmniModel.Capability.ServingProfile.PreferredRuntime, Does.Contain("cloud API"));
         Assert.That(qwenOmniModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("InferencePrompt.Modalities"));
         Assert.That(qwenOmniModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("InferenceResult.AudioJson"));
         Assert.That(qwenOmniModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("PalLLM:Tts:Speed"));
         Assert.That(qwenOmniModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("Realtime audio"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("Speech synthesis speed controls"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("async_chunk-off proof"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("/v1/video/chat/stream"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("/v1/videos generation jobs"));
         Assert.That(qwenOmniModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Realtime audio promotion receipt"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Speech synthesis promotion receipt"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("streaming-video promotion receipt"));
         Assert.That(qwenOmniModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("Qwen Omni"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("/v1/audio/speech"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("llama.cpp talker/code2wav"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("/v1/video/chat/stream"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("response.audio.delta"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("session.created"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("InferenceResult.AudioJson"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("/v1/videos"));
-        Assert.That(qwenOmniModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("Qwen3.5-Omni research"));
+        AssertLlamaCppOnlyServing(qwenOmniModel.Capability.ServingProfile);
         Assert.That(qwenOmniModel.Capability.RuntimeGuards, Has.Some.Contains("audio-in and realtime voice opt-in"));
 
         ModelCollaborationModelDescriptor textModel = snapshot.ConfiguredModels
@@ -729,70 +478,18 @@ public sealed class ModelTierTests
         Assert.That(textModel.Capability.Speculation.SupportsModelNativeMtp, Is.False);
         Assert.That(textModel.Capability.Speculation.RequiresModalityIsolatedProof, Is.False);
         Assert.That(textModel.Capability.Speculation.RecommendedFirstMode, Is.EqualTo("openai-compatible-ngram"));
-        Assert.That(textModel.Capability.ServingProfile.PreferredRuntime, Does.Contain("SGLang"));
-        Assert.That(textModel.Capability.ServingProfile.PreferredRuntime, Does.Contain("OpenVINO Model Server"));
-        Assert.That(textModel.Capability.ServingProfile.PreferredRuntime, Does.Contain("TensorRT-LLM"));
-        Assert.That(textModel.Capability.ServingProfile.PreferredRuntime, Does.Contain("transformers serve"));
-        Assert.That(textModel.Capability.ServingProfile.PreferredRuntime, Does.Contain("Foundry Local"));
-        Assert.That(textModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("\"method\":\"ngram\""));
-        Assert.That(textModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--enable-lora"));
-        Assert.That(textModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("OpenVINO Model Server lane"));
-        Assert.That(textModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("PREFILL_HINT"));
-        Assert.That(textModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("Transformers serve provenance lane"));
-        Assert.That(textModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("Transformers serve local lane"));
-        Assert.That(textModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("/load_model"));
-        Assert.That(textModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("Responses API lane"));
-        Assert.That(textModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("Foundry Local single-user lane"));
-        Assert.That(textModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("TensorRT-LLM lane"));
-        Assert.That(textModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--max-num-seqs"));
-        Assert.That(textModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--tool_call_parser"));
+        Assert.That(textModel.Capability.ServingProfile.ProfileId, Is.EqualTo("cloud-openai-chat"));
+        Assert.That(textModel.Capability.ServingProfile.PreferredRuntime, Does.Contain("cloud API"));
+        Assert.That(textModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("Cloud escape lane"));
         Assert.That(textModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("n-gram or suffix"));
-        Assert.That(textModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("BaseUrl to http://localhost:<port>/v3/"));
-        Assert.That(textModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("positional serve argument"));
-        Assert.That(textModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("experimental endpoint"));
-        Assert.That(textModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("/openai/models"));
-        Assert.That(textModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("/metrics endpoint"));
-        Assert.That(textModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("Hugging Face local cache"));
-        Assert.That(textModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("Foundry model cache"));
-        Assert.That(textModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("OpenVINO model pull"));
-        Assert.That(textModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("TensorRT-LLM"));
-        Assert.That(textModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("Dynamo"));
-        Assert.That(textModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("lora_count<=1"));
-        Assert.That(textModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("continuous batching"));
-        Assert.That(textModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("/v1/responses off live companion routing"));
-        Assert.That(textModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("OpenVINO Model Server"));
-        Assert.That(textModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("TensorRT-LLM endpoints"));
-        Assert.That(textModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("single-user client runtime"));
-        Assert.That(textModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("trust_remote_code"));
-        Assert.That(textModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("response ids"));
-        Assert.That(textModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("OpenVINO Model Server loopback-only"));
-        Assert.That(textModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("TensorRT-LLM loopback-only"));
-        Assert.That(textModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("Foundry Local service loopback-only"));
-        Assert.That(textModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("SGLang Model Gateway metrics"));
-        Assert.That(textModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("transformers serve promotion receipt"));
-        Assert.That(textModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Foundry Local promotion receipt"));
-        Assert.That(textModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("OpenVINO promotion receipt"));
-        Assert.That(textModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("TensorRT-LLM promotion receipt"));
-        Assert.That(textModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("transformers serve receipts"));
-        Assert.That(textModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("Foundry Local receipts"));
-        Assert.That(textModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("OpenVINO receipts"));
-        Assert.That(textModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("TensorRT-LLM /metrics"));
-        Assert.That(textModel.Capability.ServingOptimizations, Has.Some.Contains("chunked prefill"));
-        Assert.That(textModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("structured-output reliability"));
+        Assert.That(textModel.Capability.ServingOptimizations, Has.Some.Contains("continuous batching"));
         Assert.That(textModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("accepted/proposed token ratio"));
-        Assert.That(textModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("strict JSON"));
-        Assert.That(textModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("OpenVINO Model Server lanes"));
-        Assert.That(textModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("transformers serve --continuous-batching"));
-        Assert.That(textModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("/v1/responses"));
-        Assert.That(textModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("Foundry Local lanes"));
-        Assert.That(textModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("TensorRT-LLM lanes"));
-        Assert.That(textModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("kvCacheStats"));
-        Assert.That(textModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("tool calling"));
+        AssertLlamaCppOnlyServing(textModel.Capability.ServingProfile);
 
         ModelCollaborationModelDescriptor ggufTextModel = snapshot.ConfiguredModels
             .Single(model => model.ModelId.Equals("local-text-worker-GGUF", StringComparison.Ordinal));
         Assert.That(ggufTextModel.Capability.ServingProfile.ProfileId, Is.EqualTo("gguf-chat"));
-        Assert.That(ggufTextModel.Capability.ServingProfile.PreferredRuntime, Does.Contain("GGUF"));
+        Assert.That(ggufTextModel.Capability.ServingProfile.PreferredRuntime, Does.Contain("llama.cpp"));
         Assert.That(ggufTextModel.Capability.Speculation.RecommendedFirstMode, Is.EqualTo("llama.cpp-ngram-simple"));
         Assert.That(ggufTextModel.Capability.Speculation.RequiresPrefixCacheOffForLatencyMtp, Is.False);
         Assert.That(ggufTextModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("GGUF artifact provenance lane"));
@@ -809,8 +506,8 @@ public sealed class ModelTierTests
             "Pass 346 removed every Ollama startup hint; no OLLAMA_* env-var advice should leak through.");
         Assert.That(ggufTextModel.Capability.ServingProfile.StartupHints, Has.None.Contains("Ollama"),
             "Pass 346 removed every Ollama startup hint; no operator-facing 'Ollama' mention should remain.");
-        Assert.That(ggufTextModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("LM Studio desktop lane"));
-        Assert.That(ggufTextModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("ResidencyProvider=LmStudio"));
+        Assert.That(ggufTextModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("llama.cpp connector lane"));
+        Assert.That(ggufTextModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("llama.cpp KV-memory proof lane"));
         Assert.That(ggufTextModel.Capability.ServingProfile.StartupHints.Any(hint => hint.Contains("--speculative-config", StringComparison.Ordinal)), Is.False);
         Assert.That(ggufTextModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("cache_prompt enabled"));
         Assert.That(ggufTextModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("tokenizer metadata"));
@@ -818,7 +515,7 @@ public sealed class ModelTierTests
         // removed; llama-server's /metrics endpoint now provides the
         // equivalent timing receipts via the llama.cpp connector lane.
         Assert.That(ggufTextModel.Capability.ServingProfile.RequestHints, Has.None.Contains("load_duration"));
-        Assert.That(ggufTextModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("ttl residency hint"));
+        Assert.That(ggufTextModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("LlamaCppCachePrompt"));
         Assert.That(ggufTextModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("-cram pressure"));
         Assert.That(ggufTextModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("host prompt-cache restore"));
         // Pass 346: the "q4_0 off the player path" cache hint was the
@@ -826,23 +523,23 @@ public sealed class ModelTierTests
         // the Ollama back-compat path. llama.cpp -ctk/-ctv guidance
         // higher up replaces the equivalent quantized-KV proof note.
         Assert.That(ggufTextModel.Capability.ServingProfile.CacheHints, Has.None.Contains("q4_0 off the player path"));
-        Assert.That(ggufTextModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("loaded-model TTL"));
+        Assert.That(ggufTextModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("--slot-save-path"));
         Assert.That(ggufTextModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("GGUF prompt/state-cache receipt"));
         Assert.That(ggufTextModel.Capability.ServingProfile.PromotionReceipts, Has.Some.Contains("Structured-output portability receipt"));
         Assert.That(ggufTextModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("llama.cpp /metrics"));
         Assert.That(ggufTextModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("forced full prompt re-processing"));
         // Pass 346: "Ollama proof metrics" receipt removed.
         Assert.That(ggufTextModel.Capability.ServingProfile.MetricReceipts, Has.None.Contains("Ollama"));
-        Assert.That(ggufTextModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("LM Studio proof receipts"));
+        Assert.That(ggufTextModel.Capability.ServingProfile.MetricReceipts, Has.Some.Contains("llama.cpp state-cache canary"));
         Assert.That(ggufTextModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("cap -np"));
         // Pass 346: OLLAMA_NUM_PARALLEL=1 admission control removed.
         Assert.That(ggufTextModel.Capability.ServingProfile.AdmissionControls, Has.None.Contains("OLLAMA_"));
-        Assert.That(ggufTextModel.Capability.ServingProfile.AdmissionControls, Has.Some.Contains("single-user local lane"));
+        Assert.That(ggufTextModel.Capability.ServingProfile.AdmissionControls, Is.Not.Empty);
         Assert.That(ggufTextModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("--webui-mcp-proxy"));
         // Pass 346: OLLAMA_HOST and OLLAMA_NO_CLOUD=1 security controls
         // removed.
         Assert.That(ggufTextModel.Capability.ServingProfile.SecurityControls, Has.None.Contains("OLLAMA_"));
-        Assert.That(ggufTextModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("LM Studio's server on loopback"));
+        Assert.That(ggufTextModel.Capability.ServingProfile.SecurityControls, Has.Some.Contains("llama.cpp --host at 127.0.0.1"));
         Assert.That(ggufTextModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("accepted/generated token statistics"));
         Assert.That(ggufTextModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("same PalLLM prefix twice"));
         Assert.That(ggufTextModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("/health"));
@@ -852,7 +549,7 @@ public sealed class ModelTierTests
         Assert.That(ggufTextModel.Capability.ServingProfile.VerificationChecks, Has.None.Contains("ollama"));
         Assert.That(ggufTextModel.Capability.ServingProfile.VerificationChecks, Has.None.Contains("OLLAMA_"));
         Assert.That(ggufTextModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("json_object-only mode"));
-        Assert.That(ggufTextModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("LM Studio lanes"));
+        Assert.That(ggufTextModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("For llama.cpp GGUF lanes"));
 
         ModelCollaborationRecipe recipe = snapshot.Recipes.Single(r => r.Id == "fast-draft-dense-judge");
         Assert.That(recipe.Stages[0].PreferredModel, Does.Contain("35B-A3B"));

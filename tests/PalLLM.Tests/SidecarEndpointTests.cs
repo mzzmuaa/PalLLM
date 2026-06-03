@@ -659,13 +659,13 @@ public sealed class SidecarEndpointTests
         Assert.That(servingProfile.GetProperty("ProfileId").GetString(), Is.EqualTo("gguf-libmtmd-multimodal"));
         Assert.That(
             servingProfile.GetProperty("StartupHints").EnumerateArray().Select(element => element.GetString()),
-            Contains.Item("--limit-mm-per-prompt.video 1"));
+            Has.Some.Contains("llama.cpp local lane"));
         Assert.That(
             servingProfile.GetProperty("SecurityControls").EnumerateArray().Select(element => element.GetString()),
-            Has.Some.Contains("allowed-media-domains"));
+            Has.Some.Contains("media-domain allowlist"));
         Assert.That(
             servingProfile.GetProperty("SecurityControls").EnumerateArray().Select(element => element.GetString()),
-            Has.Some.Contains("VLLM_MAX_N_SEQUENCES"));
+            Has.Some.Contains("llama.cpp --host at 127.0.0.1"));
         Assert.That(
             servingProfile.GetProperty("VerificationChecks").EnumerateArray().Select(element => element.GetString()),
             Has.Some.Contains("media UUIDs"));
