@@ -48,23 +48,37 @@ history is preserved.
   plus a new `AssertLlamaCppOnlyServing` guard that fails if any purged backend
   token appears in any serving-profile array.
 
-- **436b(2)-(5)** — Purged the rest of the live alt-engine surface:
+- **436b(2)-(6)** — Purged the rest of the live alt-engine surface:
   `GenAiTelemetry` provider detection (only `llama.cpp` / `openai_compatible`
   remain), the `ModelAvailabilityProbe` Foundry `/openai/models` candidate,
   `ModelCollaborationPlanner` RecommendedBackend + `QuickstartGuideBuilder` /
-  `HealthSuggestionBuilder` advisory strings, and finally the **entire residency
-  feature** (`InferenceResidencyProvider`, the policy, options, validator,
-  warmup-snapshot residency fields, request `ttl` field, both connect scripts'
-  `ResidencyProvider` writes, and the appsettings lines). It only ever served LM
-  Studio + Ollama; llama.cpp keeps the model resident server-side. Deleted
+  `HealthSuggestionBuilder` advisory strings, the **entire residency feature**
+  (`InferenceResidencyProvider`, the policy, options, validator, warmup-snapshot
+  residency fields, request `ttl` field, both connect scripts' `ResidencyProvider`
+  writes, and the appsettings lines — it only ever served LM Studio + Ollama;
+  llama.cpp keeps the model resident server-side), and `HardwareProfiler`'s
+  Blackwell quant recommendation + `pal-model-probe.ps1`'s `/metrics` engine
+  guesser (now llama.cpp GGUF framing / `llamacpp:*` families). Deleted
   `InferenceResidencyPolicy.cs` + its 22-case test file + 2 obsolete ttl tests,
   regenerated the OpenAPI snapshot, and cascaded the test count `1330` -> `1306`
-  across the mirror surfaces.
+  across the mirror surfaces. The entire code + script purge is complete.
+- **436c** — Operator-doc + feature-catalog sweep to the llama.cpp-only + cloud-
+  escape contract, preserving append-only history (CHANGELOG / RESEARCH_NOTES /
+  ADRs / the genuine "Pass NNN removed X" notes). Six audited commits: operator
+  helper scripts that still pointed at deleted connect verbs;
+  `TUNING`/`OPERATIONS`/`ENV_VARS`/`API` (deleting the dead `ResidencyProvider` +
+  residency-warmup rows, relabeling the surviving OpenAI-compatible request knobs
+  off "vLLM"); `MODEL_COLLABORATION.md` (1451 -> ~430 lines); `ARCHITECTURE.md`;
+  `QUANTIZATION.md` + `BLACKWELL_RECIPES.md` (the vLLM/TensorRT cookbook became a
+  bundled-llama-server cookbook, §0-§8 anchors preserved); and `MULTIMODAL_RECIPES.md`
+  + ~17 small docs. `INDEX.md` stays vendor-neutral so the `Drift_Public_copy`
+  gate (which blocks `llama.cpp`/`OpenAI`/etc. in publication-facing files) holds.
+  The feature catalog was already llama.cpp-only from 436b. No live alt-engine
+  guidance remains in any current operator doc.
 
-**Still queued.** `HardwareProfiler`'s Blackwell quant recommendation +
-`pal-model-probe.ps1`'s vLLM-metric guesser; the operator-doc sweep
-(`MODEL_COLLABORATION`, `QUANTIZATION`, `TUNING`, `MULTIMODAL_RECIPES`,
-`BLACKWELL_RECIPES`, etc.); and adopting the proven CUDA launch recipe.
+**Still queued.** **436d:** fold the proven external CUDA launch recipe into
+`connect-llamacpp.ps1` + `LLAMA_CPP_BUNDLED.md`. **Phase B:** refine the online
+GitHub repo surface (description, topics, README; $4/mo Pro only, no Actions).
 
 **Verification (checkpoint).** `dotnet test` `1306 / 1306`; full audit `16 / 16`;
 `0` build warnings.

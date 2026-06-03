@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260603-145125/RESULTS.md`](../artifacts/full-audit/20260603-145125/RESULTS.md)
+  [`../artifacts/full-audit/20260603-162635/RESULTS.md`](../artifacts/full-audit/20260603-162635/RESULTS.md)
   (run dirs under `artifacts/` are git-ignored + auto-pruned to the newest
   `12` by the audit's retention cap, so this pointer is informational, not a
   clone-portable link)
@@ -208,26 +208,29 @@ once they reached the changelog):
   LM Studio / SGLang / OpenVINO / TensorRT / Foundry / transformers logic
   remains in `src/` or `scripts/`; llama.cpp is the only local engine and the
   OpenAI-compatible cloud API is the escape path.
-  **Still queued — all documentation/finishing, no code:**
-  (1) **436c — operator-doc sweep (the big one):** several current operator
-  guides are *structured around* the old multi-backend world and need genuine
-  rewriting/slimming to llama.cpp-only, not find-replace —
-  `MODEL_COLLABORATION.md` (1451 lines, ~230 refs; documents the now-llama.cpp-only
-  serving advisor), `BLACKWELL_RECIPES.md` (vLLM/TensorRT-on-Blackwell — largely
-  obsolete; delete or repoint to llama.cpp Blackwell GGUF guidance),
-  `MULTIMODAL_RECIPES.md` (vLLM-Omni heavy), `QUANTIZATION.md`, `TUNING.md`,
-  `OPERATIONS.md`, `ENV_VARS.md` + the `INDEX.md` framing of those docs. Plus a
-  light neutralization of the `PalLlmOptions.*`/`InferenceClient.Contracts`
-  XML-doc comments that still say "vLLM-compatible `<field>`" (the request fields
-  are real OpenAI-ecosystem passthroughs; reword to drop the engine name while
-  keeping accuracy). Preserve append-only history (CHANGELOG / RESEARCH_NOTES).
-  Do each doc as its own commit; docs have no compile/test safety net, so verify
-  the audit (path/dangling/freshness gates) after each.
-  (2) **436d:** fold the proven CUDA launch recipe from the external
+  **436c (landed) — operator-doc + feature-catalog purge.** Rewrote/relabeled
+  every current operator doc to the llama.cpp-only + cloud-escape contract,
+  matching the rewritten serving advisor, and preserved append-only history
+  (CHANGELOG / RESEARCH_NOTES / ADRs / the genuine "Pass NNN removed X" notes).
+  Landed as six audited commits: operator scripts (helpers that still pointed at
+  deleted connect verbs); the config/API docs (`TUNING` / `OPERATIONS` /
+  `ENV_VARS` / `API` — including deleting the removed `ResidencyProvider` +
+  residency-warmup rows and relabeling the surviving OpenAI-compatible request
+  knobs off "vLLM"); `MODEL_COLLABORATION.md` (1451 -> ~430 lines, rewritten to
+  match the actual `ServingProfile` output); `ARCHITECTURE.md`; `QUANTIZATION.md`
+  + `BLACKWELL_RECIPES.md` (the vLLM/TensorRT cookbook became a
+  bundled-llama-server cookbook, §0-§8 anchors preserved); and a sweep across
+  `MULTIMODAL_RECIPES.md` + ~17 small docs. `INDEX.md` stays vendor-neutral
+  because the `Drift_Public_copy` gate blocks brand names (`llama.cpp`, `OpenAI`,
+  …) in publication-facing files. The feature catalog was already llama.cpp-only
+  from 436b. No live alt-engine guidance remains in any current operator doc;
+  only intentional "Pass 436/339/346 removed X" history notes survive.
+  **Still queued — no code-behaviour change:**
+  (1) **436d:** fold the proven CUDA launch recipe from the external
   best-available llama.cpp build into `connect-llamacpp.ps1` +
   `LLAMA_CPP_BUNDLED.md` (the installer already fetches the latest release
   dynamically).
-  (3) **Online repo refine (phase B):** after local is optimal, polish the
+  (2) **Online repo refine (phase B):** after local is optimal, polish the
   GitHub repo surface (description, topics, README) — $4/mo Pro only, no Actions.
   Verification at this checkpoint: full audit `16 / 16`; `1306 / 1306`; `0` warnings.
 
