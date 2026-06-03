@@ -226,47 +226,22 @@ surface changes:
   retry, configurable request shaping, and a three-state circuit breaker
 - `ModelCollaborationPlanner` translating configured model lanes into
   explicit scout/worker/judge recipes plus hardware-aware self-healing loops
-  and per-lane capability profiles (modalities, serving backend, structured
+  and per-lane capability profiles (modalities, recommended backend, structured
   output/tool-call/speculative-decoding fit, precise n-gram / draft /
   model-native MTP speculation profile, machine-readable serving profile,
-  promotion receipts, metric receipts,
-  deterministic prefix-cache hashing, optional cache-salt isolation,
-  vLLM low-latency `--performance-mode interactivity` proof guidance,
-  optional vLLM request-priority scheduling proof,
-  disaggregated prefill/decode P/D topology proof for vLLM tail-latency
-  experiments, including MoRIIO single-node read/write proof,
-  sparse-MoE DBO proof-lane receipts for multi-GPU data/expert-parallel worker
-  servers,
-  Mooncake Store distributed KV-cache proof for vLLM offload or multi-instance
-  prefix-reuse experiments,
-  PegaFlow-style and FlexKV external KV cache process-boundary proof for
-  worker-restart and cache-daemon rollback experiments,
-  Qwen3.6 MTP-1 prefix-cache-off latency proof guidance,
-  Qwen3.6 hybrid-GDN state receipts,
-  proof-gated KV-cache dtype compression, route-labeled replay receipts,
-  cache-aware routing proof,
-  vLLM KV-block residency sampling proof,
-  vLLM KV-event redaction proof for block-store/remove evidence,
-  SGLang radix-cache / HiCache hierarchical KV / deterministic-proof /
-  metrics / local replay hints plus support-matrix-gated attention-backend,
-  FP4/FP8 KV, EAGLE-3/adaptive, and SpecV2 proof receipts,
-  TensorRT-LLM `/v1` health, metrics, KV-cache, speculation, and multimodal
-  proof hints, transformers serve continuous-batching, `/load_model`,
-  `/v1/responses` proof-lane, revision-pinning, ASR, primary-source
-  capability receipts, model-artifact provenance receipts (license, lineage,
-  immutable revision/hash, weight
-  format, runtime/tokenizer revision, `trust_remote_code`, and redistribution
-  decision),
-  LM Studio `lms` / `/v1` / TTL proof, OpenVINO Model Server `/v3` target-device proof, Foundry Local /
-  Windows ML dynamic-endpoint and execution-provider proof, Gemma 3n /
-  Gemma 4 audio proof with family-specific token budgets, Qwen Omni
-  audio-output plus `/v1/video/chat/stream` streaming-video proof and
-  `/v1/videos` offline diffusion-job proof, and tool-call qualification hints,
-  schema-digest/request-shape structured-output receipts, media-cache hints,
-  idle VRAM reclaim guardrails,
-  local hash-pinned LoRA/personality-adapter guardrails, admission controls,
-  promotion receipts, metric receipts, promotion verification checks, and
-  runtime guards)
+  deterministic prefix-cache hashing, optional `cache_salt` isolation,
+  the local llama.cpp `llama-server` launch/prompt-cache/state-cache/idle-sleep/
+  KV-memory/speculation startup hints, the `pal connect cloud` escape-lane
+  hints, GGUF artifact provenance, `--mmproj` vision/audio projectors,
+  Qwen3.6 / Gemma 4 model-native MTP proof guidance, Qwen3.6 long-context
+  receipts, Gemma 3n / Gemma 4 audio proof with family-specific token budgets,
+  Qwen Omni talker/code2wav `/v1/audio/speech` audio-output proof, route-labeled
+  replay receipts, schema-digest/request-shape structured-output receipts,
+  media-cache hints, primary-source capability receipts, model-artifact
+  provenance receipts (license, lineage, immutable revision/hash, weight format,
+  runtime/tokenizer revision, `trust_remote_code`, and redistribution decision),
+  admission controls, security controls, promotion receipts, metric receipts,
+  promotion verification checks, and runtime guards)
 - `HardwareProfiler` deriving the coarse tier and quantization hint from
   OS-backed CPU/RAM signals, bounded Linux `/proc` GPU/memory probes, Windows
   physical-memory APIs, and sanitized Windows display-adapter registry strings
@@ -281,10 +256,10 @@ surface changes:
   world-state extraction, and chat visual augmentation. Caller-supplied image
   base64 is inspected for shape and decoded-size before any data URL is built
   or model-server request is sent. Outgoing `image_url` parts carry a stable
-  content-hash `uuid` by default so vLLM-compatible endpoints can identify
-  repeated screenshots, with `PalLLM:Vision:UseMediaCacheIds=false` as the
-  strict-endpoint opt-out. Proven local multimodal lanes can also configure
-  `PalLLM:Vision:MultimodalProcessor` to emit vLLM-style
+  content-hash `uuid` by default so OpenAI-compatible multimodal endpoints can
+  identify repeated screenshots, with `PalLLM:Vision:UseMediaCacheIds=false` as
+  the strict-endpoint opt-out. Proven local multimodal lanes can also configure
+  `PalLLM:Vision:MultimodalProcessor` to emit OpenAI-compatible
   `mm_processor_kwargs` (`min_pixels`, `max_pixels`, `max_soft_tokens`,
   `fps`) for bounded screenshot processor work
 - prompt-level multimodal `InferencePrompt.UserContent` proof canaries add the
@@ -306,7 +281,7 @@ surface changes:
   `Tts.RequestFormat=openai_speech` switches to the current
   OpenAI-compatible `/v1/audio/speech` body (`input`, `voice`, optional
   `model`, `response_format`, and proof-gated `speed`) for
-  vLLM-Omni/Qwen3-TTS-style lanes. Concrete
+  OpenAI-compatible omni / Qwen3-TTS-style lanes. Concrete
   upstream audio `Content-Type` wins; missing or generic binary content types
   fall back to the requested `Tts.ResponseFormat`, including `.pcm` +
   `PlaybackHint=raw_pcm` for raw-audio canaries. The C# runtime and UE4SS Lua
@@ -360,7 +335,7 @@ surface changes:
   duration/coverage fields, and review flags. Request-level ASR `Language`
   and `Prompt` override optional `PalLLM:Asr:Language` /
   `PalLLM:Asr:Prompt` defaults, and blank values are omitted so strict local
-  endpoints stay clean. `PalLLM:Asr:Seed` can forward vLLM's multipart
+  endpoints stay clean. `PalLLM:Asr:Seed` can forward an OpenAI-compatible multipart
   `seed` only for endpoint-proven replay canaries. `Asr.ChunkingStrategy=auto` can
   also forward OpenAI-compatible server/VAD file-chunking after endpoint proof,
   while the default stays field-free for strict local ASR servers. The same verbose segment array
@@ -582,12 +557,12 @@ Six hosted services run alongside the HTTP layer:
 
 - `BridgeInboxWorker` drains `%LOCALAPPDATA%\Pal\Saved\PalLLM\Bridge\Inbox`
   on the configured bridge interval
-- `InferenceWarmupWorker` primes the active inference lane on startup and can
-  optionally keep it resident on a configured keep-alive cadence, while
-  suppressing periodic keepalive POSTs when recent live chat traffic already
-  kept the same model warm; Ollama-compatible lanes can use native
-  `/api/chat` preloads with `keep_alive`, while LM Studio-compatible lanes can
-  apply `ttl` on chat-completions requests
+- `InferenceWarmupWorker` primes the active inference lane on startup with a
+  tiny `/v1/chat/completions` request and can optionally keep it resident on a
+  configured keep-alive cadence, while suppressing periodic keepalive POSTs when
+  recent live chat traffic already kept the same model warm. The bundled
+  llama-server keeps the loaded model resident for the lifetime of the server
+  process, so no provider-specific preload path is needed
 - `ScreenshotWatcher` polls `Bridge/Screenshots`, reads each image through a
   bounded pooled base64 reader (`ArrayPool<byte>` + `FileOptions.SequentialScan`),
   and feeds the result through the structured vision world-state extractor when
@@ -790,10 +765,8 @@ Current shipped defaults in `appsettings.json`:
   compatible transcription endpoints receive `include[]=logprobs` and PalLLM
   reduces returned token logprobs to count/min/average/review fields without
   storing token text
-- inference residency auto-detection enabled with a `1800` second TTL budget
-  for compatible local runtimes
 - inference prefix-cache salt forwarding disabled by default; when configured,
-  it is emitted as vLLM-compatible `cache_salt` on chat-completions requests
+  it is emitted as an OpenAI-compatible `cache_salt` on chat-completions requests
 - hosted prompt-cache key and retention forwarding disabled by default; when
   configured for a compatible endpoint, PalLLM emits `prompt_cache_key` and
   `prompt_cache_retention` only after the operator accepts the cache-routing
@@ -810,9 +783,9 @@ Current shipped defaults in `appsettings.json`:
   PalLLM emits `cache_prompt`, `id_slot`, and `n_cache_reuse` only for
   endpoint-proven llama-server cache/slot canaries
 - inference request-priority forwarding disabled by default; when configured,
-  it is emitted as vLLM-compatible `priority` on chat-completions requests
+  it is emitted as an OpenAI-compatible `priority` on chat-completions requests
 - inference thinking-token-budget forwarding disabled by default; when
-  configured, it is emitted as vLLM-compatible `thinking_token_budget` only for
+  configured, it is emitted as an OpenAI-compatible `thinking_token_budget` only for
   endpoint-proven reasoning-parser lanes
 - inference parallel-tool-call forwarding disabled by default; when configured,
   it is emitted as OpenAI-compatible `parallel_tool_calls` on
@@ -821,23 +794,11 @@ Current shipped defaults in `appsettings.json`:
   or hardware/server-qualified `nvfp4` experiments, but PalLLM does not change
   upstream KV-cache dtype by default and promotion requires replay proof against
   the same lane using `auto` KV cache
-- model-collaboration serving profiles may name vLLM
-  `--performance-mode interactivity` for player-facing low-latency companion,
-  vision, or narration endpoints, but PalLLM treats it as a measured serving
-  mode and asks operators to compare p50/p95 latency, TTFT, ITL, queue behavior,
-  and fallback activation against `balanced` / `throughput` before changing
-  shared server defaults
-- model-collaboration serving profiles may name vLLM
-  `--scheduling-policy priority` plus `PalLLM:Inference:RequestPriority` for
-  foreground companion lanes, but promotion requires mixed short-turn /
-  long-proof replay, confirmation that lower values win queue time, and proof
-  that background proof/docs lanes are not starved
-- model-collaboration serving profiles may name vLLM sparse-MoE DBO
-  (`--enable-dbo` plus decode/prefill token thresholds) for multi-GPU
-  data/expert-parallel worker servers, but PalLLM keeps it proof-only until
-  route-labeled receipts beat the no-DBO baseline without worse queue pressure,
-  parser stability, or fallback activation on mixed short-turn / long-proof
-  replay
+- model-collaboration serving profiles may name `PalLLM:Inference:RequestPriority`
+  for foreground companion lanes when the endpoint is launched with priority
+  scheduling, but promotion requires mixed short-turn / long-proof replay,
+  confirmation that lower values win queue time, and proof that background
+  proof/docs lanes are not starved
 - model-collaboration serving profiles may name
   `PalLLM:Inference:ParallelToolCalls=false` for strict future
   action/directive lanes, but promotion requires an exact route canary proving
@@ -859,7 +820,7 @@ Current shipped defaults in `appsettings.json`:
   shape, schema name/digest, served model id, grammar/backend id, app-side
   schema validation, parse stability, latency, token, and fallback evidence
 - prompt-level `InferencePrompt.StructuredOutputs` forwarding is available for
-  vLLM-specific structured-output canaries, but ordinary companion chat omits
+  endpoint-specific structured-output canaries, but ordinary companion chat omits
   `structured_outputs` by default and promotion requires accepted request
   shape, backend id, schema/constraint digest, parse/schema validation,
   latency, token, and fallback evidence
@@ -880,8 +841,8 @@ Current shipped defaults in `appsettings.json`:
   usable text mirror, response-size, latency, and fallback evidence
 - prompt-level `InferencePrompt.UserContent` forwarding is available for
   route-specific multimodal input canaries. Local base64 image/video/audio
-  parts receive stable media-cache `uuid`s by default for vLLM-compatible
-  endpoints, but ordinary companion chat keeps the user message as a plain
+  parts receive stable media-cache `uuid`s by default for OpenAI-compatible
+  multimodal endpoints, but ordinary companion chat keeps the user message as a plain
   string. Optional prompt/configured `MultimodalProcessor` caps can emit
   `mm_processor_kwargs` only on those multimodal requests. Promotion requires
   accepted text/image/video/audio content-part shapes, media byte caps,
@@ -893,7 +854,7 @@ Current shipped defaults in `appsettings.json`:
   newer reasoning-model budget field without latency, usage, or fallback
   regression
 - inference thinking-token-budget selection stays omitted by default;
-  `PalLLM:Inference:ThinkingTokenBudget` can opt into vLLM
+  `PalLLM:Inference:ThinkingTokenBudget` can opt into an OpenAI-compatible
   `thinking_token_budget` only after the exact reasoning-parser lane proves
   accepted request shape, visible/reasoning token usage, p95 latency, and
   fallback counters
@@ -908,79 +869,21 @@ Current shipped defaults in `appsettings.json`:
   parser, p95 latency, token, or fallback regression
 - model-collaboration serving profiles now emit `MetricReceipts[]` so operator
   tools know which PalLLM and upstream evidence to capture: PalLLM
-  `palllm_chat_duration_seconds` / recent-window status / fallback counters,
-  vLLM request, KV-cache, prefix-cache, latency, sleep-state, and multimodal
-  cache metrics, SGLang cache/queue/latency metrics, and equivalent local
-  receipts for GGUF, Ollama, LM Studio, TensorRT-LLM, OpenVINO, Foundry Local,
-  and transformers serve lanes. The profile also asks for separate replay
-  receipts by route class (companion chat, vision describe, world-state,
-  screenshot proof loops, audio/ASR, and long proof/docs traffic) before cache,
-  scheduler, speculation, or routing changes become trusted player defaults.
-  vLLM `--kv-cache-metrics-sample` stays a qualification-only way to capture
-  KV-block residency, idle-before-evict, and reuse-gap evidence; SGLang
-  request dump/replay or crash-dump replay receipts stay local, with only
-  sanitized replay templates or hashes allowed in support/public bundles.
-- model-collaboration serving profiles now keep SGLang HiCache behind explicit
-  proof. `--enable-hierarchical-cache`, host-memory cache, optional storage
-  backends, runtime attach/detach, and PD-disaggregation cache transfer can be
-  explored for long proof/docs or multi-turn prefix reuse, but promotion needs
-  radix-only versus HiCache replay, page size, host/storage budget,
-  prefetch/write policy, backend namespace hash, cold/warm TTFT and E2E
-  latency, queue depth, parser stability, backend-stop rollback, and fallback
-  counters. Raw KV pages, backend paths, and storage namespaces stay out of
-  support/public bundles.
-- model-collaboration serving profiles now keep SGLang attention-backend,
-  FP4/FP8 KV, and EAGLE-3/adaptive/SpecV2 speculation changes proof-only.
-  Promotion needs an auto-selection baseline, backend support-matrix receipt,
-  page size, KV dtype, draft-model revision/hash or NGRAM config, acceptance
-  rate, OOM/backoff evidence, strict JSON/tool-call parse stability, route p95
-  TTFT/ITL/E2E latency, and fallback counters. SpecV2 lanes must pin topk=1.
-- model-collaboration serving profiles now keep vLLM disaggregated
-  prefill/decode behind explicit proof. `NixlConnector`,
-  `P2pNcclConnector`, `MooncakeConnector`, `MoRIIOConnector`, and
-  `MultiConnector` P/D topologies can be explored for dual-GPU or workstation
-  tail-latency experiments, but promotion needs a monolithic baseline,
-  prefill/decode endpoint ids, router/proxy config, redacted
-  `kv_transfer_config`, p95 TTFT, p95 ITL, p95 E2E latency, KV-transfer
-  latency/failure evidence, queue pressure, worker-stop rollback,
-  decode-only fallback, and PalLLM fallback counters. MoRIIO proof additionally
-  records read/write mode, proxy/http/handshake/notify ports, remote-KV wait,
-  and prefix-cache-disabled versus normal-prefix baselines. The profile does
-  not treat P/D as throughput proof.
-- model-collaboration serving profiles now keep vLLM KV-event streams
-  qualification-only. A loopback/admin ZMQ subscriber may summarize
-  `BlockStored`, `BlockRemoved`, and `AllBlocksCleared` batches for cache or
-  router-index proof, but support/public evidence keeps only counts, block
-  hashes, block-size/group metadata, replay gaps, and redacted extra-key
-  classes. Raw token ids, cache salts, media ids, LoRA names, and prompt
-  embedding hashes stay out of release artifacts.
-- model-collaboration serving profiles now keep Mooncake Store behind explicit
-  proof. `MooncakeStoreConnector` and `MultiConnector` can be explored for
-  long proof/docs or multi-turn prefix-reuse traffic, but promotion needs
-  redacted config hashes, store/client health, cache-hit rate, cold/warm TTFT
-  and E2E latency, companion p95, parser parity, fallback counters, and
-  rollback behavior when the store or a client is stopped.
-- model-collaboration serving profiles now keep PegaFlow-style and FlexKV
-  external KV cache daemons behind explicit proof. `PegaKVConnector`,
-  `FlexKVConnectorV1`, or another `kv_connector_module_path` service can be
-  explored as a process-boundary cache for worker restarts, multi-instance
-  reuse, host-memory, SSD, remote storage, or RDMA cache experiments, but
-  promotion needs local-prefix-cache versus daemon-backed replay, daemon
-  health, endpoint binding, pool/SSD/RDMA budget, namespace/model identity,
-  cache-hit rate, scheduler-side async transfer counts, load/store failures,
-  worker-restart reuse, daemon-stop rollback, local-prefix-cache rollback,
-  cold/warm TTFT/E2E, and PalLLM fallback counters. Raw KV blocks, SSD paths,
-  namespace strings, endpoint
-  details, and player text stay out of support/public bundles.
+  `palllm_chat_duration_seconds` / recent-window status / lane status /
+  fallback counters, plus the bundled llama-server `/metrics` or log receipts
+  (prompt-cache reuse, slot count, `-cram` pressure, active KV memory,
+  accepted/generated token statistics, forced full-prefill warnings, and p95
+  latency). The profile also asks for separate replay receipts by route class
+  (companion chat, vision describe, world-state, screenshot proof loops,
+  audio/ASR, and long proof/docs traffic) before cache, batching, speculation,
+  or routing changes become trusted player defaults.
 - model-collaboration serving profiles now also emit `PromotionReceipts[]` so
   non-metric evidence is not hidden in metric copy. The field separates
   route-labeled replay, runtime capability handshakes, model-artifact
   provenance, release/redistribution decisions, GGUF prompt/state-cache
-  canaries, vLLM scheduler/cache proof, external KV cache process-boundary
-  proof, SGLang sanitized replay proof, SGLang HiCache hierarchical KV proof,
-  transformers serve / Foundry Local /
-  OpenVINO / TensorRT-LLM readiness proof, speculation A/B proof, multimodal
-  media-admission proof, and audio/realtime fallback proof.
+  canaries, llama.cpp speculation A/B proof, cloud-escape network-unreachable
+  fallback proof, multimodal media-admission proof, and audio/realtime
+  fallback proof.
 - model-collaboration serving profiles now emit primary-source capability
   receipts and model-artifact provenance receipts so downloaded model weights,
   GGUF quants, adapters, mmproj files, and drafter weights stay proof-gated by
@@ -989,79 +892,32 @@ Current shipped defaults in `appsettings.json`:
   immutable revision/hash, base-model relation, weight format,
   runtime/tokenizer revisions, `trust_remote_code` status, and redistribution
   decision.
-- model-collaboration serving profiles may name trusted-only vLLM
-  `--enable-mm-embeds` lanes, but PalLLM does not enable them by default and
-  ordinary player media still uses local bytes plus bounded request bodies
-- model-collaboration serving profiles may name optional local LoRA adapter
-  lanes, but PalLLM does not train, download, or dynamically load adapters by
-  default; any adapter path must be operator-approved and hash-pinned
-- model-collaboration serving profiles may name SGLang `--enable-metrics`,
-  radix-cache, `--mem-fraction-static`, request-admission, structured-output
-  grammar, `--enable-deterministic-inference`, HiCache
-  `--enable-hierarchical-cache`, attention-backend pins, FP4/FP8 KV cache,
-  EAGLE-3/adaptive/SpecV2 speculation, and local request dump/replay proof-lane
-  checks, but PalLLM does not require SGLang and still treats all model-server
-  optimizations as measured serving policy, not chat-path dependencies
-- model-collaboration serving profiles may name Hugging Face
-  `transformers serve` as a lightweight OpenAI-compatible lane with
-  `--continuous-batching`, `/load_model`, `/v1/models`, and
-  `/v1/audio/transcriptions`, plus `/v1/responses` as a proof-only stateful
-  response lane, but PalLLM requires a pinned repo revision, response-id
-  cleanup proof, event-parser proof, and ordinary `/v1/chat/completions`
-  fallback proof before that lane becomes a player default
-- model-collaboration serving profiles may name TensorRT-LLM as a local
-  NVIDIA `/v1` lane with `trtllm-serve`, `/health`, `/metrics`,
-  `/v1/models`, `/v1/chat/completions`, config-YAML, tool-parser, KV-cache,
-  speculation, disaggregated-serving, and multimodal proof receipts, but
-  PalLLM keeps it optional and requires latency, parse-stability, metrics, and
-  fallback proof before promotion
-- model-collaboration serving profiles may name OpenVINO Model Server as a
-  local `/v3` lane for Intel CPU, GPU, or NPU proof with `--target_device`,
-  `/v3/models`, `/v3/chat/completions`, VLM local-media controls, and NPU
-  prefill/generation tuning receipts, but PalLLM keeps it optional and
-  requires latency, parse-stability, and fallback proof before promotion
-- model-collaboration serving profiles may name Microsoft Foundry Local /
-  Windows ML as a single-user Windows proof lane with `foundry service status`,
-  `/openai/status`, `/openai/models`, `/v1/chat/completions`, execution-provider
-  receipts, and first-use cache/download receipts, but PalLLM keeps it
-  loopback-only and requires warm latency, parse-stability, and fallback proof
-  before writing it as a player default
 - model-collaboration serving profiles may name Gemma 3n / Gemma 4 native
   audio-in lanes and Qwen Omni audio-out / streaming-video lanes; PalLLM still
   does not ship first-party mic capture or a realtime/video proxy, and
   promotion requires local
   16 kHz mono audio proof, <=30 second clip caps, family-specific audio-token
   budgets (`25` tokens/sec for Gemma 4, `6.25` for Gemma 3n), cascaded-ASR
-  comparison, privacy evidence, typed-text fallback behavior, and an
-  `async_chunk`-disabled vLLM-Omni deploy receipt before any Qwen Omni
-  `/v1/realtime` voice path becomes trusted. Qwen Omni `/v1/audio/speech`
-  proof may use vLLM-Omni or llama.cpp talker/code2wav endpoints, but speed,
-  voice, output-MIME, duration, p95 synthesis latency, native playback, and
-  text-fallback receipts are required before promotion. For Qwen Omni streaming video,
-  promotion also requires `/v1/video/chat/stream` frame-cadence, duration-cap,
-  optional PCM16 chunk, reconnect/stall, still-image/world-state fallback, and
-  ordinary `/api/chat` health receipts. vLLM-Omni `/v1/videos` and
-  `/v1/videos/sync` stay offline proof/release-walkthrough surfaces until
-  async job create/poll/content/delete, cancellation, output cleanup,
-  prompt-publication hygiene, and no-interference evidence are captured
+  comparison, privacy evidence, typed-text fallback behavior, and (for the
+  realtime voice path) the relevant `/v1/realtime` deploy receipt before any
+  Qwen Omni voice path becomes trusted. Qwen Omni `/v1/audio/speech` proof uses
+  the local llama.cpp talker/code2wav endpoints, but speed, voice, output-MIME,
+  duration, p95 synthesis latency, native playback, and text-fallback receipts
+  are required before promotion. For Qwen Omni streaming video, promotion also
+  requires `/v1/video/chat/stream` frame-cadence, duration-cap, optional PCM16
+  chunk, reconnect/stall, still-image/world-state fallback, and ordinary
+  `/api/chat` health receipts.
 - model-collaboration serving profiles may name llama.cpp / GGUF prompt-cache,
   slot-count, native speculative decoding, draft-MTP, and quantized-KV proof
   lanes, but PalLLM does not mutate the operator's GGUF server defaults;
   promotion still requires PalLLM replay evidence for p95 latency, exact parse
   success, active KV memory, accepted/generated token statistics, and fallback
   behavior
-- model-collaboration serving profiles may name Ollama context, keep-alive,
-  Flash Attention, KV-cache, concurrency, queue, origin, and cloud-disable
-  settings, but PalLLM treats those as operator-owned server policy; promotion
-  requires `ollama ps` residency/context receipts, cold-vs-warm
-  `load_duration`, native usage timing fields, queue / 503 behavior, exact
-  parse success, and fallback behavior before changing defaults
-- model-collaboration serving profiles may name LM Studio `lms server start`,
-  `lms load`, `/v1/models`, `ttl`, structured JSON/tool proof, auto-evict, and
-  context/GPU-offload receipts for low-friction desktop GGUF lanes. PalLLM
-  treats this as a single-user local lane; promotion requires PalLLM replay
-  evidence plus loopback-only serving and model-license review before any
-  downloaded artifacts travel with a package
+- on below-reference hardware, model-collaboration serving profiles name the
+  `pal connect cloud` OpenAI-compatible escape lane instead of a local GGUF;
+  promotion requires `/v1/models` identity, `/v1/chat/completions` replay,
+  API-key storage / retention-posture review, and proof that PalLLM falls back
+  to the deterministic reply when the cloud endpoint is unreachable
 
 Configured example model tags:
 
