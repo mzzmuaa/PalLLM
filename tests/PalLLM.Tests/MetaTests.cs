@@ -2092,11 +2092,11 @@ public sealed class MetaTests
         Assert.That(modelProbeScript,
             Does.Contain("/v1/models")
                 .And.Contain("/metrics")
-                .And.Contain("vllm:prefix_cache_queries")
-                .And.Contain("vllm:kv_cache_usage_perc")
-                .And.Contain("vllm:spec_decode")
+                .And.Contain("llamacpp:kv_cache_usage_ratio")
+                .And.Contain("llamacpp:requests_processing")
+                .And.Contain("llamacpp:predicted_tokens_seconds")
                 .And.Contain("No chat, image, audio, tool-call, or player payload content was sent or stored."),
-            "pal models probe should produce no-prompt model endpoint evidence for cache, KV, and speculative decoding metrics.");
+            "pal models probe should produce no-prompt llama-server endpoint evidence for prompt/token-cache, slot/queue, and latency metrics.");
 
         string connectLlamaCppScriptPath = Path.Combine(RepoRoot, "scripts", "connect-llamacpp.ps1");
         Assert.That(File.Exists(connectLlamaCppScriptPath), "llama.cpp connection wizard missing.");

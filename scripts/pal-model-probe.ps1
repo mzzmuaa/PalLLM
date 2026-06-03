@@ -177,34 +177,24 @@ function Select-Metrics {
 function New-MetricSummary {
     param([string[]]$MetricNames)
 
-    [string[]]$vllmPrefix = @(Select-Metrics $MetricNames '^vllm:(prefix_cache|external_prefix_cache)')
-    [string[]]$vllmKv = @(Select-Metrics $MetricNames '^vllm:.*kv_cache|^vllm:.*cache_usage|^vllm:gpu_cache_usage_perc|^vllm:cpu_cache_usage_perc')
-    [string[]]$vllmQueue = @(Select-Metrics $MetricNames '^vllm:num_requests_(running|waiting|swapped)|^vllm:request_(success|failure|queue)')
-    [string[]]$vllmLatency = @(Select-Metrics $MetricNames '^vllm:.*(time_to_first_token|inter_token|e2e_request_latency|request_latency|iteration_tokens)')
-    [string[]]$vllmSpec = @(Select-Metrics $MetricNames '^vllm:spec_decode')
-    [string[]]$sglang = @(Select-Metrics $MetricNames '^(sglang:|sglang_)')
-    [string[]]$llamaCpp = @(Select-Metrics $MetricNames '(?i)(llama|slot|prompt|kv|cache|token)')
+    # llama.cpp llama-server is PalLLM's only local engine; the cloud escape
+    # path does not expose /metrics. Recognition focuses on llama-server's
+    # Prometheus families (llamacpp:* metric names).
+    [string[]]$promptTokenCache = @(Select-Metrics $MetricNames '(?i)^llamacpp:.*(prompt|predicted|tokens|kv_cache)')
+    [string[]]$slotsQueue = @(Select-Metrics $MetricNames '(?i)^llamacpp:.*(requests_processing|requests_deferred|busy_slots|n_decode|kv_cache_tokens)')
+    [string[]]$latency = @(Select-Metrics $MetricNames '(?i)^llamacpp:.*seconds')
+    [string[]]$llamaCpp = @(Select-Metrics $MetricNames '(?i)(^llamacpp:|llama|slot|prompt|kv_cache|token)')
 
-    $engineGuess = 'unknown'
-    if ($vllmPrefix.Count -gt 0 -or $vllmKv.Count -gt 0 -or $vllmQueue.Count -gt 0) {
-        $engineGuess = 'vllm'
-    } elseif ($sglang.Count -gt 0) {
-        $engineGuess = 'sglang'
-    } elseif ($llamaCpp.Count -gt 0) {
-        $engineGuess = 'llama.cpp-or-gguf'
-    }
+    $engineGuess = if ($llamaCpp.Count -gt 0) { 'llama.cpp-or-gguf' } else { 'unknown' }
 
     return [pscustomobject]@{
         engineGuess = $engineGuess
         exposedMetricCount = $MetricNames.Count
         families = [pscustomobject]@{
-            vllmPrefixCache = [pscustomobject]@{ present = ($vllmPrefix.Count -gt 0); names = $vllmPrefix }
-            vllmKvCache = [pscustomobject]@{ present = ($vllmKv.Count -gt 0); names = $vllmKv }
-            vllmQueue = [pscustomobject]@{ present = ($vllmQueue.Count -gt 0); names = $vllmQueue }
-            vllmLatency = [pscustomobject]@{ present = ($vllmLatency.Count -gt 0); names = $vllmLatency }
-            vllmSpeculativeDecoding = [pscustomobject]@{ present = ($vllmSpec.Count -gt 0); names = $vllmSpec }
-            sglang = [pscustomobject]@{ present = ($sglang.Count -gt 0); names = $sglang }
             ggufOrLlamaCpp = [pscustomobject]@{ present = ($llamaCpp.Count -gt 0); names = $llamaCpp }
+            promptAndTokenCache = [pscustomobject]@{ present = ($promptTokenCache.Count -gt 0); names = $promptTokenCache }
+            slotsAndQueue = [pscustomobject]@{ present = ($slotsQueue.Count -gt 0); names = $slotsQueue }
+            latency = [pscustomobject]@{ present = ($latency.Count -gt 0); names = $latency }
         }
     }
 }
@@ -240,18 +230,13 @@ function New-NextActions {
     }
 
     if (-not $MetricsOk) {
-        $actions.Add('Expose Prometheus metrics on the model server. For llama.cpp use --metrics; for vLLM/SGLang keep /metrics loopback or auth-protected.')
+        $actions.Add('Expose Prometheus metrics on llama-server with --metrics, kept on loopback or auth-protected.')
     } elseif ($MetricCount -eq 0) {
         $actions.Add('The metrics endpoint returned no metric samples; send a short replay or check server metrics configuration.')
     }
 
-    if ($MetricSummary.engineGuess -eq 'vllm') {
-        if (-not $MetricSummary.families.vllmPrefixCache.present) {
-            $actions.Add('vLLM metrics are present but prefix-cache metrics were not seen; run repeated-prefix replay before claiming cache reuse.')
-        }
-        if (-not $MetricSummary.families.vllmKvCache.present) {
-            $actions.Add('vLLM metrics are present but KV-cache pressure metrics were not seen; confirm the server version and /metrics configuration.')
-        }
+    if ($MetricSummary.engineGuess -eq 'llama.cpp-or-gguf' -and -not $MetricSummary.families.promptAndTokenCache.present) {
+        $actions.Add('llama.cpp metrics are present but prompt/token-cache metrics were not seen; run a repeated-prefix replay before claiming cache reuse.')
     }
 
     if ($actions.Count -eq 0 -and $Verdict -eq 'ready') {
@@ -276,12 +261,13 @@ $artifactPath = Join-Path $OutputDir "model-probe-$stamp.json"
 
 if ($DryRun.IsPresent) {
     $metricSummary = New-MetricSummary @(
-        'vllm:prefix_cache_queries',
-        'vllm:prefix_cache_hits',
-        'vllm:kv_cache_usage_perc',
-        'vllm:num_requests_running',
-        'vllm:num_requests_waiting',
-        'vllm:spec_decode_draft_acceptance_rate'
+        'llamacpp:prompt_tokens_total',
+        'llamacpp:tokens_predicted_total',
+        'llamacpp:kv_cache_usage_ratio',
+        'llamacpp:kv_cache_tokens',
+        'llamacpp:requests_processing',
+        'llamacpp:requests_deferred',
+        'llamacpp:predicted_tokens_seconds'
     )
     $artifact = [pscustomobject]@{
         schemaVersion = 1

@@ -334,10 +334,10 @@ public static class HardwareProfiler
     /// <summary>
     /// Detect the GPU architecture so the recommendation engine can suggest the
     /// right quantization format. Blackwell (RTX 50 / B100 / B200 / GB200) has
-    /// native FP4 tensor cores; recommending NVFP4 + vLLM / TensorRT-LLM there
-    /// gives 2x throughput vs FP8 and 4x vs FP16 with near-FP16 accuracy. On
-    /// pre-Blackwell hardware NVFP4 is software-emulated and offers no win, so
-    /// the recommendation falls back to the right format for that architecture.
+    /// native FP4 tensor cores, so an NVFP4 GGUF keeps a large model compact at
+    /// near-FP16 accuracy. On pre-Blackwell hardware NVFP4 is software-emulated
+    /// and offers no win, so the recommendation falls back to the right format
+    /// for that architecture (Q4_K_M on llama.cpp by default).
     ///
     /// <para>We deliberately don't shell out (no nvidia-smi, no subprocess);
     /// this keeps the profiler hot-path-safe and embeddable. Detection sources
@@ -783,9 +783,9 @@ public static class HardwareProfiler
         }
         if (fp4Likely)
         {
-            // Blackwell: NVFP4 via vLLM or TensorRT-LLM is 2x faster than FP8
-            // at near-FP16 accuracy. See docs/QUANTIZATION.md for the full
-            // matrix.
+            // Blackwell: an NVFP4 (or Q4_K_M) GGUF keeps a large model near
+            // ~40 GB at near-FP16 accuracy on llama.cpp. See docs/QUANTIZATION.md
+            // for the full matrix.
             return "nvfp4";
         }
         if (arch is "hopper" or "ada")
@@ -802,8 +802,8 @@ public static class HardwareProfiler
         }
         if (arch is "ampere" or "turing-or-older")
         {
-            // Pre-Hopper: no FP8 / FP4. Q4_K_M (llama.cpp) or AWQ-INT4 (vLLM)
-            // are the practical choices.
+            // Pre-Hopper: no FP8 / FP4 tensor cores. Q4_K_M on llama.cpp is the
+            // practical choice.
             return "q4_k_m";
         }
         // Unknown architecture — recommend the lowest-risk default.
@@ -837,7 +837,7 @@ public static class HardwareProfiler
     private static string BuildRecommendation(DuoHardwareTier tier, int ramGb, bool gpuLikely, bool fp4Likely, string arch)
     {
         string lowPrecisionNote = fp4Likely
-            ? " Blackwell FP4 tensor cores detected — vLLM or TensorRT-LLM with an NVFP4-quantized model gives ~2x throughput vs FP8 at near-FP16 accuracy. See docs/QUANTIZATION.md."
+            ? " Blackwell FP4 tensor cores detected — an NVFP4-quantized GGUF on llama.cpp keeps a 70B model near ~40 GB (vs ~140 GB FP16) at near-FP16 accuracy. See docs/QUANTIZATION.md."
             : arch is "cdna3" or "cdna4"
                 ? " AMD Instinct CDNA3/CDNA4 accelerator hint detected — current ROCm-oriented stacks expose an MXFP4 path. Validate it on your exact model family before promoting it to the default serving lane; see docs/QUANTIZATION.md."
             : string.Empty;

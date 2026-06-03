@@ -318,14 +318,14 @@ public sealed class ScriptExecutionTests
             Assert.That(root.GetProperty("privacy").GetString(), Does.Contain("No chat"));
 
             JsonElement metrics = root.GetProperty("metrics");
-            Assert.That(metrics.GetProperty("engineGuess").GetString(), Is.EqualTo("vllm"));
+            Assert.That(metrics.GetProperty("engineGuess").GetString(), Is.EqualTo("llama.cpp-or-gguf"));
             JsonElement families = metrics.GetProperty("families");
-            Assert.That(families.GetProperty("vllmPrefixCache").GetProperty("present").GetBoolean(), Is.True,
-                "DryRun must demonstrate the prefix-cache metric family.");
-            Assert.That(families.GetProperty("vllmKvCache").GetProperty("present").GetBoolean(), Is.True,
-                "DryRun must demonstrate the KV-cache metric family.");
-            Assert.That(families.GetProperty("vllmSpeculativeDecoding").GetProperty("present").GetBoolean(), Is.True,
-                "DryRun must demonstrate the speculative-decoding metric family.");
+            Assert.That(families.GetProperty("ggufOrLlamaCpp").GetProperty("present").GetBoolean(), Is.True,
+                "DryRun must demonstrate the llama.cpp metric family.");
+            Assert.That(families.GetProperty("promptAndTokenCache").GetProperty("present").GetBoolean(), Is.True,
+                "DryRun must demonstrate the prompt/token-cache metric family.");
+            Assert.That(families.GetProperty("slotsAndQueue").GetProperty("present").GetBoolean(), Is.True,
+                "DryRun must demonstrate the slots/queue metric family.");
         }
         finally
         {
