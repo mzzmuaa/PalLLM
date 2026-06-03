@@ -79,8 +79,8 @@ public static class HealthSuggestionBuilder
         // 2. Inference circuit breaker is OPEN — chat is on fallback while
         // the configured backend cools down. This is the most common
         // operator pain after install: config says "inference enabled",
-        // but the configured llama.cpp / vLLM / LM Studio server is not
-        // actually responding. We flag this only when inference is
+        // but the configured llama.cpp server (or cloud escape endpoint) is
+        // not actually responding. We flag this only when inference is
         // configured (otherwise an OPEN state is expected on a
         // fallback-only deployment).
         string circuit = inputs.InferenceCircuitState ?? string.Empty;

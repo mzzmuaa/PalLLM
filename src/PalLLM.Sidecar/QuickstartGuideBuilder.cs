@@ -63,7 +63,7 @@ internal static class QuickstartGuideBuilder
                 Priority: "recommended",
                 Label: "Turn on live inference for richer replies",
                 Why: "Live inference is off today — the companion is replying entirely via the deterministic fallback director. That is a supported shipping posture, but live inference typically gives more varied and contextual replies.",
-                Action: "Install the bundled engine with `pwsh ./pal.ps1 install-llama-cpp` (or use LM Studio / vLLM for high-config GPUs / Foundry Local on Windows), start the server pointing at a curated D:\\Models GGUF, then set PalLLM:Inference:Enabled=true plus BaseUrl / Model in appsettings.json and restart the sidecar.",
+                Action: "Install the bundled engine with `pwsh ./pal.ps1 install-llama-cpp` (or wire a cloud endpoint with `pwsh ./pal.ps1 connect cloud` for below-reference hardware), start llama-server pointing at a curated D:\\Models GGUF, then set PalLLM:Inference:Enabled=true plus BaseUrl / Model in appsettings.json and restart the sidecar.",
                 Verify: "palllm_inference_success_total rises above 0, or GET /api/inference/performance shows recent live lane activity."));
         }
         else
@@ -117,8 +117,8 @@ internal static class QuickstartGuideBuilder
             steps.Add(new QuickstartStep(
                 Priority: "optional",
                 Label: "Switch to NVFP4 to take advantage of your Blackwell tensor cores",
-                Why: $"Blackwell GPU detected ({hardware.GpuArchitectureDetail}). NVFP4 + vLLM / TensorRT-LLM gives ~2x throughput vs FP8 and ~4x vs FP16 at near-FP16 accuracy on a 70B model. Memory drops from ~140 GB (FP16) to ~37 GB (NVFP4).",
-                Action: "Run vLLM 0.6+ with --quantization fp4 and a NVIDIA-published or community-quantized NVFP4 model (e.g. nvidia/Llama-3.3-70B-Instruct-FP4). Update PalLLM:Inference:BaseUrl + Model accordingly.",
+                Why: $"Blackwell GPU detected ({hardware.GpuArchitectureDetail}). A 4-bit quantized GGUF keeps VRAM low (a 70B model drops from ~140 GB FP16 to ~40 GB) at near-FP16 accuracy, so it fits comfortably on Blackwell-class memory.",
+                Action: "Serve a 4-bit GGUF (Q4_K_M, or an NVFP4-derived quant where the llama.cpp build supports it) with `pwsh ./pal.ps1 install-llama-cpp` + llama-server, then update PalLLM:Inference:BaseUrl + Model accordingly.",
                 Verify: "GET /api/hardware -> RecommendedQuantization=nvfp4. /api/inference/performance shows ~2x lower per-token latency compared to FP8. See docs/QUANTIZATION.md for the full setup walkthrough."));
         }
         else if (string.Equals(hardware.RecommendedQuantization, "mxfp4", StringComparison.OrdinalIgnoreCase))
@@ -127,7 +127,7 @@ internal static class QuickstartGuideBuilder
                 Priority: "optional",
                 Label: "Validate MXFP4 on your AMD Instinct serving lane",
                 Why: $"AMD accelerator hint detected ({hardware.GpuArchitectureDetail}). Current ROCm-oriented serving stacks expose MXFP4 support, which can lower model memory while keeping a standards-based 4-bit path. Coverage still depends on the exact backend and model family.",
-                Action: "If you are serving through vLLM on ROCm or another MXFP4-capable stack, benchmark an MXFP4 checkpoint beside your current FP8 or Q4_K_M default before switching PalLLM over.",
+                Action: "If your llama.cpp build exposes an MXFP4-capable path on ROCm, benchmark an MXFP4 GGUF beside your current Q4_K_M default before switching PalLLM over.",
                 Verify: "GET /api/hardware -> RecommendedQuantization=mxfp4. Then compare /api/inference/performance before and after the serving change on the same workload."));
         }
 

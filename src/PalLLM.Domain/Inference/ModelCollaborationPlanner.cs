@@ -187,8 +187,8 @@ public sealed partial class ModelCollaborationPlanner
         bool supportsStructuredOutputs = !isEmbedding;
         bool supportsSpeculativeDecoding = !isEmbedding && (isSparseMoe || supportsToolCalls || !supportsVision);
         bool multimodal = supportsVision || supportsVideo || supportsAudioInput || supportsAudioOutput;
-        bool preferVllm = !isGguf || supportsVideo || supportsAudioOutput;
-        bool supportsModelNativeMtp = preferVllm && !isEmbedding && (isQwen36 || isGemma4);
+        bool richMediaOrNonGguf = !isGguf || supportsVideo || supportsAudioOutput;
+        bool supportsModelNativeMtp = richMediaOrNonGguf && !isEmbedding && (isQwen36 || isGemma4);
 
         List<string> inputModalities = ["text"];
         if (supportsVision)
@@ -331,19 +331,21 @@ public sealed partial class ModelCollaborationPlanner
 
         if (isGguf && multimodal)
         {
-            return "llama.cpp libmtmd or vLLM OpenAI-compatible multimodal server";
+            return "llama.cpp llama-server with libmtmd + a matching mmproj (GGUF multimodal)";
         }
 
         if (isGguf)
         {
-            // Pass 346: Ollama removed from the suggested runtime list.
-            // llama.cpp (PalLLM's bundled default) and vLLM cover the
-            // GGUF path; LM Studio remains for desktop operators.
-            return "llama.cpp, vLLM, LM Studio, or another OpenAI-compatible GGUF server";
+            // Pass 436: llama.cpp is the only local engine. The alt-engine names
+            // (vLLM / LM Studio / Ollama) were dropped from the suggested-runtime
+            // list with the rest of the purge.
+            return "llama.cpp llama-server (the bundled local engine)";
         }
 
+        // Not a local GGUF: route through the OpenAI-compatible cloud escape
+        // path. PalLLM ships no non-GGUF local engine.
         return multimodal
-            ? "vLLM, SGLang, or TensorRT-LLM OpenAI-compatible multimodal server"
-            : "OpenAI-compatible chat-completions server";
+            ? "an OpenAI-compatible cloud API via pal connect cloud (escape path for non-GGUF multimodal models)"
+            : "an OpenAI-compatible cloud API via pal connect cloud (escape path)";
     }
 }
