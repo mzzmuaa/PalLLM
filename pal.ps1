@@ -657,22 +657,13 @@ function Run-Connect {
         Write-Host "  foundry     Microsoft Foundry Local / Windows ML REST lane"
         Write-Host ""
         Write-Host "Examples:" -ForegroundColor White
-        Write-Host "  pal connect ollama                          # default localhost:11434, auto-recommend"
-        Write-Host "  pal connect ollama -DryRun                  # preview the config delta"
-        Write-Host "  pal connect ollama -Model qwen3:14b         # force a specific installed model"
         Write-Host "  pal connect llamacpp -ModelPath C:\Models\qwen.gguf # print / wire raw llama-server"
-        Write-Host "  pal connect lmstudio -Model <loaded-id>     # print / wire LM Studio localhost:1234"
-        Write-Host "  pal connect vllm -UseCase coding            # print the agentic-coding recipe"
-        Write-Host "  pal connect vllm -WriteConfig               # also wire appsettings.json at vLLM"
-        Write-Host "  pal connect omni                            # default omni-text-out profile"
-        Write-Host "  pal connect omni -Profile omni-full         # multimodal in + audio out via realtime WS"
-        Write-Host "  pal connect omni -WriteConfig               # wire Vision to vLLM-Omni; add -WireInference only after proof"
-        Write-Host "  pal connect transformers -Revision <sha>    # print / wire transformers serve"
-        Write-Host "  pal connect tensorrt -ToolCallParser qwen3  # print / wire TensorRT-LLM"
-        Write-Host "  pal connect openvino -TargetDevice GPU      # print / wire OpenVINO Model Server"
-        Write-Host "  pal connect foundry -FoundryEndpoint <url>  # print / wire Foundry Local"
+        Write-Host "  pal connect llamacpp -WriteConfig            # also wire appsettings.json at llama.cpp"
+        Write-Host "  pal connect cloud -Provider openai -ApiKey <key>  # escape path: OpenAI-compatible cloud API"
+        Write-Host "  pal connect cloud -DryRun                    # preview the cloud-API config delta"
         Write-Host ""
-        Write-Host "More: docs/MULTIMODAL_RECIPES.md  +  docs/BLACKWELL_RECIPES.md" -ForegroundColor DarkGray
+        Write-Host "llama.cpp is the only local engine. Cloud is the escape path for below-reference hardware." -ForegroundColor DarkGray
+        Write-Host "More: docs/LLAMA_CPP_BUNDLED.md  +  docs/MINIMUM_REQUIREMENTS.md" -ForegroundColor DarkGray
         Write-Host ""
         return
     }
@@ -721,85 +712,10 @@ function Run-Connect {
                 -File (Join-Path $repoRoot 'scripts/connect-llamacpp.ps1') @rest
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         }
-        'lmstudio' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-lmstudio.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
-        'lm-studio' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-lmstudio.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
-        'vllm' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-vllm.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
-        'omni' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-vllm-omni.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
-        'transformers' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-transformers.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
-        'hf' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-transformers.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
-        'tensorrt' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-tensorrt.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
-        'trtllm' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-tensorrt.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
-        'trt-llm' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-tensorrt.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
-        'openvino' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-openvino.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
-        'ovms' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-openvino.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
-        'intel' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-openvino.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
-        'foundry' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-foundry.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
-        'foundry-local' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-foundry.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
-        'ms-foundry' {
-            & powershell -NoProfile -ExecutionPolicy Bypass `
-                -File (Join-Path $repoRoot 'scripts/connect-foundry.ps1') @rest
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        }
         default {
             Write-Host ""
             Write-Host "Unknown 'pal connect' target: $sub" -ForegroundColor Red
-            Write-Host "Try: pal connect ollama   or   pal connect llamacpp   or   pal connect lmstudio   or   pal connect vllm   or   pal connect tensorrt   or   pal connect openvino   or   pal connect foundry" -ForegroundColor Yellow
+            Write-Host "Try: pal connect llamacpp   (local engine)   or   pal connect cloud   (escape path)" -ForegroundColor Yellow
             Write-Host ""
             exit 1
         }

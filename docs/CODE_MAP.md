@@ -145,14 +145,9 @@ outbox / session-persistence contracts).
 - **Background feeder** -> `PalLLM.Sidecar/PromotionLedgerFeeder.cs`
 
 ### Inference-engine connectors (`pal connect <target>`)
-- **llama.cpp `llama-server`** (bundled default) -> `scripts/connect-llamacpp.ps1` (`pal connect llamacpp`)
-- **LM Studio** -> `scripts/connect-lmstudio.ps1` (`pal connect lmstudio`)
-- **vLLM** -> `scripts/connect-vllm.ps1` (`pal connect vllm`)
-- **vLLM-Omni (multimodal)** -> `scripts/connect-vllm-omni.ps1` (`pal connect omni`)
-- **Hugging Face transformers serve** -> `scripts/connect-transformers.ps1` (`pal connect transformers`)
-- **NVIDIA TensorRT-LLM** -> `scripts/connect-tensorrt.ps1` (`pal connect tensorrt`)
-- **OpenVINO Model Server** -> `scripts/connect-openvino.ps1` (`pal connect openvino`)
-- **Microsoft Foundry Local** -> `scripts/connect-foundry.ps1` (`pal connect foundry`)
+llama.cpp is the only local engine; cloud is the escape path for below-reference hardware.
+- **llama.cpp `llama-server`** (bundled, the one local engine) -> `scripts/connect-llamacpp.ps1` (`pal connect llamacpp`)
+- **OpenAI-compatible cloud API** (escape path for below-reference rigs) -> `scripts/connect-cloud.ps1` (`pal connect cloud`)
 
 ### Posture / advisory surfaces (the "what's happening?" answerers)
 - **Privacy posture** -> `Runtime/PrivacyPostureBuilder.cs`

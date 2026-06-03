@@ -106,16 +106,9 @@
     },
 
     "inferenceWiring": {
-      "summary": "One-command path from clean clone to a working LLM endpoint. Nine connectors as of Pass 357; bundled llama.cpp is the default for reference-rig hardware; cloud API is the shipping escape path for below-reference rigs.",
+      "summary": "One-command path from clean clone to a working LLM endpoint. llama.cpp is the only local engine (bundled, default for reference-rig hardware); the OpenAI-compatible cloud API is the shipping escape path for below-reference rigs.",
       "cloudApi": "pwsh ./pal.ps1 connect cloud -Provider openai -Model gpt-4o-mini -ApiKey $env:OPENAI_API_KEY -WriteConfig",
       "llamaCppRaw": "pwsh ./pal.ps1 connect llamacpp -ModelPath <model.gguf>",
-      "lmStudioDesktop": "pwsh ./pal.ps1 connect lmstudio -Model <loaded-id>",
-      "vllmBlackwell": "pwsh ./pal.ps1 connect vllm",
-      "vllmOmniMultimodal": "pwsh ./pal.ps1 connect omni",
-      "transformersServe": "pwsh ./pal.ps1 connect transformers",
-      "tensorrtNvidia": "pwsh ./pal.ps1 connect tensorrt",
-      "openvinoIntel": "pwsh ./pal.ps1 connect openvino -TargetDevice GPU",
-      "foundryWindows": "pwsh ./pal.ps1 connect foundry -FoundryEndpoint <url>",
       "modelEndpointProbe": "pwsh ./pal.ps1 models probe -Json",
       "blackwellRecipes": "docs/BLACKWELL_RECIPES.md",
       "quantizationPrimer": "docs/QUANTIZATION.md",

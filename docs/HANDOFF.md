@@ -3848,7 +3848,7 @@ once they reached the changelog):
   scan reinforced the same generic route-proof/media-smoke pattern; no sibling
   code, prompts, names, branding, or product identity was lifted.
   
-  **Connector hardening:** `scripts/connect-vllm-omni.ps1 -WriteConfig` now
+  **Connector hardening:** `connect-vllm-omni.ps1 -WriteConfig` now
   writes `PalLLM:Vision` only by default and preserves the existing
   `PalLLM:Inference` text endpoint. A new `-WireInference` switch restores
   the old shared endpoint behavior only as an explicit proof-lane override

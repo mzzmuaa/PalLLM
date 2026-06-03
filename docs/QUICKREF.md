@@ -19,7 +19,7 @@ is the page that has the most `Ctrl+F`-friendly hit rate.
 | `check-updates` | Check releases for a newer version | `scripts/check-updates.ps1` |
 | `cleanup` | Preview/remove generated audit coverage and build outputs | `scripts/pal-cleanup.ps1` |
 | `config` | Edit/show/wizard runtime config | `scripts/pal-config-show.ps1`, `scripts/pal-config-wizard.ps1` |
-| `connect` | Wire inference to a local engine or a cloud API (Pass 357: `pal connect cloud` for below-reference hardware) | `scripts/connect-cloud.ps1`, `scripts/connect-llamacpp.ps1`, `scripts/connect-lmstudio.ps1`, `scripts/connect-vllm.ps1`, `scripts/connect-vllm-omni.ps1`, `scripts/connect-transformers.ps1`, `scripts/connect-tensorrt.ps1`, `scripts/connect-openvino.ps1`, `scripts/connect-foundry.ps1` |
+| `connect` | Wire inference to the local llama.cpp engine or the cloud-API escape path (Pass 357: `pal connect cloud` for below-reference hardware) | `scripts/connect-cloud.ps1`, `scripts/connect-llamacpp.ps1` |
 | `context` | Agent context JSON | `scripts/agent-context.ps1` |
 | `demo` | Self-running fallback demo | `scripts/demo-pal.ps1` |
 | `doctor` | Environment + smoke + delivery-replay | `scripts/doctor.ps1 -RunSmoke -RunDeliveryReplay` |

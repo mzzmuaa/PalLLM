@@ -6087,7 +6087,7 @@ it can accept media. The active `D:\Coding` sibling scan reinforced the same
 generic idea through route-proof and media-smoke patterns; no sibling code,
 prompts, names, branding, or product identity was lifted.
 
-**Connector hardening.** `scripts/connect-vllm-omni.ps1 -WriteConfig` now wires
+**Connector hardening.** `connect-vllm-omni.ps1 -WriteConfig` now wires
 `PalLLM:Vision` to the vLLM-Omni endpoint by default and preserves the existing
 `PalLLM:Inference` text endpoint. Operators can still pass `-WireInference` as
 an explicit proof-lane override after the exact endpoint has passed text-only
@@ -14549,7 +14549,7 @@ recommended but `pal connect` did not yet expose.
 Small local-model usability pass focused on the GGUF desktop lane already
 described by the runtime but missing a first-class one-command connector.
 
-- **New `pal connect lmstudio`.** Added `scripts/connect-lmstudio.ps1`
+- **New `pal connect lmstudio`.** Added `connect-lmstudio.ps1`
   and wired it through `pal.ps1`, `pal.json`, `agents.json`, the model-serving
   helper, welcome/next/benchmark scripts, and code-map/index docs. The helper
   probes `/v1/models`, prints `lms server start`, `lms load`, `lms ps`, and
@@ -14775,7 +14775,7 @@ that path as a proof-gated `/v1` lane beside Ollama, vLLM, SGLang, llama.cpp,
   speculation A/B proof, disaggregated serving / Dynamo proof, malformed-media
   fallback, exact JSON/tool-call parse success, and deterministic fallback
   activation.
-- **New `pal connect tensorrt`.** Added `scripts/connect-tensorrt.ps1` plus
+- **New `pal connect tensorrt`.** Added `connect-tensorrt.ps1` plus
   `pal.ps1`, `pal.json`, `agents.json`, `pal models serving`, and docs
   coverage. The helper prints bare-metal and Docker setup commands, uses
   loopback for bare metal and container `0.0.0.0` only inside Docker, verifies
@@ -14818,7 +14818,7 @@ vLLM, SGLang, llama.cpp, `transformers serve`, and Foundry Local.
   behavior, INT4 edge-model warmup, VLM media allowlists, ASR proof lanes, NPU
   `PREFILL_HINT` / `GENERATE_HINT` experiments, warm p50/p95 latency, exact
   JSON/tool-call parse success, and deterministic fallback activation.
-- **New `pal connect openvino`.** Added `scripts/connect-openvino.ps1` plus
+- **New `pal connect openvino`.** Added `connect-openvino.ps1` plus
   `pal.ps1`, `pal.json`, `agents.json`, `pal models serving`, `pal next`, and
   `pal welcome` coverage. The helper prints both `ovms.exe` and Docker setup
   commands, keeps the target device explicit, verifies `/v3/models` and
@@ -14862,7 +14862,7 @@ single-user Windows lane beside Ollama, vLLM, SGLang, llama.cpp, and
   `/openai/status`, `/openai/models`, execution-provider receipts, first-use
   cache/download behavior, warm p50/p95 latency, exact JSON/tool-call parse
   success, fallback activation, and optional ASR proof.
-- **New `pal connect foundry`.** Added `scripts/connect-foundry.ps1` plus
+- **New `pal connect foundry`.** Added `connect-foundry.ps1` plus
   `pal.ps1` routing and `pal.json` manifest coverage. The helper prints the
   Foundry Local setup and verification commands, resolves or accepts the
   dynamic endpoint, normalizes PalLLM `BaseUrl` to `<endpoint>/v1/`, and can
@@ -14984,7 +14984,7 @@ llama.cpp.
   short-request starvation, exact JSON/tool-call parse success, and fallback
   activation.
 - **New `pal connect transformers`.** Added
-  `scripts/connect-transformers.ps1` plus `pal.ps1` routing and `pal.json`
+  `connect-transformers.ps1` plus `pal.ps1` routing and `pal.json`
   manifest coverage. The helper prints copy-paste setup commands, warns when
   no revision is pinned, verifies `/v1/models` and `/load_model` commands,
   and can write `PalLLM:Inference` plus optional `PalLLM:Vision` config with
@@ -15041,7 +15041,7 @@ ideas. The active `D:\Coding` sibling scan reinforced model decisions as
 auditable promotion choices; no sibling code, branding, or identity was copied.
 
 Verification: focused `ModelTierTests` + `MetaTests` `34 / 34`;
-`scripts/connect-vllm.ps1` parser check PASS; `connect-vllm.ps1 -DryRun`
+`connect-vllm.ps1` parser check PASS; `connect-vllm.ps1 -DryRun`
 prints `Performance: interactivity` and `--performance-mode interactivity`;
 `dotnet test` `645 / 645`; full audit `15/15` PASS at
 `artifacts/full-audit/20260506-090803/RESULTS.md`. No new test case, route,
@@ -16473,7 +16473,7 @@ without starting the active watcher.
   `pal.json`, `Makefile`, `QUICKREF.md`, `CHEAT_SHEET.md`, and `INDEX.md`.
   While resyncing the verb manifest, fixed two stale manifest paths
   (`pack new` now points at `scripts/scaffold-pack.ps1`, and `connect` includes
-  `scripts/connect-vllm-omni.ps1`), removed a hard-coded verb count from
+  `connect-vllm-omni.ps1`), removed a hard-coded verb count from
   `pal-next.ps1`, and taught `pal next` to include native proof state so it can
   recommend `pal proof` when the normal repo/operator posture is otherwise
   healthy.
@@ -16629,7 +16629,7 @@ changes.
   Library landscape table compares Mem0 (48k stars, the default),
   Letta (MemGPT successor), Zep (temporal graph; 15-pt
   LongMemEval lead).
-- **`scripts/connect-vllm-omni.ps1`** + **`pal connect omni`** --
+- **`connect-vllm-omni.ps1`** + **`pal connect omni`** --
   new subcommand under the existing `pal connect` router. Two
   profiles:
     - `omni-text-out` (default): multimodal IN (image + audio +
@@ -17626,7 +17626,7 @@ Pure documentation + tooling additions; zero runtime code changes.
   - Friendly error path when Ollama is unreachable: names the
     four common causes (not installed, daemon not running, wrong
     URL, different engine) with copy-pastable fixes.
-- **`scripts/connect-vllm.ps1`** + **`pal connect vllm`**
+- **`connect-vllm.ps1`** + **`pal connect vllm`**
   - The "one-click Blackwell" wizard. Probes `/api/hardware`,
     picks the right recipe from a 5-use-case x 4-tier matrix
     (companion / coding / productivity / vision / narration vs

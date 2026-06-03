@@ -2033,14 +2033,10 @@ public sealed class MetaTests
             "pal.ps1 should expose the model serving profile checklist under pal models serving.");
         Assert.That(palRunner, Does.Contain("'probe'").And.Contain("scripts/pal-model-probe.ps1"),
             "pal.ps1 should expose the model endpoint evidence probe under pal models probe.");
-        Assert.That(palRunner, Does.Contain("'transformers'").And.Contain("scripts/connect-transformers.ps1"),
-            "pal.ps1 should expose the transformers serve connection helper under pal connect transformers.");
-        Assert.That(palRunner, Does.Contain("'lmstudio'").And.Contain("scripts/connect-lmstudio.ps1"),
-            "pal.ps1 should expose the LM Studio connection helper under pal connect lmstudio.");
         Assert.That(palRunner, Does.Contain("'llamacpp'").And.Contain("scripts/connect-llamacpp.ps1"),
-            "pal.ps1 should expose the llama.cpp connection helper under pal connect llamacpp.");
-        Assert.That(palRunner, Does.Contain("'openvino'").And.Contain("scripts/connect-openvino.ps1"),
-            "pal.ps1 should expose the OpenVINO Model Server connection helper under pal connect openvino.");
+            "pal.ps1 should expose the llama.cpp connection helper under pal connect llamacpp (the only local engine).");
+        Assert.That(palRunner, Does.Contain("'cloud'").And.Contain("scripts/connect-cloud.ps1"),
+            "pal.ps1 should expose the cloud-API escape path under pal connect cloud (below-reference-rig hardware).");
 
         string healthScriptPath = Path.Combine(RepoRoot, "scripts", "pal-health.ps1");
         Assert.That(File.Exists(healthScriptPath), "Health snapshot script missing.");
@@ -2102,31 +2098,6 @@ public sealed class MetaTests
                 .And.Contain("No chat, image, audio, tool-call, or player payload content was sent or stored."),
             "pal models probe should produce no-prompt model endpoint evidence for cache, KV, and speculative decoding metrics.");
 
-        string connectTransformersScriptPath = Path.Combine(RepoRoot, "scripts", "connect-transformers.ps1");
-        Assert.That(File.Exists(connectTransformersScriptPath), "transformers serve connection wizard missing.");
-        string connectTransformersScript = File.ReadAllText(connectTransformersScriptPath);
-        Assert.That(connectTransformersScript,
-            Does.Contain("transformers[serving]")
-                .And.Contain("--continuous-batching")
-                .And.Contain("transformers serve $modelRef")
-                .And.Contain("/load_model")
-                .And.Contain("Revision")
-                .And.Contain("WireVision")
-                .And.Contain("DryRun = $DryRun.IsPresent"),
-            "pal connect transformers should keep Hugging Face serving local, revision-aware, continuous-batching-capable, and dry-run safe.");
-
-        string connectLmStudioScriptPath = Path.Combine(RepoRoot, "scripts", "connect-lmstudio.ps1");
-        Assert.That(File.Exists(connectLmStudioScriptPath), "LM Studio connection wizard missing.");
-        string connectLmStudioScript = File.ReadAllText(connectLmStudioScriptPath);
-        Assert.That(connectLmStudioScript,
-            Does.Contain("lms server start")
-                .And.Contain("/v1/models")
-                .And.Contain("ResidencyProvider")
-                .And.Contain("LmStudio")
-                .And.Contain("ttl")
-                .And.Contain("DryRun = $DryRun.IsPresent"),
-            "pal connect lmstudio should keep the desktop server local, model-id explicit, TTL-aware, and dry-run safe.");
-
         string connectLlamaCppScriptPath = Path.Combine(RepoRoot, "scripts", "connect-llamacpp.ps1");
         Assert.That(File.Exists(connectLlamaCppScriptPath), "llama.cpp connection wizard missing.");
         string connectLlamaCppScript = File.ReadAllText(connectLlamaCppScriptPath);
@@ -2142,42 +2113,6 @@ public sealed class MetaTests
                 .And.Contain("Disabled")
                 .And.Contain("DryRun = $DryRun.IsPresent"),
             "pal connect llamacpp should keep raw llama-server lanes local, metrics-visible, residency-neutral, and dry-run safe.");
-
-        string connectOpenVinoScriptPath = Path.Combine(RepoRoot, "scripts", "connect-openvino.ps1");
-        Assert.That(File.Exists(connectOpenVinoScriptPath), "OpenVINO Model Server connection wizard missing.");
-        string connectOpenVinoScript = File.ReadAllText(connectOpenVinoScriptPath);
-        Assert.That(connectOpenVinoScript,
-            Does.Contain("/v3/chat/completions")
-                .And.Contain("/v3/models")
-                .And.Contain("--target_device")
-                .And.Contain("OpenVINO/Qwen3-8B-int4-ov")
-                .And.Contain("DryRun = $DryRun.IsPresent")
-                .And.Contain("WireVision"),
-            "pal connect openvino should keep OpenVINO Model Server local, /v3-aware, target-device explicit, and dry-run safe.");
-
-        string connectVllmScriptPath = Path.Combine(RepoRoot, "scripts", "connect-vllm.ps1");
-        Assert.That(File.Exists(connectVllmScriptPath), "vLLM connection wizard missing.");
-        string connectVllmScript = File.ReadAllText(connectVllmScriptPath);
-        Assert.That(connectVllmScript,
-            Does.Contain("--kv-cache-dtype $kvCacheDtype")
-                .And.Contain("--performance-mode $performanceMode")
-                .And.Contain("'interactivity'")
-                .And.Contain("--prefix-caching-hash-algo sha256_cbor")
-                .And.Contain("--enable-chunked-prefill")
-                .And.Contain("DryRun = $DryRun.IsPresent")
-                .And.Not.Contain("--calculate-kv-scales"),
-            "pal connect vllm should emit current proof-gated cache and low-latency flags, report dry runs accurately, and avoid deprecated dynamic KV-scale calculation.");
-
-        string connectOmniScriptPath = Path.Combine(RepoRoot, "scripts", "connect-vllm-omni.ps1");
-        Assert.That(File.Exists(connectOmniScriptPath), "vLLM-Omni connection wizard missing.");
-        string connectOmniScript = File.ReadAllText(connectOmniScriptPath);
-        Assert.That(connectOmniScript,
-            Does.Contain("WireInference")
-                .And.Contain("same-endpoint text+media proof")
-                .And.Contain("$pal['Vision']['BaseUrl'] = $baseUrl")
-                .And.Contain("if ($WireInference.IsPresent)")
-                .And.Contain("$pal['Inference']['BaseUrl'] = $baseUrl"),
-            "pal connect omni should wire the media lane by default and require explicit proof-lane intent before replacing text inference.");
 
         string domainJsonContextPath = Path.Combine(RepoRoot, "src", "PalLLM.Domain", "PalLlmDomainJsonSerializerContext.cs");
         string domainJsonContext = File.ReadAllText(domainJsonContextPath);

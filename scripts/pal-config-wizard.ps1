@@ -92,7 +92,7 @@ if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
 $ConfigPath = [IO.Path]::GetFullPath($ConfigPath)
 
 # -----------------------------------------------------------------------------
-# JSON helpers (shared shape with connect-ollama / connect-vllm)
+# JSON helpers (shared shape with connect-llamacpp / connect-cloud)
 # -----------------------------------------------------------------------------
 
 function ConvertTo-MutableConfig {
