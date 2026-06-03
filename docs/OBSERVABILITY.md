@@ -68,12 +68,11 @@ spans automatically.
 | (auto) outbound HTTP | `System.Net.Http.*` | One per outbound `HttpClient` call | OTel HTTP client semconv |
 
 The GenAI span and metric provider label stays low-cardinality. Hosted
-providers use their vendor label when the host is known; local runtimes are
-classified only from stable host/path hints or loopback/LAN default-port hints
-(`llama.cpp` (default), `lmstudio`, `vllm`, `sglang`, `tensorrt_llm`,
-`openvino`, `foundry_local`, or `transformers`). Ambiguous endpoints, including
-a plain `localhost:8000/v1/`, stay `openai_compatible` until the host/path gives
-a clearer signal.
+providers use their vendor label when the host is known (an `openai.com` host
+resolves to `openai`); the bundled local engine resolves to `llama.cpp` from
+its host/path or loopback default port 8080. Every other OpenAI-compatible
+endpoint — including the cloud escape path and a plain `localhost:8000/v1/` —
+stays `openai_compatible` until the host/path gives a clearer signal.
 
 The `pal.chat` span is the per-turn root for PalLLM-emitted work
 and carries every per-turn diagnostic tag including the fallback

@@ -16,7 +16,7 @@ Last audited: `2026-05-22`
 
 Concrete operator recipes for PalLLM's bundled llama.cpp engine. This
 doc is the applied companion to [`BLACKWELL_RECIPES.md`](BLACKWELL_RECIPES.md)
-(vLLM/TensorRT-LLM oriented) and
+(Blackwell / NVFP4 GGUF recipes on the same bundled engine) and
 [`LOCAL_MODELS_INVENTORY.md`](LOCAL_MODELS_INVENTORY.md) (the operator's
 curated `D:\Models` library). When something here disagrees with one
 of those, this doc is the source of truth for **the bundled
@@ -689,9 +689,10 @@ support — relevant on Hopper NVLink dual-GPU setups.
 
 ## What this doc deliberately does NOT cover
 
-- **vLLM / TensorRT-LLM recipes** — those live in
-  [`BLACKWELL_RECIPES.md`](BLACKWELL_RECIPES.md). vLLM is the operator's
-  high-config option; llama.cpp is the bundled and default.
+- **Blackwell / NVFP4 GGUF recipes** — those live in
+  [`BLACKWELL_RECIPES.md`](BLACKWELL_RECIPES.md). llama.cpp is the bundled and
+  only local engine; below-reference hardware uses the `pal connect cloud`
+  escape path.
 - **GGUF quantization theory** — that's
   [`QUANTIZATION.md`](QUANTIZATION.md).
 - **MTP / draft-MTP / EAGLE pedagogy** — see

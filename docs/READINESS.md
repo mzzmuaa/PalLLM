@@ -64,14 +64,14 @@ live in-game work I cannot do autonomously.
 | 2 | Download / extract | **7/10** | SHA-256 + sigstore + SLSA + checksums all ship. Windows SmartScreen unavoidable for unsigned `.bat`. | Code-signed `.bat` (or wrap as a signed `.exe` launcher). |
 | 3 | Install (one-click) | **9.5/10** | `play.bat` auto-detects Palworld, installs mod, boots sidecar, opens dashboard, launches game. Atomic install with rollback. | Interactive prompt for missing UE4SS prerequisite. |
 | 4 | First chat (deterministic) | **7/10** | 19 hand-authored fallback strategies + emergency tier always answer. Replies are competent, not magical. | By-design ceiling - deterministic replies stay predictable on purpose. |
-| 5 | First chat (with inference) | **9/10** | Works against any OpenAI-compatible endpoint. Nine first-party connectors via `pal connect <target>` (`cloud`, `llamacpp`, `lmstudio`, `vllm`, `vllm-omni`, `transformers`, `tensorrt`, `openvino`, `foundry`). Each has `-DryRun` preview, `.bak` backup, hardware-tier-aware recommendation. | One-click "Connect to llama.cpp" button inside the dashboard. |
+| 5 | First chat (with inference) | **9/10** | Works against any OpenAI-compatible endpoint. Two first-party connectors via `pal connect <target>` (`llamacpp` for the bundled local engine, `cloud` for the below-reference-rig escape). Each has `-DryRun` preview, `.bak` backup, hardware-tier-aware recommendation. | One-click "Connect to llama.cpp" button inside the dashboard. |
 | 6 | **In-game experience (native HUD/audio/actions)** | **5/10** | **The biggest gap.** Replies render via generic `ClientMessage`, not a true subtitle / portrait / HUD. Audio is local Windows playback fallback, not in-world. `recall_pals` and `request_craft_queue` show feedback messages but don't execute natively. | Phase 4 + Phase 5 of [`ROADMAP.md`](ROADMAP.md) - requires live Palworld + UE4SS session (~12-13pp of the remaining 23.8%). |
 | 7 | Configuration | **8/10** | `pal config` opens / shows / wizards `appsettings.json`. The wizard is a 5-question interactive setup; `show` annotates each value's source (file vs env-var vs default); `-Json` for programmatic consumption. [`ENV_VARS.md`](ENV_VARS.md) + [`TUNING.md`](TUNING.md) are comprehensive. | Dashboard-side editor with validation + diff preview before save. |
 | 8 | Diagnose / troubleshoot | **9.7/10** | `pal doctor`, `pal support`, `pal logs`, `pal preflight`, `pal proof`, [`RUNBOOK.md`](RUNBOOK.md) per-symptom playbook, friendly errors with "try this next" hints. | One-click "send anonymized support bundle" button inside the dashboard. |
 | 9 | Uninstall | **9.5/10** | One-click `uninstall.bat` with manifest-based atomic uninstall, `/preview`, `/full`, preserves chat history by default. | Snapshot-rollback via Windows shadow copies (2030 territory). |
 | 10 | Customize (personality packs) | **8.5/10** | `pack.json` format with content-hash integrity. Four reference packs (Warrior / Scholar / Healer / Trickster). `pal pack list / copy / new` covers the full lifecycle. Walkthrough at [`PACK_SAMPLES.md`](PACK_SAMPLES.md). | Pack browser / marketplace in the dashboard with one-click install. |
 | 11 | MCP integration | **9/10** | 38 tools, 6 resources + 1 template, 4 prompts. Example configs ship for Claude Desktop / VS Code / Cursor. `pal mcp connect <client>` wires the config idempotently. | One-click in-dashboard "wire to <my MCP client>" button. |
-| 12 | Performance (Blackwell + NVFP4 + vLLM) | **9.8/10** | `Chat.Inference` lands sub-second on a 5090 with 70B NVFP4. `pal connect vllm` picks a recipe; `pal connect omni` for multimodal lanes (Gemma 3n/4, Qwen3-Omni). See [`BLACKWELL_RECIPES.md`](BLACKWELL_RECIPES.md), [`MULTIMODAL_RECIPES.md`](MULTIMODAL_RECIPES.md), `AGENTIC_PATTERNS_2026.md` (retired Pass 418), `MEMORY_RECIPES.md` (retired Pass 418). | One-click "boot + wait + verify" path that survives a model pull on first run. |
+| 12 | Performance (Blackwell + NVFP4 GGUF on llama.cpp) | **9.8/10** | `Chat.Inference` lands sub-second on a 5090 with a 70B NVFP4 GGUF. `pal connect llamacpp` picks a per-family recipe; `--mmproj` adds multimodal lanes (Gemma 3n/4, Qwen3-Omni). See [`BLACKWELL_RECIPES.md`](BLACKWELL_RECIPES.md), [`MULTIMODAL_RECIPES.md`](MULTIMODAL_RECIPES.md), `AGENTIC_PATTERNS_2026.md` (retired Pass 418), `MEMORY_RECIPES.md` (retired Pass 418). | One-click "boot + wait + verify" path that survives a model pull on first run. |
 | 13 | Performance (typical hardware) | **7.5/10** | 1-3 second per-turn latency with a local engine on most PCs. `pal benchmark` measures actual cold/median/p95/max vs the per-tier budgets in [`HOT_PATH.md`](HOT_PATH.md) (Constrained 1500ms warm / Standard 900ms / Generous 600ms / Blackwell 450ms). | One-click "speed mode" preset that prefers smaller models. |
 | 14 | Polish (dashboard + error messages) | **7.7/10** | Functional vanilla HTML/CSS/JS dashboard. `pal welcome` (60-second tour), `pal preflight` (12-check readiness verdict). Friendly errors with "try this next" hints. | Dashboard visual redesign, animated transitions, polished theming. |
 | 15 | Documentation | **9/10** | 63 docs, drift-gated, [Diataxis](https://diataxis.fr/)-organized. [`CODE_MAP.md`](CODE_MAP.md) gives small models the full project replication recipe. | A "5 docs to read in order" dropdown on the dashboard. |
@@ -110,11 +110,11 @@ queues 3-5. That's `~12.5%` of the honest roadmap remaining.
 
 ### B. Player on Blackwell hardware (5090 / B-series)
 
-**Realistic experience: 8/10 today, 10/10 once they configure vLLM.**
+**Realistic experience: 8/10 today, 10/10 once they load an NVFP4 GGUF.**
 
-- The default Ollama path gives 1-3s per turn - same as any other
+- The default llama.cpp path gives 1-3s per turn - same as any other
   GPU.
-- Switching to vLLM + an NVFP4 model (per `docs/BLACKWELL_RECIPES.md`)
+- Loading an NVFP4 GGUF (per `docs/BLACKWELL_RECIPES.md`)
   drops `Chat.Inference` to sub-second and quality stays near
   FP16. This is genuinely 10/10 territory once configured.
 - The configuration step is documented but not yet a one-click
@@ -196,7 +196,7 @@ Each is 1-2 passes of focused work, all autonomous.
 | Clean-machine release proof | Requires a clean Windows machine without dev artifacts. | Operator with hardware |
 | Community ecosystem (4 -> 9) | Requires people: Discord, marketplace, contributor pipeline. | Community |
 | Localization (3 -> 9) | Requires translators per locale. | Community |
-| Hardware-specific perf (7 -> 10) | Requires the user to have Blackwell + configure vLLM. | User hardware |
+| Hardware-specific perf (7 -> 10) | Requires the user to have Blackwell + load an NVFP4 GGUF. | User hardware |
 | Visual polish (7 -> 10) | Requires designer time + asset pipeline. | Designer |
 
 ## How users would actually rate it 10/10

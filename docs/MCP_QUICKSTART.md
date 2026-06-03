@@ -61,8 +61,8 @@ Or if you built from source:
 dotnet run --project src\PalLLM.Sidecar\PalLLM.Sidecar.csproj
 ```
 
-Or via Docker Compose (llama.cpp + PalLLM together — Pass 339 dropped
-Ollama support; see `docs/examples/compose.yaml`):
+Or via Docker Compose (llama.cpp + PalLLM together; see
+`docs/examples/compose.yaml`):
 
 ```bash
 docker compose -f docs/examples/compose.yaml up -d

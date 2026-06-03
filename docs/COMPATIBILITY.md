@@ -85,7 +85,7 @@ deterministically from `(coreCount, ramGiB, gpuPresent)` - see
 
 The three values are the live `DuoHardwareTier` enum
 (`src/PalLLM.Domain/Inference/DuoOrchestratorPlanner.cs:400`).
-For 2025+ Blackwell hardware (5090 / B-series with NVFP4 + vLLM)
+For 2025+ Blackwell hardware (5090 / B-series with an NVFP4 GGUF on llama.cpp)
 the system still reports `Generous` - Blackwell is a sub-recipe
 of Generous, not a fourth enum value. The `pal benchmark`
 script defines an additional `Blackwell` budget row for live
@@ -187,8 +187,7 @@ is missing.
 |---|---|---|---|
 | llama.cpp server (bundled, loopback) | `http://127.0.0.1:8080/v1/` | **Reference** | Default in `appsettings.json`; installed via `pal install-llama-cpp` |
 | llama.cpp server (LAN) | `http://<host>:8080/v1/` | Supported | Set `PalLLM:Inference:BaseUrl` |
-| vLLM | `http://<host>:8000/v1/` | Supported | OpenAI-compatible; high-VRAM rigs |
-| Text Generation Inference | `http://<host>:3000/v1/` | Supported | OpenAI-compatible (messages API) |
+| OpenAI-compatible cloud API | `https://<provider>/v1/` | Supported (escape path) | Below-reference-rig escape via `pal connect cloud`; leaves the air-gap boundary |
 | OpenAI direct | `https://api.openai.com/v1/` | Works but not recommended | Leaks chat traffic off-device; `/api/airgap/verify` will mark `public-internet` |
 
 ## Reporting a new compatibility entry

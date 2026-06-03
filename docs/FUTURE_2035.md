@@ -4,7 +4,7 @@ Last audited: `2026-05-22`
 
 PalLLM today is a local-first companion runtime with a portable adapter
 seam, a deterministic fallback director, a 38-tool MCP surface, an
-opt-in inference path that reaches eight engines (llama.cpp default; vLLM for high-config GPUs; Ollama removed in Pass 339), an
+opt-in inference path to the bundled llama.cpp engine (with an OpenAI-compatible cloud escape for below-reference hardware), an
 operator-actionable Suggestions surface, and a 122-entry feature
 catalog. Most of the architecture is already in place; what stays
 deliberately in front of the project is a set of forward-looking ideas
@@ -50,10 +50,9 @@ extend rather than replace:
   decision + evidence + provenance, queryable post-hoc.
 - **Suggestions surface** - operator-actionable hints flowing through
   9 consumer surfaces from one builder.
-- **Nine inference connectors** - Ollama, llama.cpp, LM Studio, vLLM,
-  vLLM-Omni, transformers serve, TensorRT-LLM, OpenVINO, Foundry
-  Local - each with `-DryRun` preview, `.bak` config backup, and
-  hardware-tier-aware recipe selection where applicable.
+- **Two inference connectors** - the bundled llama.cpp engine and an
+  OpenAI-compatible cloud escape - each with `-DryRun` preview, `.bak` config
+  backup, and hardware-tier-aware recipe selection where applicable.
 - **MCP-over-HTTP** at `/mcp` with 38 tools, 6 resources + 1 template,
   4 prompts. Discoverable and stable across protocol version
   `2025-06-18`.
@@ -129,8 +128,8 @@ because inference was cold, the runtime kicks off a background
 `WarmAsync(samePrompt)` that primes the KV cache. Next real turn
 hits warm cache.
 
-**What blocks it today.** Most local engines (Ollama, llama.cpp)
-already do prompt caching automatically. The speculative win is
+**What blocks it today.** The bundled llama.cpp engine already does
+prompt caching automatically. The speculative win is
 small for typical conversation cadence. Worth implementing when
 the latency budget tightens (e.g. real-time voice loops).
 
@@ -256,8 +255,8 @@ Source: [`MODELS_2026.md` §6 — Embeddings](MODELS_2026.md#6-embeddings--memor
 **Where it fits.**
 [`src/PalLLM.Domain/Inference/InferenceClient.cs`](../src/PalLLM.Domain/Inference/InferenceClient.cs)
 forwards an optional `lora_request` field on chat-completions when
-the active personality pack declares one. vLLM and llama.cpp both
-support adapter hot-swap natively.
+the active personality pack declares one. llama.cpp supports adapter
+hot-swap natively.
 
 **First deliverable.** `PersonalityPackManifest` now has
 `LoraAdapterPath` plus `VoiceRefPath`, `VoiceConsent`,
@@ -458,7 +457,7 @@ operators wire their own diffusion endpoint via existing
 OpenAI-compatible image-generation routes).
 
 **What blocks it today.** No native diffusion connector script
-yet. The recent connectors (Ollama / vLLM / TensorRT) cover text
+yet. The current connectors (bundled llama.cpp + cloud escape) cover text
 + multimodal; image-out is a separate engine class.
 
 ## Hard "no"s (deliberately not pursued)

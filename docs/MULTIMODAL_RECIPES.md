@@ -1,6 +1,6 @@
 # Multimodal recipes — vision, audio, realtime (2026)
 
-Last audited: `2026-05-25`
+Last audited: `2026-06-03`
 
 The companion to [`BLACKWELL_RECIPES.md`](BLACKWELL_RECIPES.md). Where
 that doc covers text-only inference on Blackwell, this doc covers
@@ -12,33 +12,33 @@ chat (via `VisionClient`) and TTS-out (via `TtsClient`). What's
 new in 2026 is:
 
 1. **OpenAI-compatible audio in / audio out** is now the standard
-   wire shape - Qwen3-Omni / vLLM-Omni / OpenAI-compatible realtime stacks
-   speak it.
+   wire shape - Qwen3-Omni and OpenAI-compatible realtime stacks speak it.
 2. **Gemma 3n**, **Gemma 4**, and **Qwen3-Omni** expose native
-   audio-capable multimodal paths you can light up locally. Qwen3.6 stays
+   audio-capable multimodal paths you can light up locally on the bundled
+   llama.cpp engine (with the matching `--mmproj`). Qwen3.6 stays
    text/image/video in the normal PalLLM model matrix; use cascaded ASR or an
    Omni lane for speech until the exact Gemma runtime/model artifact is proven.
 3. **Realtime WebSocket** has settled as the bidirectional voice
    transport — `/v1/realtime`, server-VAD, sub-100ms TTFA on the
    right model + GPU pair.
-4. **Streaming video WebSocket** is emerging in vLLM-Omni as
-   `/v1/video/chat/stream`; PalLLM treats it as a proof-only Palworld clip
-   lane until frame cadence, audio chunk, reconnect, and fallback evidence
-   are recorded.
-5. **Video generation** through vLLM-Omni `/v1/videos` is a different async
-   diffusion-job surface. It is useful for offline release walkthroughs or
+4. **Streaming video WebSocket** (`/v1/video/chat/stream`) is emerging on
+   omni stacks; PalLLM treats it as a proof-only Palworld clip lane until frame
+   cadence, audio chunk, reconnect, and fallback evidence are recorded.
+5. **Video generation** through an omni `/v1/videos` surface is a different
+   async diffusion-job surface. It is useful for offline release walkthroughs or
    proof-bundle material, not for companion chat, screenshot understanding, or
    live Palworld HUD rendering.
 
 This doc is recipe-shaped: pick the use case, copy the snippet.
 
-> **Honest scope note.** Most recipes here describe operator
-> server-side setup (vLLM-Omni / vLLM-Audio / SGLang). PalLLM's
-> own runtime today consumes the standard `/v1/chat/completions`
-> path; the seams for audio-in / audio-out / realtime-WS are
-> documented + scaffolded but the chat hot path stays text-first
-> by design. See "What PalLLM does today vs. what these recipes
-> light up" at the bottom for the honest line.
+> **Honest scope note.** Most recipes here describe operator server-side setup
+> on the bundled llama.cpp `llama-server` (vision/audio via `--mmproj`, speech
+> via the talker/code2wav `/v1/audio/speech` endpoint) or — for surfaces
+> llama.cpp does not serve — an OpenAI-compatible cloud escape. PalLLM's own
+> runtime today consumes the standard `/v1/chat/completions` path; the seams
+> for audio-in / audio-out / realtime-WS are documented + scaffolded but the
+> chat hot path stays text-first by design. See "What PalLLM does today vs.
+> what these recipes light up" at the bottom for the honest line.
 
 ## Index
 
@@ -66,16 +66,18 @@ until the exact server build passes a same-process negative canary. Text-MTP
 wins do not qualify `image_url`, `video_url`, `input_audio`, or `audio_url`
 routes; those stay no-spec or separately proven.
 
-`pal connect omni -WriteConfig` now follows that split-lane posture: it wires
-`PalLLM:Vision` to the vLLM-Omni endpoint by default and leaves the existing
-text `PalLLM:Inference` lane alone. Add `-WireInference` only after the exact
-same endpoint has replay proof for text-only chat, screenshot/image, audio,
-strict JSON/tool-call, latency, fallback counters, and stall behavior.
+To keep that split-lane posture with the bundled engine, run a second
+llama-server process (or port) for the multimodal/`--mmproj` lane and point
+`PalLLM:Vision` at it, leaving the text `PalLLM:Inference` lane on its own
+server. Only collapse the two onto one server after the exact build has replay
+proof for text-only chat, screenshot/image, audio, strict JSON/tool-call,
+latency, fallback counters, and stall behavior. (The dedicated `pal connect
+omni` verb was removed in Pass 436 along with the other alt-engine connectors.)
 
 ## 1. Vision-in (single image)
 
-The OpenAI-compatible wire shape (works on vLLM, Ollama, llama.cpp,
-SGLang):
+The OpenAI-compatible wire shape (works on the bundled llama.cpp engine and any
+OpenAI-compatible cloud endpoint):
 
 ```json
 {
@@ -97,8 +99,9 @@ PalLLM's `VisionClient` already speaks this. Point the
 Qwen2-VL, LLaVA-Next, etc.) and the existing `/api/vision/describe`
 endpoint works.
 
-vLLM can cache repeated media processing when the caller supplies stable media
-UUIDs. PalLLM tags each outgoing vision `image_url` part with a stable
+OpenAI-compatible multimodal servers can cache repeated media processing when
+the caller supplies stable media UUIDs. PalLLM tags each outgoing vision
+`image_url` part with a stable
 content-hash id (`palllm-image-sha256-*`) when
 `PalLLM:Vision:UseMediaCacheIds=true` (default). Prompt-level
 `InferencePrompt.UserContent` canaries do the same for local base64
@@ -107,9 +110,9 @@ content-hash id (`palllm-image-sha256-*`) when
 `palllm-{image|video|audio}-sha256-*` ids. Strict endpoints that reject unknown
 content-part fields can disable the matching knob without disabling vision or
 inference. Send the media on cache misses; only skip the payload in future work
-when that UUID is known to be warm in the same vLLM process.
+when that UUID is known to be warm in the same server process.
 
-For vLLM-compatible lanes that spend too much time in image/video preprocessing,
+For OpenAI-compatible lanes that spend too much time in image/video preprocessing,
 PalLLM can also emit `mm_processor_kwargs`. Configure
 `PalLLM:Vision:MultimodalProcessor` for screenshot requests, or
 `PalLLM:Inference:MultimodalProcessor` / prompt-level
@@ -118,8 +121,8 @@ The supported fields are `min_pixels`, `max_pixels`, `max_soft_tokens`, and
 `fps`; all are omitted by default. Prove the exact endpoint accepts the shape
 and improves TTFT/VRAM before using the caps in a live Palworld companion lane.
 
-For heavier repeated-media loops, current vLLM v1 can also be paired with
-LMCache's encoder-cache connector. Treat this as a separate cache from text KV
+For heavier repeated-media loops, an OpenAI-compatible server may expose a
+separate encoder cache. Treat this as a separate cache from text KV
 reuse: set an explicit CPU or disk budget, choose a local path if persistence is
 desired, and prove cold vs warm media TTFT plus cache-hit/log evidence before
 claiming a win. This is useful for repeated Palworld proof screenshots,
@@ -130,8 +133,8 @@ latency; it is usually overkill for one-off single-frame asks.
 
 Qwen3-VL and Gemma 4 31B accept multiple images per request.
 Same `image_url` blocks, just more of them — the OpenAI wire
-shape supports this natively. vLLM enforces a per-prompt cap via
-`--limit-mm-per-prompt image=4`.
+shape supports this natively. PalLLM caps multi-image inputs at the admission
+layer; the bundled llama-server enforces its own per-prompt media limits.
 
 PalLLM today caps `VisionRequest` to one image. To accept multiple,
 the `VisionOptions:MaxImagesPerRequest` knob (planned, see
@@ -139,20 +142,20 @@ the `VisionOptions:MaxImagesPerRequest` knob (planned, see
 of images. The internal `VisionRequest` record would carry a
 list rather than a single image.
 
-vLLM serve flag for batched-image use:
+Bundled llama-server start for batched-image use (the `--mmproj` projector is
+what enables vision; cap concurrent slots to the session count):
 
 ```bash
-docker run --gpus all --rm -p 8000:8000 \
-  -e VLLM_MEDIA_URL_ALLOW_REDIRECTS=0 \
-  vllm/vllm-openai:latest \
-  --model google/gemma-4-31b-it \
-  --limit-mm-per-prompt image=4
+llama-server -m D:\Models\Gemma\gemma-4-31b-it-UD-Q4_K_XL.gguf -a gemma-4-31b-it \
+  --mmproj D:\Models\mmproj\mmproj-F16.gguf \
+  --host 127.0.0.1 --port 8080 -c 16384 -ngl 99 \
+  --flash-attn on --metrics --no-webui
 ```
 
-PalLLM's current vision path sends base64 data URLs, so vLLM does not need to
-fetch arbitrary remote media. If an operator adds remote image/video URLs,
-start vLLM with an explicit `--allowed-media-domains` allowlist and keep
-redirects disabled so a media URL cannot bounce into a private network. Before
+PalLLM's current vision path sends base64 data URLs, so the server does not need
+to fetch arbitrary remote media. If an operator adds remote image/video URLs,
+keep a tight server-side media allowlist and disable redirects so a media URL
+cannot bounce into a private network. Before
 promoting any remote-media profile, run a negative replay with localhost,
 private-range, link-local, IP-literal, and redirect-to-private URLs and confirm
 they fail before model execution. Keep the normal player path on local bytes.
@@ -197,27 +200,19 @@ local, mono 16 kHz, and 30 seconds or shorter until longer clips have proof:
 }
 ```
 
-Local startup with audio extras:
+Local startup with audio extras on the bundled llama-server (the audio
+projector is what enables native audio-in):
 
 ```bash
-python -m pip install --upgrade "transformers[serving]"
-transformers serve google/gemma-3n-E4B-it@<revision-sha> \
-  --host localhost \
-  --port 8002 \
-  --continuous-batching \
-  --dtype bfloat16
-
-vllm serve Qwen/Qwen3-Omni-30B-A3B-Instruct --omni --port 8091
+llama-server -m D:\Models\Gemma\gemma-3n-E4B-it-UD-Q4_K_XL.gguf -a gemma-3n-E4B-it \
+  --mmproj D:\Models\mmproj\gemma-3n-audio-mmproj.gguf \
+  --host 127.0.0.1 --port 8080 -c 8192 -ngl 99 \
+  --flash-attn on --metrics --no-webui
 ```
 
-Docker-shaped vLLM example for Gemma 4 E4B text-out with native audio-in:
-
-```bash
-docker run --gpus all --rm -p 8000:8000 \
-  vllm/vllm-openai:latest \
-  --model google/gemma-4-E4B-it \
-  --limit-mm-per-prompt image=2,audio=1
-```
+For an omni model that PalLLM's bundled engine cannot serve as a local GGUF,
+point the cloud escape (`pal connect cloud`) at an OpenAI-compatible omni
+endpoint instead.
 
 For Gemma proof lanes, record the normalized clip duration and token budget
 beside the clip hash. Current Gemma audio guidance budgets Gemma 4 at `25`
@@ -251,8 +246,9 @@ PalLLM's `TtsClient` defaults to POSTing `{ "text", "voice" }` to a
 configured endpoint and treating the response body as audio bytes. For
 current OpenAI-compatible speech APIs, set
 `PalLLM:Tts:RequestFormat=openai_speech`; PalLLM then posts `input`,
-`voice`, optional `model`, and `response_format` to a route such as
-vLLM-Omni `/v1/audio/speech`.
+`voice`, optional `model`, and `response_format` to an omni
+`/v1/audio/speech` route (e.g. the bundled llama-server talker/code2wav
+endpoint, or an OpenAI-compatible cloud omni endpoint).
 
 The recommended local-first default for a companion mod: **Maya1
 or IndexTTS2**, paired with per-pack voice references (see §11).
@@ -290,8 +286,8 @@ cap, requires `VoiceConsent` (`self_recorded`, `licensed`,
 
 ## 7. Realtime full-duplex
 
-The `/v1/realtime` WebSocket has converged across OpenAI, Azure,
-and vLLM-Omni. Wire shape:
+The `/v1/realtime` WebSocket has converged across OpenAI-compatible omni
+stacks. Wire shape:
 
 - Client opens a WS to `wss://<host>/v1/realtime?model=<model>`.
 - Server accepts; sends `session.created` event.
@@ -304,25 +300,13 @@ and vLLM-Omni. Wire shape:
   `response.audio_transcript.delta` (text mirror).
 - Either side can `response.cancel` for barge-in.
 
-vLLM-Omni snippet:
-
-```bash
-docker run --gpus all --rm -p 8000:8000 \
-  -e VLLM_MEDIA_URL_ALLOW_REDIRECTS=0 \
-  -v ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface \
-  vllm/vllm-omni:latest \
-  --model Qwen/Qwen3-Omni-30B-A3B-Instruct \
-  --omni \
-  --enable-prefix-caching
-```
-
-Current vLLM-Omni Qwen3-Omni docs call out one important proof caveat:
-`/v1/realtime` is unsupported while the deploy config has `async_chunk`
-enabled. For PalLLM, a realtime voice proof therefore needs a recorded
-`async_chunk`-disabled deploy config plus `session.created`,
+PalLLM's bundled llama.cpp engine does not host `/v1/realtime`. Realtime voice
+therefore needs an omni-capable endpoint reached through the cloud escape
+(`pal connect cloud`), or a future local realtime build. For PalLLM, a realtime
+voice proof needs a recorded deploy config plus `session.created`,
 `response.audio.delta`, transcript-delta, reconnect/stall, and text-chat
 fallback evidence. If that receipt is missing, use `/v1/chat/completions`
-audio canaries or `/v1/audio/speech` instead of promoting realtime voice.
+audio canaries or the `/v1/audio/speech` lane instead of promoting realtime voice.
 
 PalLLM today does not host a `/v1/realtime` endpoint. The seam:
 a thin proxy that forwards player audio to the upstream realtime
@@ -333,8 +317,9 @@ deterministic-fallback-grade. Audio-realtime is opt-in.
 
 ## 8. Streaming video proof
 
-vLLM-Omni's streaming-video route uses a separate WebSocket,
-`/v1/video/chat/stream`. The client sends `session.config`, base64 JPEG/PNG
+The omni streaming-video route uses a separate WebSocket,
+`/v1/video/chat/stream` (reached through the cloud escape on an omni-capable
+endpoint). The client sends `session.config`, base64 JPEG/PNG
 `video.frame` messages, optional base64 PCM16 16 kHz mono `audio.chunk`
 messages, and `video.query` prompts over the buffered stream.
 
@@ -349,8 +334,8 @@ PalLLM treats this as a Palworld proof-clip lane only:
 This is useful for future "what just happened on screen?" clips, but it is not
 the normal companion hot path.
 
-vLLM-Omni also exposes `/v1/videos` and `/v1/videos/sync` for diffusion video
-generation. Keep that off PalLLM's player-facing path: prove async
+Some omni endpoints also expose `/v1/videos` and `/v1/videos/sync` for diffusion
+video generation. Keep that off PalLLM's player-facing path: prove async
 create/poll/content/delete, storage cleanup, cancellation, prompt-publication
 hygiene, and no interference with `/api/chat` or `/api/vision` before using it
 as release-walkthrough evidence.
@@ -403,33 +388,31 @@ UUIDs over rehashing every captured frame in the model server. A future
 `pal vision look` verb should capture the frame, compute a SHA-256 media id
 locally, send the image with that UUID on first use, and reuse the UUID for
 proof replay or repeated static screens while falling back to full media
-payloads on cache misses. If an operator enables LMCache encoder cache, the
+payloads on cache misses. If the server exposes a separate encoder cache, the
 same verb should record cold/warm TTFT and expose whether the cache hit came
 from text prefix reuse, media UUID reuse, or encoder-cache reuse so debugging
 does not blur three different cache layers. If `PalLLM:Inference:PrefixCacheSalt`
-is configured for a shared vLLM server, repeated screenshot proof should also
+is configured for a shared endpoint, repeated screenshot proof should also
 record whether matching salts reuse cache while different trust-domain salts do
-not. If multiple replicas sit behind a router, prove sticky or KV cache-aware
-routing keeps repeated media on the cache-warm worker before using that pool for
-live companion turns. When processor caps are configured, record the exact
-`mm_processor_kwargs` beside the replay so reviewers can separate a media-cache
-win from a smaller pixel/token budget. If the same vLLM lane also uses sleep
-mode for idle VRAM reclaim, treat wake-up as a cold-cache boundary and remeasure
-those cache claims before trusting the warm path.
+not. When processor caps are configured, record the exact `mm_processor_kwargs`
+beside the replay so reviewers can separate a media-cache win from a smaller
+pixel/token budget. If the lane uses idle sleep (`--sleep-idle-seconds`) for
+VRAM reclaim, treat wake-up as a cold-cache boundary and remeasure those cache
+claims before trusting the warm path.
 
-vLLM can also accept precomputed multimodal embeddings through
-`--enable-mm-embeds`. Treat that as a future trusted-tool lane, not a player
-media path: PalLLM must own the encoder, model-family tensor shape, projector
-metadata, and malformed-shape isolation proof before it sends `image_embeds`,
-`audio_embeds`, or video embeddings. Operators can then compare VRAM and
-latency against ordinary local media bytes; until that proof exists, the safe
-default remains local bytes plus stable media UUIDs.
+Some OpenAI-compatible servers also accept precomputed multimodal embeddings.
+Treat that as a future trusted-tool lane, not a player media path: PalLLM must
+own the encoder, model-family tensor shape, projector metadata, and
+malformed-shape isolation proof before it sends `image_embeds`, `audio_embeds`,
+or video embeddings. Operators can then compare VRAM and latency against
+ordinary local media bytes; until that proof exists, the safe default remains
+local bytes plus stable media UUIDs.
 
 This remains an operator-server optimization. `GET /api/inference/collaboration`
 now exposes the same idea in each model lane's `Capability.ServingProfile`
 (`RequestHints`, `CacheHints`, `AdmissionControls`, `SecurityControls`,
 `PromotionReceipts`, and `VerificationChecks`) so operator tools can check
-runtime flags, media guardrails, vLLM sleep/wake admin isolation, trusted-only
+runtime flags, media guardrails, idle-sleep admin isolation, trusted-only
 embedding lanes, local LoRA adapter guardrails, and promotion proof without
 scraping this prose.
 The default PalLLM security posture stays local base64 media plus bounded
@@ -439,7 +422,7 @@ request bodies.
 
 A genuinely-novel 2026 idea: ship a four-tuple per personality
 pack — `(prompt.md, voice-ref.wav, lora-adapter.safetensors,
-memory-namespace)`. vLLM supports multi-LoRA serving, so an
+memory-namespace)`. llama.cpp supports per-request LoRA adapters, so an
 opt-in runtime lane can select a local adapter per pack at request time.
 
 Pack format extension (schema implemented; runtime adapter selection stays

@@ -26,7 +26,7 @@ Before Pass 132, "is anything broken?" was scattered across:
   rendering)
 
 A new operator who saw their companion replying with the default
-voice had to know to check pack count. An operator whose Ollama
+voice had to know to check pack count. An operator whose llama-server
 crashed had to read the circuit-breaker state in
 `/api/health.InferenceCircuitState` and remember what `Open` meant.
 There was no single place that said "no packs loaded — run

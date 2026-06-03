@@ -7,10 +7,10 @@
 # multiple PalLLM installs without duplication. See docs/LOCAL_MODELS_INVENTORY.md
 # for the operator-curated layout this compose example assumes.
 #
-# Ollama is intentionally absent — Pass 339 removed it from PalLLM's
-# operator surfaces. Use this compose file as the canonical local stack.
-# For high-config / Blackwell GPUs that want the vLLM throughput path,
-# see docs/BLACKWELL_RECIPES.md (vLLM-on-CUDA recipes).
+# llama.cpp is PalLLM's only local engine (the alt-engine connectors were
+# removed in Pass 436). Use this compose file as the canonical local stack.
+# For Blackwell / NVFP4 GGUF tuning on this same engine, see
+# docs/BLACKWELL_RECIPES.md. Below-reference hardware uses pal connect cloud.
 #
 # ------------------------------------------------------------------------
 # Prerequisites

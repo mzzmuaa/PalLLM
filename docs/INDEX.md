@@ -104,14 +104,9 @@ right doc depends on what you're trying to do right now, not who you are.
 | Scaffold a new personality pack with valid manifest + computed `ContentHash` | `pwsh ../pal.ps1 pack new -Id <id> -DisplayName "..." -Author <name>` |
 | List the personality packs the running sidecar has loaded | `pwsh ../pal.ps1 pack list` |
 | See the moments catalog (scripted reactive lines tied to in-world triggers) | [`MOMENTS.md`](MOMENTS.md) |
-| Wire PalLLM's inference path to a local chat-completions engine in one command | `pwsh ../pal.ps1 connect <engine>` (auto-recommend by hardware) |
-| Print or wire a raw GGUF server lane | `pwsh ../pal.ps1 connect <gguf-engine> -ModelPath <model.gguf>` |
-| Print or wire a local desktop `/v1` model-server lane | `pwsh ../pal.ps1 connect <desktop-engine> -Model <loaded-id>` |
-| Pick a Blackwell / Hopper / Ampere recipe and copy-paste the inference-server docker command | `pwsh ../pal.ps1 connect <gpu-engine> -UseCase companion` |
-| Print or wire a lightweight transformers serving lane | `pwsh ../pal.ps1 connect <transformers-engine> -Revision <sha>` |
-| Print or wire an accelerated `/v1` GPU-serving lane | `pwsh ../pal.ps1 connect <accelerated-engine>` |
-| Print or wire an Intel CPU/GPU/NPU `/v3` model-server lane | `pwsh ../pal.ps1 connect <intel-engine> -TargetDevice GPU` |
-| Print or wire a local Windows ML lane | `pwsh ../pal.ps1 connect <windows-ml-engine> -FoundryEndpoint <url>` |
+| Wire PalLLM's inference path to the bundled local model engine (the only local engine) | `pwsh ../pal.ps1 connect llamacpp -ModelPath <model.gguf> -WriteConfig` |
+| Pick a Blackwell / NVFP4 GGUF recipe and copy-paste the model-server command | [`BLACKWELL_RECIPES.md`](BLACKWELL_RECIPES.md) |
+| Wire a hosted model API (the below-reference-rig escape path) | `pwsh ../pal.ps1 connect cloud -Provider <provider> -Model <id> -ApiKey <key> -WriteConfig` |
 | Pick a starting personality pack (Warrior / Scholar / Healer / Trickster) | [`PACK_SAMPLES.md`](PACK_SAMPLES.md) |
 | Compute the canonical `ContentHash` for a personality pack | `pwsh ../scripts/compute-pack-hash.ps1 ./my-pack -Update` |
 | Export an anonymized support bundle for triage | `pwsh ../pal.ps1 support` (or double-click [`../support.bat`](../support.bat)) |

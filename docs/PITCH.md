@@ -29,7 +29,7 @@ character.
 1. **100% local by default.** No OpenAI account, no cloud bill, no
    "we've updated our privacy policy" emails. Your conversations
    stay on your PC. The one exception - you opt in to point PalLLM
-   at your own llama.cpp (default) or vLLM (high-config) server -
+   at the bundled llama.cpp server (or an OpenAI-compatible cloud API) -
    is explicit and fully inspectable (`GET /api/airgap/verify`).
 2. **Zero-inference fallback.** Even if you never set up an AI
    model, PalLLM still answers. A deterministic "director" picks
@@ -112,8 +112,8 @@ Three short answers:
   would need their own `IGameAdapter` implementation. The seam is
   documented so this is tractable if you want to port.
 - **You provide the inference model.** PalLLM doesn't ship a
-  model - it connects to your local llama.cpp (default) or vLLM
-  (high-config) install. Deterministic fallback answers when you
+  model - it connects to the bundled llama.cpp engine (or an
+  OpenAI-compatible cloud API). Deterministic fallback answers when you
   don't have one.
 - **The honest roadmap number is `76.2%` today.** The sidecar
   runtime is production-ready; the remaining work is in the

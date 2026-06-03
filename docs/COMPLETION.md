@@ -88,7 +88,7 @@ ceiling of what's possible without live hardware:
 |---|---|---|
 | Privacy posture | `10/10` | zero outbound traffic by default |
 | Security / supply chain | `10/10` | sigstore, SLSA, SBOM, CodeQL, gitleaks |
-| Performance (Blackwell + vLLM + NVFP4) | `9.8/10` | sub-second `Chat.Inference` on a 5090 |
+| Performance (Blackwell + NVFP4 GGUF on llama.cpp) | `9.8/10` | sub-second `Chat.Inference` on a 5090 |
 | Agent-native discoverability | `9.9/10` | `agents.json` + `pal.json` + AGENT-CARD coverage |
 | Diagnose / troubleshoot | `9.7/10` | `pal doctor`, `pal logs`, `pal preflight`, RUNBOOK |
 | Install (one-click) | `9.5/10` | `play.bat` atomic install with rollback |

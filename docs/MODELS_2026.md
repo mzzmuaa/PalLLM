@@ -137,7 +137,7 @@ companion-feel.
 `PalLLM:Tts:Model`, and `PalLLM:Tts:DefaultVoice` already exist. The
 operator picks Kokoro / Fish / F5 by pointing at an
 OpenAI-compatible TTS server that wraps the chosen model
-(`vllm-omni`, `openvoice-api`, `kokoro-fastapi`, etc.).
+(`openvoice-api`, `kokoro-fastapi`, a llama.cpp talker/code2wav lane, etc.).
 
 **Honest note on Fish vs F5.** Both are commonly recommended for
 voice cloning. Fish Speech ships under a permissive license and runs

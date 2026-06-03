@@ -27,7 +27,7 @@ which tier you're on (`HardwareProfiler.Capture()` →
 | `Constrained` | 4-core CPU, 8 GiB RAM, no GPU or entry-level | n/a or `gemma3:1b` | Lean |
 | `Standard` | 8-core CPU, 16-32 GiB RAM, single mid GPU | `qwen3.6:0.6b` to `gemma3:4b` | Studio |
 | `Generous` | 16-core CPU, 64+ GiB RAM, multi-GPU | `qwen3.6:35b-a3b` and up | Workstation |
-| `Blackwell` | 5090 / B-series with NVFP4 + vLLM | dense MoE / NVFP4 70B-class | Frontier |
+| `Blackwell` | 5090 / B-series with an NVFP4 GGUF on llama.cpp | dense MoE / NVFP4 70B-class | Frontier |
 
 ### End-to-end chat-turn budgets
 

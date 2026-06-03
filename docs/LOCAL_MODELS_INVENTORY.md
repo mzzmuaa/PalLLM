@@ -159,15 +159,12 @@ pwsh ./pal.ps1 connect llamacpp `
 
 ### 3. llama.cpp is the only supported loader
 
-Pass 339 removed Ollama from PalLLM's operator surfaces (no
-`connect-ollama.ps1`, shipping `appsettings.json` points at
-`:8080`, doc recommendations all default to llama.cpp). The
-codebase keeps some Ollama-aware response-shape parsing for
-back-compat with operators who still run Ollama out-of-band, but
-none of the shipping verbs, scripts, or recommended workflows
-involve Ollama anymore. **Use `pal connect llamacpp` for every
-chat lane.** For high-config / Blackwell-class GPUs that want
-the vLLM throughput path, use `pal connect vllm`.
+The bundled llama.cpp `llama-server` is PalLLM's only local engine; shipping
+`appsettings.json` points at `:8080` and every doc recommendation defaults to
+it. The alt-engine connectors (and their response-shape parsing) were removed
+in Pass 436. **Use `pal connect llamacpp` for every chat lane.** On
+below-reference hardware that cannot serve a usable local GGUF, use
+`pal connect cloud` for an OpenAI-compatible cloud API.
 
 ## MTP (Multi-Token Prediction) status
 

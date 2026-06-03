@@ -65,13 +65,11 @@ get a reply.
 ### Do I need to install an AI model?
 
 Optional. If you skip it, the deterministic director answers every
-chat turn using 19 hand-authored strategies. If you install
-[llama.cpp](https://github.com/ggml-org/llama.cpp) (default) or
-[vLLM](https://github.com/vllm-project/vllm) (high-config GPUs) and
-point PalLLM at it via `pal connect llamacpp` or `pal connect vllm`,
-you get live inference with the deterministic path still as fallback.
-LM Studio / Foundry Local / TensorRT-LLM / OpenVINO / transformers
-also work; see `pal connect` for the full eight-engine list.
+chat turn using 19 hand-authored strategies. If you install the bundled
+[llama.cpp](https://github.com/ggml-org/llama.cpp) engine and point PalLLM at
+it via `pal connect llamacpp`, you get live inference with the deterministic
+path still as fallback. On below-reference hardware, `pal connect cloud` wires
+an OpenAI-compatible cloud API instead — those are the only two connect lanes.
 
 ### How big is the install?
 

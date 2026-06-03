@@ -109,14 +109,14 @@ The `ResponsePath` value is exact: `fallback-after-breaker-open`,
 - Breaker open: wait for the configured cooldown (default 30 s),
   or restart the sidecar to reset state. If breaker keeps
   re-opening, the inference endpoint itself is unhealthy — go check
-  Ollama / your model server.
+  your llama-server / model server.
 - Rate limit: bump `MaxCharacterRequestsPerMinute` or wait for the
   sliding window to free up.
 - Thermal: cool the GPU, or temporarily set
   `Inference:ThermalGate:Enabled = false`.
 - Endpoint down: hit `Inference:BaseUrl` directly with curl. If
-  Ollama isn't responding, restart it. If the model is missing,
-  pull it.
+  llama-server isn't responding, restart it. If the model is missing,
+  point `-m` at the GGUF file path.
 
 ## Outbox isn't emptying — Lua bridge sees no replies
 

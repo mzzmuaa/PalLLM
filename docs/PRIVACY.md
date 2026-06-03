@@ -49,7 +49,7 @@ catching it.
 
 | Surface | Controlled by | What happens when you enable it |
 | --- | --- | --- |
-| `live-inference` | `PalLLM:Inference:Enabled` + `PalLLM:Inference:BaseUrl` | Chat turns POST to your configured endpoint. You pick the endpoint (Ollama loopback, private LAN, or a remote URL). |
+| `live-inference` | `PalLLM:Inference:Enabled` + `PalLLM:Inference:BaseUrl` | Chat turns POST to your configured endpoint. You pick the endpoint (bundled llama.cpp loopback, private LAN, or a remote cloud URL). |
 | `vision-describe` | `PalLLM:Vision:Enabled` + `PalLLM:Vision:BaseUrl` | Screenshots are POSTed to your configured vision endpoint. Default off. |
 | `tts-synthesis` | `PalLLM:Tts:Enabled` + `PalLLM:Tts:BaseUrl` | Text is POSTed to your configured TTS endpoint. Audio is played locally. Speech playback receipts record compact status, artifact byte counts, WAV or raw-PCM encoding/sample-format/byte-order/mixer-conversion/mixer-queue/mixer-buffer-duration/sample-rate/channel/bit-depth/duration/byte-rate/block-align/audio-data-size/sample-frame/partial-frame/valid-bits/channel-mask metadata when available, playback sequence, superseded request id/count/age/prior-buffer/estimated-remaining-buffer, cancellation mode, launch attempt counts, and elapsed milliseconds only; they do not store audio bytes, generated text, or local file paths. |
 | `otlp-telemetry` | `OTEL_EXPORTER_OTLP_ENDPOINT` env-var | OpenTelemetry traces, metrics, and logs are sent to the configured OTLP collector. |

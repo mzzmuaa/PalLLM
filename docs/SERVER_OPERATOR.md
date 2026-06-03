@@ -48,7 +48,7 @@ latency. **Cons:** sidecar competes with game server for GPU/CPU.
    ┌──────────────────────┐              ┌───────────────────────┐
    │ Palworld host        │              │ AI host               │
    │ + UE4SS mod          │◀──── LAN ────│ PalLLM.Sidecar + GPU  │
-   │                      │   HTTP/JSON  │ + llama-server / vLLM │
+   │                      │   HTTP/JSON  │ + llama-server (GPU)  │
    └──────────────────────┘              └───────────────────────┘
 ```
 
@@ -74,8 +74,8 @@ On the **server** box:
         Topology B; keep the default localhost bind for Topology A
       - Set `PalLLM:Auth:ApiKey` to a strong value if reachable from
         the LAN
-      - Configure `PalLLM:Inference:BaseUrl` to point at your local
-        llama-server (default `:8080/v1/`) or vLLM (`:8000/v1/`) endpoint
+      - Configure `PalLLM:Inference:BaseUrl` to point at your bundled
+        llama-server (default `:8080/v1/`) or an OpenAI-compatible cloud endpoint
       - Raise `PalLLM:Fallback:MaxCharacterRequestsPerMinute` to suit
         your concurrent-player count (default is per-character)
 - [ ] Launch the sidecar: `sidecar\publish\PalLLM.Sidecar.exe` or
