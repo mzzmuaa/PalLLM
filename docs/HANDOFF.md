@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260603-134725/RESULTS.md`](../artifacts/full-audit/20260603-134725/RESULTS.md)
+  [`../artifacts/full-audit/20260603-140501/RESULTS.md`](../artifacts/full-audit/20260603-140501/RESULTS.md)
   (run dirs under `artifacts/` are git-ignored + auto-pruned to the newest
   `12` by the audit's retention cap, so this pointer is informational, not a
   clone-portable link)
@@ -181,16 +181,30 @@ once they reached the changelog):
   `SidecarEndpointTests` with a compact llama.cpp-positive contract plus a new
   `AssertLlamaCppOnlyServing` guard that rejects every purged backend token, so
   the invariant is now enforced by the suite. Test count unchanged (`1330`).
-  **Still queued (436b tail + c/d):** the residency/telemetry/probe code still
-  carries provider-detection for the purged backends — note the
-  `InferenceResidencyProvider.LmStudio` value + its ~12-case test file and the
-  Foundry `/openai/models` probe branch are LM-Studio/Ollama/Foundry-specific
-  and become vestigial under llama.cpp-only (removing them is a test-count
-  cascade); plus the operator-doc sweep (`MODEL_COLLABORATION`, `QUANTIZATION`,
-  `TUNING`, `MULTIMODAL_RECIPES`, `BLACKWELL_RECIPES`, etc.) and adopting the
-  proven CUDA launch recipe from the external best-available llama.cpp build.
-  Verification at this checkpoint: full audit `16 / 16`; `1330 / 1330`; `0`
-  warnings.
+  **436b(2) + (3) (landed):** purged alt-engine *detection* — removed the
+  `GenAiTelemetry` host->provider branches (lmstudio/vllm/sglang/tensorrt/
+  openvino/foundry/transformers; only `llama.cpp` is recognised, everything else
+  resolves to `openai_compatible`) and the `ModelAvailabilityProbe` Foundry Local
+  `/openai/models` candidate + `ParseFoundryModels` (`/v1/models` is now the sole
+  probe). Coupled tests updated; count unchanged.
+  **Still queued (436b tail + c/d):** (1) **remove the residency feature
+  entirely** — `InferenceResidencyProvider` (incl. `LmStudio`), the policy +
+  hint code, the `ResidencyProvider`/`ResidencyTtlSeconds` options + validator,
+  the snapshot DTO field, the appsettings lines, and the ~22-case
+  `InferenceResidencyPolicyTests.cs`. It only ever served LM Studio + Ollama
+  (both purged); llama.cpp uses server-side `--sleep-idle-seconds`. This touches
+  ~13 source files, the **OpenAPI snapshot** (regenerate via
+  `scripts/export-openapi.ps1`), and is a **test-count cascade** (1330 minus the
+  deleted residency tests) across the ~24 mirror surfaces. (2) misc residual
+  refs in `HardwareProfiler`, `QuickstartGuideBuilder`, `HealthSuggestionBuilder`,
+  `ModelCollaborationPlanner.cs`, and the `pal-model-probe.ps1` vLLM-metric
+  guesser. (3) **436c:** operator-doc sweep (`MODEL_COLLABORATION`,
+  `QUANTIZATION`, `TUNING`, `MULTIMODAL_RECIPES`, `BLACKWELL_RECIPES`, etc.) +
+  feature catalog. (4) **436d:** fold the proven CUDA launch recipe from the
+  external best-available llama.cpp build into `connect-llamacpp.ps1` +
+  `LLAMA_CPP_BUNDLED.md` (the installer already fetches the latest release
+  dynamically). Verification at this checkpoint: full audit `16 / 16`;
+  `1330 / 1330`; `0` warnings.
 
 - **Pass 435 - Local-repo hygiene: artifact retention cap + clone-safe link gate.**
   The local `artifacts/full-audit/` pile had grown unbounded to ~`922` run dirs
