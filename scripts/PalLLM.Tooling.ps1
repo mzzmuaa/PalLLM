@@ -67,7 +67,7 @@ function Get-PalLlmRuntimeRoot {
         pal-health all read from the wrong tree.
 
         This helper checks the same candidate appsettings.json paths
-        connect-ollama / pal-config-* use, parses the two knobs if present,
+        connect-llamacpp / pal-config-* use, parses the two knobs if present,
         and falls back to the historical
         %LOCALAPPDATA%\Pal\Saved\PalLLM default when neither file nor knob
         is set. Pure read; never writes.
@@ -75,7 +75,7 @@ function Get-PalLlmRuntimeRoot {
     $localAppData = [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)
     $defaultRoot = Join-Path $localAppData "Pal\Saved\PalLLM"
 
-    # Same candidate order pal-next + connect-ollama use: prefer the operator's
+    # Same candidate order pal-next + connect-llamacpp use: prefer the operator's
     # custom path under LOCALAPPDATA (which doctor / play create on first
     # boot), then the published sidecar config, then the source tree config.
     $repoRoot = Get-PalLlmRepoRoot

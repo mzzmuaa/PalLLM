@@ -2083,7 +2083,7 @@ public sealed class MetaTests
                 .And.Contain("SecurityControls")
                 .And.Contain("VerificationChecks")
                 .And.Contain("pal connect llamacpp")
-                .And.Contain("pal connect omni"),
+                .And.Contain("pal connect cloud"),
             "Model serving profile script should project live per-lane runtime policy without rewriting config.");
 
         string modelProbeScriptPath = Path.Combine(RepoRoot, "scripts", "pal-model-probe.ps1");

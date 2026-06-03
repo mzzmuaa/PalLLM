@@ -7,9 +7,8 @@
     Reads GET /api/inference/collaboration and projects each configured model
     lane's Capability.ServingProfile into an operator-readable checklist.
     This is the "what do I need to boot/check on the model server?" companion
-    to pal connect llamacpp / pal connect lmstudio / pal connect vllm / pal connect omni /
-    pal connect transformers / pal connect tensorrt / pal connect openvino /
-    pal connect foundry.
+    to pal connect llamacpp (the local llama.cpp engine) and pal connect cloud
+    (the OpenAI-compatible escape path for below-reference hardware).
     It includes startup, request, cache, admission, security, promotion-receipt,
     metric-receipt, verification, and runtime-guard sections for each lane, including
     model-artifact provenance receipts before promotion or redistribution.
@@ -255,14 +254,7 @@ foreach ($model in $projection.models) {
     Write-Host ""
 }
 
-Write-Host "Related commands:" -ForegroundColor White
-Write-Host "  pal connect vllm      # print and optionally wire a text/vision vLLM recipe"
-Write-Host "  pal connect llamacpp  # print and optionally wire a raw llama.cpp GGUF recipe"
-Write-Host "  pal connect lmstudio  # print and optionally wire a local LM Studio recipe"
-Write-Host "  pal connect omni      # print and optionally wire the multimodal-in recipe"
-Write-Host "  pal connect transformers # print and optionally wire a transformers serve recipe"
-Write-Host "  pal connect tensorrt  # print and optionally wire a TensorRT-LLM /v1 recipe"
-Write-Host "  pal connect openvino  # print and optionally wire an OpenVINO Model Server /v3 recipe"
-Write-Host "  pal connect foundry   # print and optionally wire a Foundry Local / Windows ML recipe"
+Write-Host "  pal connect llamacpp  # print and optionally wire the bundled llama.cpp GGUF recipe (the only local engine)"
+Write-Host "  pal connect cloud     # print and optionally wire an OpenAI-compatible cloud API (below-reference-rig escape path)"
 Write-Host "  pal models serving -Json | ConvertFrom-Json  # feed this to another tool"
 Write-Host ""

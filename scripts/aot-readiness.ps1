@@ -265,8 +265,7 @@ $runtimeText = Get-RepoText "src\PalLLM.Domain\Runtime\PalLlmRuntime.cs"
 
 $hotPathMissing = [System.Collections.Generic.List[string]]::new()
 foreach ($missing in @(Test-TextContainsAll -Text $inferenceText -Needles @(
-    "PalLlmDomainJsonSerializerContext.Default.InferenceChatCompletionsRequestBody",
-    "PalLlmDomainJsonSerializerContext.Default.OllamaWarmupRequestBody"
+    "PalLlmDomainJsonSerializerContext.Default.InferenceChatCompletionsRequestBody"
 ))) { $hotPathMissing.Add($missing) | Out-Null }
 foreach ($missing in @(Test-TextContainsAll -Text $visionText -Needles @(
     "PalLlmDomainJsonSerializerContext.Default.VisionChatCompletionsRequestBody"

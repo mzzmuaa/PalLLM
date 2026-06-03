@@ -11,7 +11,7 @@
       2. The first thing to try: pal hello (probe a running sidecar)
       3. The 30-second self-tour: pal demo
       4. Out-of-game moments: pal campfire (with /whisper /fortune /quest /tale)
-      5. Wire a real LLM: pal connect llamacpp (or vllm / lmstudio / foundry)
+      5. Wire a real LLM: pal connect llamacpp (or pal connect cloud)
       6. Where to go next: docs/INDEX.md and docs/HANDOFF.md
 
     Each beat waits for ENTER before continuing. The user can ABORT
@@ -147,15 +147,11 @@ Pause-Beat
 
 Write-Pal ""
 Write-Pal "5. Wire a real LLM (optional):" 'Cyan'
-Write-Pal "   Pick the path that matches your local model server:" 'White'
+Write-Pal "   Pick the path that matches your hardware:" 'White'
 Write-Pal ""
 Write-Pal "       pal install-llama-cpp -AutoLaunch  # download + launch the bundled engine" 'Yellow'
-Write-Pal "       pal connect llamacpp -ModelPath <model.gguf>  # raw GGUF llama-server lane" 'Yellow'
-Write-Pal "       pal connect lmstudio -Model <loaded-id>  # LM Studio desktop lane" 'Yellow'
-Write-Pal "       pal connect vllm     # Blackwell / Hopper / Ampere recipe" 'Yellow'
-Write-Pal "       pal connect openvino -TargetDevice GPU  # Intel CPU / GPU / NPU lane" 'Yellow'
-Write-Pal "       pal connect foundry -FoundryEndpoint <url>  # Windows ML lane" 'Yellow'
-Write-Pal "       pal connect transformers -Revision <sha>  # pinned HF serving" 'Yellow'
+Write-Pal "       pal connect llamacpp -ModelPath <model.gguf>  # raw GGUF llama-server lane (the only local engine)" 'Yellow'
+Write-Pal "       pal connect cloud    # OpenAI-compatible cloud API (below-reference-rig escape path)" 'Yellow'
 Write-Pal ""
 Write-Pal "   Each can write a coherent appsettings.json with a -DryRun preview" 'White'
 Write-Pal "   and a .bak backup. Or run the wizard for everything:" 'White'

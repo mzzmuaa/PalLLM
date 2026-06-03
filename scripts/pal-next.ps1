@@ -28,7 +28,7 @@
 
        1.  Repo not built / not tested      -> `pal onboard`
        2.  Sidecar offline                  -> `pal play`
-       3.  Sidecar up, no inference         -> `pal connect llamacpp` (also vllm / omni / foundry / openvino / tensorrt / transformers / lmstudio)
+       3.  Sidecar up, no inference         -> `pal connect llamacpp` (or `pal connect cloud` for the below-reference-rig escape path)
        3b. Inference wired but unreachable  -> `pal doctor` (circuit open / probe failed)
        4.  Sidecar up, no packs loaded      -> `pal pack copy companion-warrior`
        5.  Latest audit FAIL                -> `pal fast-audit` to confirm
@@ -282,24 +282,20 @@ elseif (-not $sidecarUp) {
 }
 # 3. Sidecar up but inference not wired -> connect a model
 elseif (-not $inferenceWired) {
-    $action = 'connect-ollama'
+    $action = 'connect-llamacpp'
     $verdict = 'DETERMINISTIC ONLY'
     $why = 'Sidecar is up but inference is OFF in appsettings.json. The companion still answers via the deterministic-fallback layer; with a model wired, replies get richer.'
-    if ($hardwareTier -eq 'Blackwell' -or $hardwareTier -eq 'Generous') {
-        $command = 'pal connect vllm   # or: pal connect llamacpp / lmstudio / openvino / foundry / transformers'
-    } else {
-        $command = 'pal connect llamacpp   # bundled default (raw GGUF); ''pal connect lmstudio'' for desktop local models; ''pal connect openvino'' for Intel GPU/NPU; ''pal connect foundry'' for Windows ML; ''pal connect transformers'' for pinned HF serving; ''pal connect omni'' for multimodal'
-    }
+    $command = 'pal connect llamacpp   # bundled local engine (raw GGUF); ''pal connect cloud'' for the OpenAI-compatible escape path on below-reference hardware'
 }
 # 3b. Inference wired in config but the configured backend is unreachable.
-# Without this branch, an operator with a dead Ollama / crashed vLLM gets the
-# READY verdict because everything else is green. /api/health surfacing
-# circuit-state lets us surface the real issue.
+# Without this branch, an operator with a dead llama-server / unreachable cloud
+# endpoint gets the READY verdict because everything else is green. /api/health
+# surfacing circuit-state lets us surface the real issue.
 elseif (-not $inferenceLive) {
     $action = 'inference-unreachable'
     $verdict = 'INFERENCE UNREACHABLE'
-    $why = "Inference is enabled in config but the sidecar reports the circuit as '$inferenceCircuit'. The configured backend at the BaseUrl in appsettings.json isn't responding. Boot it (or pick a different lane with 'pal connect') and the companion swaps back to live replies on the next probe."
-    $command = "pal doctor   # diagnose the backend; or pick a lane with pal connect llamacpp / vllm / openvino / foundry"
+    $why = "Inference is enabled in config but the sidecar reports the circuit as '$inferenceCircuit'. The configured backend at the BaseUrl in appsettings.json isn't responding. Boot it (or re-wire with 'pal connect') and the companion swaps back to live replies on the next probe."
+    $command = "pal doctor   # diagnose the backend; or re-wire with pal connect llamacpp / pal connect cloud"
 }
 # 4. No packs loaded -> get a voice. Four ready-made samples ship under
 # samples\packs\; `pal pack copy <name>` is the dedicated one-step bridge
