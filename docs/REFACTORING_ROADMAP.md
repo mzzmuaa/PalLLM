@@ -140,7 +140,7 @@ after the queued `Program.cs` extraction.
       stay private).
 - [ ] `git log --stat` shows zero changes outside
       `src/PalLLM.Domain/Runtime/PalLlmRuntime*.cs`.
-- [ ] `dotnet test` passes exactly the same `1321` tests with the
+- [ ] `dotnet test` passes exactly the same `1330` tests with the
       same names.
 - [ ] Audit gate `Drift_Hot_file_line_count` passes — the *primary*
       `PalLlmRuntime.cs` is now well under its budget, and the

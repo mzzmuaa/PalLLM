@@ -8,7 +8,7 @@ All notable changes to PalLLM are documented here. Format follows
 First public-ready revision. Collapsed from multiple in-flight drafts
 dated `2026-04-18`, `2026-04-19`, `2026-04-22`, and `2026-04-23`.
 
-**Current baseline (rolling):** `1321` passing tests - `16/16` drift
+**Current baseline (rolling):** `1330` passing tests - `16/16` drift
 gates green - `122` feature-catalog entries (119 ready / 2 scaffolded
 / 1 deferred) - `57` `/api` routes - `38` MCP tools - `19`
 deterministic fallback strategies - `6` ADRs accepted - honest
@@ -17,6 +17,31 @@ roadmap `76.2%` - `0` build warnings.
 Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
+
+### Pass 434 - Pure-logic coverage sweep (Quickstart + DecisionPlanner) (2026-06-03)
+
+**Context.** Continuing the coverage work, the cobertura run flagged two
+pure-logic surfaces with large untested gaps: `QuickstartGuideBuilder` (the
+state-aware `GET /api/quickstart` advisor) and `ModelCollaborationDecisionPlanner`
+(the `POST /api/inference/collaboration/plan` policy selector). Both are
+deterministic functions of their inputs, so their branches are cleanly
+reachable without infrastructure.
+
+**Changes.**
+- Added `tests/PalLLM.Tests/QuickstartGuideBuilderTests.cs` (3 tests) — pins
+  the opt-in upgrade steps (vision / TTS / auth / thermal-gate / warmup) on
+  both sides of their guards, plus the overall-status / headline rollup and
+  the "every step card is complete" invariant.
+- Added `tests/PalLLM.Tests/ModelCollaborationDecisionPlannerTests.cs` (6
+  tests) — covers the policy arms the existing ModelTier test didn't reach:
+  `tool-heavy-guarded`, `frontend-visual-loop`,
+  `context-compiler-then-dense-reasoning`, `low-risk-fast-lane`,
+  `medium-risk-fast-implement-dense-review`, and a CPU-only coherent-decision
+  path. Each is reached by varying one signal on the request.
+- Cascaded the test count `1321` -> `1330` across the mirror surfaces.
+
+**Verification.** `dotnet test` `1330 / 1330`; full audit `16 / 16` with `0`
+build warnings.
 
 ### Pass 433 - Fallback-strategy coverage (2026-06-03)
 

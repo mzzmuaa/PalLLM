@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 433)
+## Codex handoff (read first — Pass 434)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -107,7 +107,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs`
 - feature split: `119 ready`, `2 scaffolded`, `1 deferred`
 - `19` deterministic fallback strategies
-- `1321` passing tests from `dotnet test PalLLM.sln`
+- `1330` passing tests from `dotnet test PalLLM.sln`
 - `16 / 16` drift gates PASS on the latest audit
 - `1104` lines in `PalLlmRuntime.cs`, `391` lines in
   `PalLlmRuntime.Helpers.cs`, `357` lines in
@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260603-121254/RESULTS.md`](../artifacts/full-audit/20260603-121254/RESULTS.md)
+  [`../artifacts/full-audit/20260603-123001/RESULTS.md`](../artifacts/full-audit/20260603-123001/RESULTS.md)
 - committed OpenAPI snapshot:
   [`openapi/palllm-sidecar-v1.json`](openapi/palllm-sidecar-v1.json)
 
@@ -159,6 +159,21 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
+
+- **Pass 434 - Pure-logic coverage sweep (Quickstart + DecisionPlanner).**
+  Continued the coverage work on two pure-logic surfaces the cobertura run
+  flagged. Added `QuickstartGuideBuilderTests.cs` (3 tests — the
+  `/api/quickstart` advisor's opt-in upgrade steps on both sides of their
+  guards + the status/headline rollup) and
+  `ModelCollaborationDecisionPlannerTests.cs` (6 tests — the policy arms the
+  existing ModelTier test didn't reach: `tool-heavy-guarded`,
+  `frontend-visual-loop`, `context-compiler-then-dense-reasoning`,
+  `low-risk-fast-lane`, `medium-risk-fast-implement-dense-review`, plus a
+  CPU-only path). Both invoke the real public surface; each branch is reached
+  by varying one input. Cascaded the test count `1321` -> `1330` across the
+  mirror surfaces. (`BridgeProofBuilder` remains the next coverage target —
+  larger, needs evidence-snapshot fixtures.) Verification: `dotnet test`
+  `1330 / 1330`; full audit `16 / 16`; `0` warnings.
 
 - **Pass 433 - Fallback-strategy coverage.**
   A `XPlat Code Coverage` run found 7 of the 19 deterministic fallback

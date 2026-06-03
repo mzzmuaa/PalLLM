@@ -65,7 +65,7 @@ has no architecture gates beyond `<TargetFramework>net10.0</TargetFramework>`.
 
 To verify on your platform after a source build:
 ```powershell
-dotnet test PalLLM.sln --configuration Release    # 1321 / 1321 expected
+dotnet test PalLLM.sln --configuration Release    # 1330 / 1330 expected
 ```
 Tests use only platform-agnostic APIs (`HttpClient`, `JsonDocument`,
 `MemoryStream`); they pass on every supported RID.
