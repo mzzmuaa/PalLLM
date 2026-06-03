@@ -1722,11 +1722,18 @@ public sealed class InferenceClientTests
                 "Ex-Ollama port 11434 must fall through to openai_compatible after Pass 346.");
             Assert.That(GenAiTelemetry.GetProviderName("http://ollama-host.local/v1/"), Is.EqualTo("openai_compatible"),
                 "Ex-Ollama host substring must fall through to openai_compatible after Pass 346.");
-            Assert.That(GenAiTelemetry.GetProviderName("http://127.0.0.1:1234/v1/"), Is.EqualTo("lmstudio"));
+            // Pass 436: LM Studio / vLLM / SGLang / TensorRT / OpenVINO / Foundry /
+            // transformers host detection was removed with the alt-engine purge.
+            // llama.cpp stays the only recognised local engine; everything else
+            // (including the cloud escape path) resolves to "openai_compatible".
+            Assert.That(GenAiTelemetry.GetProviderName("http://127.0.0.1:1234/v1/"), Is.EqualTo("openai_compatible"),
+                "Pass 436 removed LM Studio detection; port 1234 falls through to openai_compatible.");
             Assert.That(GenAiTelemetry.GetProviderName("http://localhost:8080/v1/"), Is.EqualTo("llama.cpp"));
             Assert.That(GenAiTelemetry.GetProviderName("http://192.168.1.20:8080/v1/"), Is.EqualTo("llama.cpp"));
-            Assert.That(GenAiTelemetry.GetProviderName("http://vllm.local/v1/"), Is.EqualTo("vllm"));
-            Assert.That(GenAiTelemetry.GetProviderName("http://openvino.local:8000/v3/"), Is.EqualTo("openvino"));
+            Assert.That(GenAiTelemetry.GetProviderName("http://vllm.local/v1/"), Is.EqualTo("openai_compatible"),
+                "Pass 436 removed vLLM detection.");
+            Assert.That(GenAiTelemetry.GetProviderName("http://openvino.local:8000/v3/"), Is.EqualTo("openai_compatible"),
+                "Pass 436 removed OpenVINO detection.");
             Assert.That(GenAiTelemetry.GetProviderName("http://203.0.113.10:8080/v1/"), Is.EqualTo("openai_compatible"),
                 "Default local-runtime ports should not classify arbitrary public hosts.");
             Assert.That(GenAiTelemetry.GetProviderName("http://localhost:8000/v1/"), Is.EqualTo("openai_compatible"),

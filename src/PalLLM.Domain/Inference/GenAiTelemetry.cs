@@ -260,7 +260,6 @@ internal static class GenAiTelemetry
     private static string ResolveProviderName(Uri? endpoint, string baseUrl)
     {
         string host = endpoint?.Host ?? string.Empty;
-        string path = endpoint?.AbsolutePath ?? string.Empty;
         bool localRuntimeAddress = IsLoopbackOrPrivateEndpoint(endpoint);
 
         if (host.EndsWith("openai.com", StringComparison.OrdinalIgnoreCase))
@@ -334,13 +333,6 @@ internal static class GenAiTelemetry
         // provider — they fall through to "openai_compat" the same way
         // any other unknown OpenAI-compatible endpoint does.
 
-        if (host.Contains("lmstudio", StringComparison.OrdinalIgnoreCase)
-            || host.Contains("lm-studio", StringComparison.OrdinalIgnoreCase)
-            || (localRuntimeAddress && endpoint?.Port == 1234))
-        {
-            return "lmstudio";
-        }
-
         if (host.Contains("llamacpp", StringComparison.OrdinalIgnoreCase)
             || host.Contains("llama-cpp", StringComparison.OrdinalIgnoreCase)
             || (localRuntimeAddress && endpoint?.Port == 8080))
@@ -348,40 +340,11 @@ internal static class GenAiTelemetry
             return "llama.cpp";
         }
 
-        if (host.Contains("vllm", StringComparison.OrdinalIgnoreCase))
-        {
-            return "vllm";
-        }
-
-        if (host.Contains("sglang", StringComparison.OrdinalIgnoreCase))
-        {
-            return "sglang";
-        }
-
-        if (host.Contains("tensorrt", StringComparison.OrdinalIgnoreCase)
-            || host.Contains("trtllm", StringComparison.OrdinalIgnoreCase)
-            || host.Contains("trt-llm", StringComparison.OrdinalIgnoreCase))
-        {
-            return "tensorrt_llm";
-        }
-
-        if (host.Contains("openvino", StringComparison.OrdinalIgnoreCase)
-            || (localRuntimeAddress && path.StartsWith("/v3", StringComparison.OrdinalIgnoreCase)))
-        {
-            return "openvino";
-        }
-
-        if (host.Contains("foundry", StringComparison.OrdinalIgnoreCase)
-            || (localRuntimeAddress && path.StartsWith("/openai", StringComparison.OrdinalIgnoreCase)))
-        {
-            return "foundry_local";
-        }
-
-        if (host.Contains("transformers", StringComparison.OrdinalIgnoreCase))
-        {
-            return "transformers";
-        }
-
+        // Pass 436: detection branches for LM Studio, vLLM, SGLang, TensorRT-LLM,
+        // OpenVINO, Foundry Local, and transformers serve were removed with the
+        // rest of the alt-engine purge. llama.cpp is the only local engine; every
+        // other OpenAI-compatible endpoint (including the cloud escape path)
+        // resolves to "openai_compatible".
         return "openai_compatible";
     }
 
