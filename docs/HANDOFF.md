@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260603-143914/RESULTS.md`](../artifacts/full-audit/20260603-143914/RESULTS.md)
+  [`../artifacts/full-audit/20260603-145125/RESULTS.md`](../artifacts/full-audit/20260603-145125/RESULTS.md)
   (run dirs under `artifacts/` are git-ignored + auto-pruned to the newest
   `12` by the audit's retention cap, so this pointer is informational, not a
   clone-portable link)
@@ -200,19 +200,36 @@ once they reached the changelog):
   It only ever served LM Studio + Ollama (both purged); llama.cpp keeps the model
   resident server-side (`--sleep-idle-seconds`). Regenerated the OpenAPI snapshot
   and cascaded the test count `1330` -> `1306` across the ~24 mirror surfaces.
-  **Still queued (c/d), each a dedicated slice:**
-  (1) `HardwareProfiler` Blackwell quant recommendation still names
-  `vLLM / TensorRT-LLM` (its `Recommendation` is asserted by `HardwareProfilerTests`
-  to contain `NVFP4`/`MXFP4`/`Q4_K_M`, so reword keeps those quant tokens, drops the
-  engines) + the `pal-model-probe.ps1` vLLM-metric guesser.
-  (2) **436c:** operator-doc sweep (`MODEL_COLLABORATION`, `QUANTIZATION`,
-  `TUNING`, `MULTIMODAL_RECIPES`, `BLACKWELL_RECIPES`, etc.) + feature catalog
-  (preserve append-only history).
-  (3) **436d:** fold the proven CUDA launch recipe from the external
+  **436b(6) (landed):** retargeted `HardwareProfiler`'s Blackwell quant
+  recommendation (now llama.cpp GGUF framing; kept the `NVFP4`/`MXFP4`/`Q4_K_M`
+  quant tokens `HardwareProfilerTests` pins) and `pal-model-probe.ps1`'s
+  `/metrics` engine recognition (now `llamacpp:*` families, not vLLM/SGLang).
+  **The entire code + script purge is now complete** — no live vLLM / Ollama /
+  LM Studio / SGLang / OpenVINO / TensorRT / Foundry / transformers logic
+  remains in `src/` or `scripts/`; llama.cpp is the only local engine and the
+  OpenAI-compatible cloud API is the escape path.
+  **Still queued — all documentation/finishing, no code:**
+  (1) **436c — operator-doc sweep (the big one):** several current operator
+  guides are *structured around* the old multi-backend world and need genuine
+  rewriting/slimming to llama.cpp-only, not find-replace —
+  `MODEL_COLLABORATION.md` (1451 lines, ~230 refs; documents the now-llama.cpp-only
+  serving advisor), `BLACKWELL_RECIPES.md` (vLLM/TensorRT-on-Blackwell — largely
+  obsolete; delete or repoint to llama.cpp Blackwell GGUF guidance),
+  `MULTIMODAL_RECIPES.md` (vLLM-Omni heavy), `QUANTIZATION.md`, `TUNING.md`,
+  `OPERATIONS.md`, `ENV_VARS.md` + the `INDEX.md` framing of those docs. Plus a
+  light neutralization of the `PalLlmOptions.*`/`InferenceClient.Contracts`
+  XML-doc comments that still say "vLLM-compatible `<field>`" (the request fields
+  are real OpenAI-ecosystem passthroughs; reword to drop the engine name while
+  keeping accuracy). Preserve append-only history (CHANGELOG / RESEARCH_NOTES).
+  Do each doc as its own commit; docs have no compile/test safety net, so verify
+  the audit (path/dangling/freshness gates) after each.
+  (2) **436d:** fold the proven CUDA launch recipe from the external
   best-available llama.cpp build into `connect-llamacpp.ps1` +
   `LLAMA_CPP_BUNDLED.md` (the installer already fetches the latest release
-  dynamically). Verification at this checkpoint: full audit `16 / 16`;
-  `1306 / 1306`; `0` warnings.
+  dynamically).
+  (3) **Online repo refine (phase B):** after local is optimal, polish the
+  GitHub repo surface (description, topics, README) — $4/mo Pro only, no Actions.
+  Verification at this checkpoint: full audit `16 / 16`; `1306 / 1306`; `0` warnings.
 
 - **Pass 435 - Local-repo hygiene: artifact retention cap + clone-safe link gate.**
   The local `artifacts/full-audit/` pile had grown unbounded to ~`922` run dirs
