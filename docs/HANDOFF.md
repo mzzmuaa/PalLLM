@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260603-140501/RESULTS.md`](../artifacts/full-audit/20260603-140501/RESULTS.md)
+  [`../artifacts/full-audit/20260603-141452/RESULTS.md`](../artifacts/full-audit/20260603-141452/RESULTS.md)
   (run dirs under `artifacts/` are git-ignored + auto-pruned to the newest
   `12` by the audit's retention cap, so this pointer is informational, not a
   clone-portable link)
@@ -181,27 +181,36 @@ once they reached the changelog):
   `SidecarEndpointTests` with a compact llama.cpp-positive contract plus a new
   `AssertLlamaCppOnlyServing` guard that rejects every purged backend token, so
   the invariant is now enforced by the suite. Test count unchanged (`1330`).
-  **436b(2) + (3) (landed):** purged alt-engine *detection* — removed the
-  `GenAiTelemetry` host->provider branches (lmstudio/vllm/sglang/tensorrt/
-  openvino/foundry/transformers; only `llama.cpp` is recognised, everything else
-  resolves to `openai_compatible`) and the `ModelAvailabilityProbe` Foundry Local
-  `/openai/models` candidate + `ParseFoundryModels` (`/v1/models` is now the sole
-  probe). Coupled tests updated; count unchanged.
-  **Still queued (436b tail + c/d):** (1) **remove the residency feature
-  entirely** — `InferenceResidencyProvider` (incl. `LmStudio`), the policy +
-  hint code, the `ResidencyProvider`/`ResidencyTtlSeconds` options + validator,
-  the snapshot DTO field, the appsettings lines, and the ~22-case
-  `InferenceResidencyPolicyTests.cs`. It only ever served LM Studio + Ollama
-  (both purged); llama.cpp uses server-side `--sleep-idle-seconds`. This touches
-  ~13 source files, the **OpenAPI snapshot** (regenerate via
-  `scripts/export-openapi.ps1`), and is a **test-count cascade** (1330 minus the
-  deleted residency tests) across the ~24 mirror surfaces. (2) misc residual
-  refs in `HardwareProfiler`, `QuickstartGuideBuilder`, `HealthSuggestionBuilder`,
-  `ModelCollaborationPlanner.cs`, and the `pal-model-probe.ps1` vLLM-metric
-  guesser. (3) **436c:** operator-doc sweep (`MODEL_COLLABORATION`,
-  `QUANTIZATION`, `TUNING`, `MULTIMODAL_RECIPES`, `BLACKWELL_RECIPES`, etc.) +
-  feature catalog. (4) **436d:** fold the proven CUDA launch recipe from the
-  external best-available llama.cpp build into `connect-llamacpp.ps1` +
+  **436b(2)-(4) (landed):** purged alt-engine *detection* + *recommendation
+  strings* — `GenAiTelemetry` host->provider branches (only `llama.cpp` is
+  recognised, everything else is `openai_compatible`); the
+  `ModelAvailabilityProbe` Foundry `/openai/models` candidate + `ParseFoundryModels`
+  (`/v1/models` is the sole probe); `ModelCollaborationPlanner` RecommendedBackend
+  (llama.cpp / cloud escape, not vLLM/SGLang/TensorRT/LM Studio); the
+  `QuickstartGuideBuilder` inference + Blackwell-quant steps; and the
+  `HealthSuggestionBuilder` comment. Coupled tests updated; count unchanged.
+  **Still queued (436b tail + c/d), each a dedicated slice:**
+  (1) **remove the residency feature entirely** — `InferenceResidencyProvider`
+  (incl. `LmStudio`), the policy + hint code, the
+  `ResidencyProvider`/`ResidencyTtlSeconds` options + validator, the
+  `InferenceWarmupSnapshot` residency fields, the `InferenceClient` TransportResult
+  residency fields, the warmup-status plumbing in `PalLlmRuntime.Inference`,
+  `connect-cloud.ps1`'s `ResidencyProvider=Disabled` write + its test, the
+  appsettings lines, and the ~22-case `InferenceResidencyPolicyTests.cs`. Only
+  ever served LM Studio + Ollama (both purged); llama.cpp uses server-side
+  `--sleep-idle-seconds`. Touches ~15 files, **regenerates the OpenAPI snapshot**
+  (`scripts/export-openapi.ps1`; residency is in the committed
+  `palllm-sidecar-v1.json`), and is a **test-count cascade** (`1330` minus the
+  deleted residency tests) across the ~24 mirror surfaces — do it as its own pass.
+  (2) `HardwareProfiler` Blackwell quant recommendation still names
+  `vLLM / TensorRT-LLM` (its `Recommendation` is asserted by `HardwareProfilerTests`
+  to contain `NVFP4`/`MXFP4`/`Q4_K_M`, so reword keeps those quant tokens, drops the
+  engines) + the `pal-model-probe.ps1` vLLM-metric guesser.
+  (3) **436c:** operator-doc sweep (`MODEL_COLLABORATION`, `QUANTIZATION`,
+  `TUNING`, `MULTIMODAL_RECIPES`, `BLACKWELL_RECIPES`, etc.) + feature catalog
+  (preserve append-only history).
+  (4) **436d:** fold the proven CUDA launch recipe from the external
+  best-available llama.cpp build into `connect-llamacpp.ps1` +
   `LLAMA_CPP_BUNDLED.md` (the installer already fetches the latest release
   dynamically). Verification at this checkpoint: full audit `16 / 16`;
   `1330 / 1330`; `0` warnings.
