@@ -2,7 +2,7 @@
 
 Audience: someone already comfortable with the runtime who now has to keep it healthy in production.
 
-Last audited: `2026-06-01`
+Last audited: `2026-06-03`
 
 This is a how-to guide in the [Diataxis](https://diataxis.fr/) sense - each section answers a specific operational question. Skim the table of contents and skip to what you need.
 
@@ -483,21 +483,20 @@ promoting that setting, replay the same PalLLM route with both field names and
 record accepted request shape, usage counters, p95 latency, and fallback
 counters.
 
-`PalLLM:Inference:ThinkingTokenBudget` can forward vLLM's
+`PalLLM:Inference:ThinkingTokenBudget` can forward an OpenAI-compatible
 `thinking_token_budget` on reasoning-parser lanes. Leave it `null` for normal
 local play and use `EnableThinking=false` for fast non-thinking turns. Before
 promotion, replay the same route with no budget and with the configured budget,
 then record reasoning-parser config, accepted request shape, visible/reasoning
 token usage, p95 latency, and fallback counters.
 
-For a shared vLLM endpoint, `PalLLM:Inference:PrefixCacheSalt` can forward a
-stable non-secret `cache_salt` on chat-completions requests. Use one salt per
-player/save/profile trust domain when cache isolation matters; do not rotate it
-per request unless you intentionally prefer isolation over prefix-cache hits.
-For vLLM startup, prefer `--prefix-caching-hash-algo sha256_cbor` when
-deterministic cross-version cache identity matters, and prove sticky or KV
-cache-aware routing beats round-robin before putting multiple replicas behind a
-live PalLLM companion lane.
+For a shared OpenAI-compatible endpoint, `PalLLM:Inference:PrefixCacheSalt` can
+forward a stable non-secret `cache_salt` on chat-completions requests. Use one
+salt per player/save/profile trust domain when cache isolation matters; do not
+rotate it per request unless you intentionally prefer isolation over
+prefix-cache hits. If you front a cloud API with multiple replicas, prove sticky
+or KV cache-aware routing beats round-robin before putting them behind a live
+PalLLM companion lane.
 
 For hosted prompt-cache canaries, `PalLLM:Inference:PromptCacheKey` can forward
 `prompt_cache_key`, and `PalLLM:Inference:PromptCacheRetention` can forward
@@ -540,7 +539,7 @@ replay two same-prefix turns and one changed-prefix negative canary on the exact
 llama-server build; record accepted request shape, slot id, second-turn TTFT,
 cache metrics, cache RAM pressure, and fallback counters.
 
-For vLLM-compatible multimodal proof lanes,
+For OpenAI-compatible multimodal proof lanes,
 `PalLLM:Inference:MultimodalProcessor` and
 `PalLLM:Vision:MultimodalProcessor` can forward `mm_processor_kwargs` with
 `min_pixels`, `max_pixels`, `max_soft_tokens`, and `fps`. Leave every field
@@ -549,11 +548,11 @@ to bound screenshot, video, or audio-visual processor work; promotion evidence
 should include accepted JSON, cold/warm TTFT, processor token or pixel evidence,
 VRAM/queue pressure, parse stability, and fallback counters.
 
-For a shared vLLM endpoint that was launched with `--scheduling-policy priority`,
+For a shared endpoint that was launched with priority scheduling,
 `PalLLM:Inference:RequestPriority` can forward a `priority` integer on
 chat-completions requests. Leave it `null` by default: lower values are more
-urgent on vLLM priority schedulers, but non-zero values can be rejected by
-FCFS-only vLLM servers or strict non-vLLM endpoints. Before promoting it, replay
+urgent on priority-scheduling endpoints, but non-zero values can be rejected by
+FCFS-only servers or strict endpoints that reject the field. Before promoting it, replay
 a short companion turn beside a long proof/docs prompt and confirm the companion
 lane wins queue time without starving the background lane.
 
@@ -589,10 +588,11 @@ them as `tools` and `tool_choice` only for that call and preserves returned
 tool-call-only responses must still have a deterministic fallback path before
 any action/directive route is promoted.
 
-For vLLM-specific structured-output proof lanes, route-specific callers can
-set `InferencePrompt.StructuredOutputs`; PalLLM forwards it as
+For endpoint-specific structured-output proof lanes (the bundled llama-server
+supports them), route-specific callers can set
+`InferencePrompt.StructuredOutputs`; PalLLM forwards it as
 `structured_outputs` only for that call. Use it for choice, regex, JSON,
-grammar, or structural-tag constraints after the exact vLLM endpoint accepts
+grammar, or structural-tag constraints after the exact endpoint accepts
 the request shape. Prefer `InferencePrompt.ResponseFormat` when portable
 OpenAI-compatible `response_format: json_schema` is enough. Ordinary companion
 chat omits `structured_outputs`.
@@ -634,25 +634,25 @@ for normal play. Add delimiters only after the exact endpoint/model proves it
 accepts `stop`, reduces generated tokens, and does not clip useful companion
 text.
 
-### Residency control for local runtimes
+### Warmup and model residency
 
-PalLLM now distinguishes "send a tiny warmup request" from "keep the active
-lane resident on a host that supports explicit residency controls."
+PalLLM's warmup path sends a tiny bounded request to trigger model load /
+graph compilation / cache priming so the first real player turn does not pay
+the full cold-start penalty.
 
-- `PalLLM:Inference:ResidencyProvider=Auto` is the shipping default. PalLLM
-  resolves provider behavior from `BaseUrl` and only emits a residency hint
-  when the host matches a known compatible runtime.
-- `PalLLM:Inference:ResidencyTtlSeconds=1800` is the shipping default. Set it
-  to `0` to disable residency hints without disabling warmup itself.
-- Ollama-compatible hosts use the native `/api/chat` preload path for warmup
-  and map the TTL to `keep_alive`.
-- LM Studio-compatible hosts keep using chat-completions and map the TTL to
-  the documented `ttl` request field. `pal connect lmstudio` writes
-  `ResidencyProvider=LmStudio` explicitly so this stays true even if the
-  operator moves the server off the default `localhost:1234` port.
-- `POST /api/inference/warmup` and `/api/health` expose the resolved
-  `ResidencyProvider`, `ResidencyTtlSeconds`, `WarmupTransport`, and whether
-  the last warmup actually used a residency hint.
+- `PalLLM:Inference:EnableWarmup=true` is the shipping default. Warmup runs on
+  startup and after tier graduations.
+- `PalLLM:Inference:WarmupIntervalSeconds=0` (default) warms only on startup +
+  tier changes; raise it for a periodic keep-alive tick. Recent successful
+  live chat on the same model suppresses the next tick inside that window.
+- The bundled llama.cpp `llama-server` keeps the loaded model resident for the
+  lifetime of the server process; control idle unload with server flags such
+  as `--sleep-idle-seconds` rather than any PalLLM per-request setting. (The
+  per-request residency/TTL knobs were removed in Pass 436 — they only ever
+  served the now-purged LM Studio / Ollama lanes.)
+- `POST /api/inference/warmup` and `/api/health` expose the warmup `Status`,
+  `StatusMessage`, `ActiveModel`, `WarmupTransport`, and
+  `LastLiveInferenceAtUtc`.
 - `scripts/play-palllm.ps1` now issues a best-effort `POST /api/inference/warmup`
   after the sidecar is healthy and doctor has passed, so the one-click player
   path hides cold-start latency when live inference is enabled without turning
@@ -707,8 +707,8 @@ Other model families may want different values - tune
    OpenAI-compatible `/v1/audio/speech` endpoints that expect
    `input`, `voice`, and `response_format`.
 2. Set `PalLLM:Tts:Enabled=true` and point `BaseUrl` at the server. For
-   strict OpenAI-compatible servers, also set `Tts:Model`; local vLLM-Omni
-   speech servers can infer the model from the loaded process.
+   strict OpenAI-compatible servers, also set `Tts:Model`; local
+   OpenAI-compatible omni speech servers can infer the model from the loaded process.
    For `openai_speech`, set `Tts:ResponseFormat` to the container you intend to
    prove (`wav`, `mp3`, `opus`, `aac`, `flac`, or `pcm`). If the speech server
    omits `Content-Type` or sends generic `application/octet-stream`, PalLLM uses
@@ -767,7 +767,7 @@ Other model families may want different values - tune
 
 ## Turning on ASR
 
-1. Run an OpenAI-compatible transcription endpoint, for example a local vLLM
+1. Run an OpenAI-compatible transcription endpoint, for example a local
    speech-to-text lane at `/v1/audio/transcriptions`.
 2. Set `PalLLM:Asr:Enabled=true`, point `BaseUrl` at the endpoint, and set the
    exact `Model` id it expects.
@@ -778,8 +778,8 @@ Other model families may want different values - tune
    short pronunciation or command-vocabulary guidance. Keep it non-secret and
    language-matched; request-level `Prompt` still overrides it.
 5. Optional `PalLLM:Asr:Seed` sends a multipart `seed` only for
-   endpoint-proven vLLM ASR replay canaries. Use it to compare transcript
-   drift on the same clip, not as a broad determinism guarantee.
+   endpoint-proven OpenAI-compatible ASR replay canaries. Use it to compare
+   transcript drift on the same clip, not as a broad determinism guarantee.
 6. Keep `MaxAudioBytes`, `MaxResponseBytes`, and `MaxTranscriptCharacters`
    bounded. `RequestLogprobs`, `TimestampGranularities`, and verbose segment
    quality receipts stay proof-only and content-free.
@@ -1216,11 +1216,10 @@ locks in this promise for the tracing path.
 PalLLM supports a **tiered local-model cascade** so you can ship a
 working sidecar the moment a small-and-fast model is available, then
 automatically graduate to a larger, higher-quality model when the heavy
-one finishes downloading / warming in your local inference endpoint
-(llama.cpp server (default), vLLM, TensorRT-LLM, LM Studio,
-OpenVINO Model Server, Foundry Local, `transformers serve`, vLLM-Omni
-for multimodal — eight engines total; Pass 339 removed Ollama support).
-Zero downtime, zero manual config edit.
+one finishes downloading / warming in your inference endpoint — the bundled
+llama.cpp `llama-server` (the only local engine) or, on below-reference
+hardware, an OpenAI-compatible cloud API. Zero downtime, zero manual config
+edit.
 
 For a raw llama.cpp GGUF lane:
 
@@ -1236,17 +1235,11 @@ strict JSON/tool-call parse success, and deterministic fallback activation.
 Treat `-ctk/-ctv`, `--sleep-idle-seconds`, `--spec-type`, and `--mmproj`
 vision as separate proof lanes.
 
-For a low-friction LM Studio desktop lane:
-
-```powershell
-lms server start --port 1234
-lms load <model-id> --gpu auto --context-length 8192 --identifier <stable-pal-model-id> --ttl 1800
-pwsh ./pal.ps1 connect lmstudio -Model <stable-pal-model-id> -WriteConfig
-```
-
-Promote it only after `/v1/models`, structured JSON, tool-call, `ttl`,
-auto-evict, p50/p95 latency, and deterministic fallback behavior have all been
-captured on PalLLM replay traffic.
+On below-reference hardware, `pwsh ./pal.ps1 connect cloud` wires an
+OpenAI-compatible cloud API into the same `/v1/` BaseUrl instead. Promote
+either lane only after `/v1/models`, structured JSON, tool-call, p50/p95
+latency, and deterministic fallback behavior have all been captured on PalLLM
+replay traffic.
 
 **The shipping default** in `appsettings.json` configures two tiers:
 
@@ -1265,18 +1258,15 @@ captured on PalLLM replay traffic.
    periodic keep-alive warmup so idle local runtimes keep the current lane
    resident. A keep-alive tick self-suppresses when a recent successful live
    chat already touched the same active model inside the keepalive window, so
-   active sessions do not pay duplicate warmup POSTs. When the lane is backed
-   by LM Studio, live chat-completions requests can carry `ttl`; llama.cpp
-   keeps the loaded model resident for the lifetime of the server process so
+   active sessions do not pay duplicate warmup POSTs. The bundled llama-server
+   keeps the loaded model resident for the lifetime of the server process, so
    no per-request keep-alive is needed.
 3. `ModelTierUpgradeWorker` (IHostedService) immediately probes the
-   inference endpoint's configured `models` catalog (`/v1/models` for most
-   servers including llama-server, OpenVINO `/v3/models` when `BaseUrl` ends
-   in `/v3/`), then Foundry Local `/openai/models`. The probe code also
-   recognises Ollama's `/api/tags` shape for back-compat with any operator
-   still running Ollama out-of-band, but PalLLM no longer ships an Ollama
-   connector. It atomically swaps the active tier if the probe reveals a
-   higher-priority option.
+   inference endpoint's `/v1/models` catalog — the sole probe, exposed by both
+   the bundled llama-server and OpenAI-compatible cloud APIs (Pass 436 removed
+   the Foundry Local `/openai/models` candidate and Pass 346 the Ollama
+   `/api/tags` fallback). It atomically swaps the active tier if the probe
+   reveals a higher-priority option.
 4. When the active tier changes, the sidecar triggers another bounded warmup
    for the new lane so the first player turn after graduation is less likely
    to pay the full model-load cost.
@@ -1321,10 +1311,6 @@ llama-server -m D:\Models\Qwen\Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf `
 # native MTP speculative decoding (`--spec-type ngram-mod`).
 ```
 
-> Pass 339 dropped Ollama support. If you previously used
-> `ollama pull` + `ollama serve`, switch to the llama-server flow above.
-> Your existing GGUF library is reusable — point `-m` at the file path.
-
 **Customising tiers:**
 
 Edit `appsettings.json` under `PalLLM:Inference:ModelTiers`. Each
@@ -1354,10 +1340,9 @@ compatible with pre-tier configs.
   last-seen available models, and `InferenceWarmup` status/timestamps.
 - `POST /api/inference/warmup` manually primes the currently active lane and
   returns the updated warmup snapshot.
-- the warmup snapshot also includes the resolved residency provider/TTL, the
-  transport used for the last warmup (`chat_completions` vs
-  `ollama_native_chat_preload`), and whether a provider-specific residency
-  hint was emitted.
+- the warmup snapshot also includes the transport used for the last warmup
+  (`chat_completions`) and the `StatusMessage` describing the most recent
+  warmup or keep-alive decision.
 - Active tier id is also available in traces (every `pal.chat` span
   backed by inference carries the model tag used).
 - The upgrade worker logs each graduation at `Information` severity:
