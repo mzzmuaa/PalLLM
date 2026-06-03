@@ -142,7 +142,7 @@ queues 3-5. That's `~12.5%` of the honest roadmap remaining.
   one-liner, `pal scaffold` placeholder generator.
 - Portable adapter seam (`PortableAdapterContracts.cs`) for
   lifting into other games.
-- Honest baseline: `1317 / 1317 tests`, every count in docs verified
+- Honest baseline: `1321 / 1321 tests`, every count in docs verified
   against code by drift gates.
 
 This is genuinely 10/10 if your goal is to take ideas / patterns /

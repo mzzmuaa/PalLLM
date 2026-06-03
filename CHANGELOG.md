@@ -8,7 +8,7 @@ All notable changes to PalLLM are documented here. Format follows
 First public-ready revision. Collapsed from multiple in-flight drafts
 dated `2026-04-18`, `2026-04-19`, `2026-04-22`, and `2026-04-23`.
 
-**Current baseline (rolling):** `1317` passing tests - `16/16` drift
+**Current baseline (rolling):** `1321` passing tests - `16/16` drift
 gates green - `122` feature-catalog entries (119 ready / 2 scaffolded
 / 1 deferred) - `57` `/api` routes - `38` MCP tools - `19`
 deterministic fallback strategies - `6` ADRs accepted - honest
@@ -17,6 +17,31 @@ roadmap `76.2%` - `0` build warnings.
 Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
+
+### Pass 433 - Fallback-strategy coverage (2026-06-03)
+
+**Context.** A coverage pass (`--collect:"XPlat Code Coverage"`) found that 7
+of the 19 deterministic fallback strategies in `FallbackBehaviorEngine` had
+*no* direct test exercising their bodies — they were only reachable through the
+full runtime path that the broader suite doesn't drive. Since "there is always
+a working deterministic reply" is the headline product invariant (ADR 0001),
+untested strategy guards are a real regression risk.
+
+**Changes.**
+- Added `tests/PalLLM.Tests/FallbackBehaviorStrategyTests.cs` — crafts a minimal
+  `FallbackBehaviorContext` (a keyword in the chat message, a world-state
+  signal, or a low-morale character) so exactly one strategy is applicable,
+  then asserts `Generate` routes to it with a non-empty reply. Covers four
+  previously-unexercised strategies: `capture-window`, `exploration-sweep`,
+  `weather-shelter`, and `morale-rally`. Tests go through the real internal
+  `Analyze` -> `Generate` path (no production visibility changed).
+- Cascaded the test count `1317` -> `1321` across the mirror surfaces (README
+  badge, PROJECT_NUMBERS.json, agents.json, ROADMAP, CODE_MAP, HANDOFF,
+  INVARIANTS, ARCHITECTURE, pal.json/pal.ps1, onboard.ps1, the
+  `PalLlmRuntime` AGENT-CARD, etc.).
+
+**Verification.** `dotnet test` `1321 / 1321`; full audit `16 / 16` with `0`
+build warnings.
 
 ### Pass 432 - AudioTranscriptionClient concern split (2026-06-03)
 

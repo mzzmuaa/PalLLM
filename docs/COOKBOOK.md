@@ -34,7 +34,7 @@ Before any recipe:
 
 ```powershell
 pwsh ./pal.ps1 fast-audit   # confirm 16 / 16 gates green
-pwsh ./pal.ps1 test         # confirm 1317 / 1317 tests
+pwsh ./pal.ps1 test         # confirm 1321 / 1321 tests
 ```
 
 If either is red, fix that *first*. Don't layer changes on a red

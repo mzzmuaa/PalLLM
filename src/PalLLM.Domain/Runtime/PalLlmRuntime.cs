@@ -22,7 +22,7 @@ using PalLLM.Domain.Packs;
 //            prompt rendering, snapshot assembly, and bridge/outbox activity
 //            live in companion partials.
 //            Touch only what you're changing.
-//   gate:    Drift_Test_count_docs (1317 expected); ChatAsync behaviour pinned
+//   gate:    Drift_Test_count_docs (1321 expected); ChatAsync behaviour pinned
 //            by PalLlmRuntimeChatTests + neighbouring suites.
 //   adr:     0001-deterministic-first-reply-pipeline.md (load-bearing for
 //            the chat hot path), 0005-ttl-cache-for-posture-surfaces.md.

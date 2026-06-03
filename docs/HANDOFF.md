@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 432)
+## Codex handoff (read first — Pass 433)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -107,7 +107,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs`
 - feature split: `119 ready`, `2 scaffolded`, `1 deferred`
 - `19` deterministic fallback strategies
-- `1317` passing tests from `dotnet test PalLLM.sln`
+- `1321` passing tests from `dotnet test PalLLM.sln`
 - `16 / 16` drift gates PASS on the latest audit
 - `1104` lines in `PalLlmRuntime.cs`, `391` lines in
   `PalLlmRuntime.Helpers.cs`, `357` lines in
@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260603-102928/RESULTS.md`](../artifacts/full-audit/20260603-102928/RESULTS.md)
+  [`../artifacts/full-audit/20260603-121254/RESULTS.md`](../artifacts/full-audit/20260603-121254/RESULTS.md)
 - committed OpenAPI snapshot:
   [`openapi/palllm-sidecar-v1.json`](openapi/palllm-sidecar-v1.json)
 
@@ -159,6 +159,19 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
+
+- **Pass 433 - Fallback-strategy coverage.**
+  A `XPlat Code Coverage` run found 7 of the 19 deterministic fallback
+  strategies in `FallbackBehaviorEngine` had no test exercising their bodies
+  (only reachable via the full runtime path the broad suite doesn't drive).
+  Added `FallbackBehaviorStrategyTests.cs` — crafts a minimal
+  `FallbackBehaviorContext` (message keyword / world-state signal / low-morale
+  character) so exactly one strategy is applicable, then asserts `Generate`
+  routes to it with a non-empty reply. Now covers `capture-window`,
+  `exploration-sweep`, `weather-shelter`, and `morale-rally` (4 of the 7),
+  through the real internal `Analyze` -> `Generate` path. Cascaded the test
+  count `1317` -> `1321` across the mirror surfaces. Verification:
+  `dotnet test` `1321 / 1321`; full audit `16 / 16`; `0` warnings.
 
 - **Pass 432 - AudioTranscriptionClient concern split (readability refactor).**
   `AudioTranscriptionClient.cs` `1082` -> `356` (interface + DisabledClient +
@@ -169,7 +182,7 @@ once they reached the changelog):
   (`161`). Pure relocation, behaviorally inert. Completes the "client logic
   separated from contracts" pattern across the HTTP client family. `TtsClient`
   (254 lines) left whole — too small to benefit.
-  Verification: `dotnet test` `1317 / 1317`; full audit `16 / 16`; `0` warnings.
+  Verification: `dotnet test` `1321 / 1321`; full audit `16 / 16`; `0` warnings.
 
 - **Pass 431 - HTTP-client wire-contract extraction (readability refactor).**
   Continued the contracts-vs-logic separation to the two largest
@@ -184,7 +197,7 @@ once they reached the changelog):
   `GenAiTelemetry`, `HttpContentReadLimiter`); only per-client result
   construction differs, correctly not abstracted. `AudioTranscriptionClient` /
   `TtsClient` were left as-is (client-logic-dominated, small DTO tail).
-  Verification: `dotnet test` `1317 / 1317`; full audit `16 / 16`; `0` warnings.
+  Verification: `dotnet test` `1321 / 1321`; full audit `16 / 16`; `0` warnings.
 
 - **Pass 430 - God-file decomposition (readability refactor).**
   Continued the partial-extraction pattern to the three remaining source
@@ -208,7 +221,7 @@ once they reached the changelog):
     compiled static regex built once into `static readonly` fields, source-gen
     JSON, pooled `SocketsHttpHandler`, minimal hot-path allocation. No runtime
     change warranted; the refactor is readability-only.
-  Verification: `dotnet test` `1317 / 1317`; full audit `16 / 16`; `0` build
+  Verification: `dotnet test` `1321 / 1321`; full audit `16 / 16`; `0` build
   warnings.
 
 - **Pass 429 - llama.cpp draft-MTP connector guardrails (Codex).**
@@ -227,8 +240,8 @@ once they reached the changelog):
     route-smoke proof are green.
   - **Regression coverage:** added two `ScriptExecutionTests` for the
     draft-MTP dry run and the rejected Qwen3-Coder speculative lane. Test
-    count is now `1317`. Focused `ScriptExecutionTests` pass `12 / 12`;
-    `dotnet test` passes `1317 / 1317`; full audit passes `16 / 16` with
+    count is now `1321`. Focused `ScriptExecutionTests` pass `12 / 12`;
+    `dotnet test` passes `1321 / 1321`; full audit passes `16 / 16` with
     `0` build warnings at
     `../artifacts/full-audit/20260603-023213/RESULTS.md`.
 
