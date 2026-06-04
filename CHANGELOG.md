@@ -8,7 +8,7 @@ All notable changes to PalLLM are documented here. Format follows
 First public-ready revision. Collapsed from multiple in-flight drafts
 dated `2026-04-18`, `2026-04-19`, `2026-04-22`, and `2026-04-23`.
 
-**Current baseline (rolling):** `1306` passing tests - `16/16` drift
+**Current baseline (rolling):** `1309` passing tests - `16/16` drift
 gates green - `122` feature-catalog entries (119 ready / 2 scaffolded
 / 1 deferred) - `57` `/api` routes - `38` MCP tools - `19`
 deterministic fallback strategies - `6` ADRs accepted - honest
@@ -17,6 +17,76 @@ roadmap `76.2%` - `0` build warnings.
 Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
+
+### Pass 438 - concurrency stress guards for shared hot-path state (2026-06-04)
+
+**Context.** Current Microsoft guidance for ASP.NET Core performance still
+centers on keeping hot paths asynchronous, avoiding needless blocking, and
+stress-testing rate limiters before production. Current llama.cpp server docs
+continue to frame multimodal and speculative features as opt-in, metrics-backed
+lanes. A read-only adjacent-workspace scan reinforced the same practical lesson:
+before adding flashier default-on model features, PalLLM needs executable proof
+that its existing bounded state survives real concurrent pressure.
+
+**Changes.**
+- Added `tests/PalLLM.Tests/ConcurrencyStressTests.cs` with three deterministic
+  concurrency guards:
+  - `ConversationMemoryStore_ConcurrentRememberAndRecall_StaysBoundedAndCrashFree`
+    drives concurrent writers/readers past the 2,000-entry cap and asserts the
+    cap plus no torn read symptoms.
+  - `ChatRateLimiter_ConcurrentTryAcquireOnOneBucket_AdmitsExactlyTheLimit`
+    sends 1,600 contended acquire attempts into one bucket and proves exactly
+    `MaxPerMinute` are admitted.
+  - `RelationshipTracker_ConcurrentRecordInteraction_LosesNoUpdates` records
+    1,600 concurrent interactions for one character and proves the final count
+    did not drop read/modify/write updates.
+- Cascaded the test count `1306` -> `1309` across the primary doc mirrors and
+  the secondary mirrors pinned by
+  `MetaTests.SecondaryTestCountMirrors_AgreeWithProjectNumbers`, including
+  `pal.ps1`, `.cursorrules`, `scripts/onboard.ps1`, and the `PalLlmRuntime.cs`
+  agent-card gate comment.
+
+**Verification.** Focused stress + secondary-mirror tests `4/4`; full
+`dotnet test` `1309/1309`; full audit `16/16` at
+`artifacts/full-audit/20260604-013631/RESULTS.md`; `0` warnings.
+
+### Pass 438 - concurrency regression coverage for the shared singletons (2026-06-04)
+
+**Context.** A refactor / perf / bug-test review found the codebase already
+lean, decomposed (the Phase 1+2 monolith-extraction roadmap is complete), and
+DRY: the chat hot path (`ChatAsync`, prompt assembly, `PresentationCuePlanner`)
+already uses pooled HTTP clients, source-generated JSON, `ArrayPool` /
+`stackalloc` / `CollectionsMarshal`, TTL caches, and bounded enumeration, so
+there was no low-risk perf/DRY change worth the churn (and the repo's own
+anti-patterns forbid mass-reformat). Adversarial review of seven high-risk
+surfaces (memory store, rate limiter, circuit breaker, relationship tracker,
+prompt builder, base64 intake, cue planner) found them correct. The one genuine
+gap was test coverage: the shared, mutable singletons that the chat hot path,
+the bridge worker, and health polling all hit at the same time
+(`ConversationMemoryStore`, `ChatRateLimiter`, `RelationshipTracker`) are each
+guarded by a single private lock, but the suite only exercised them on one
+thread.
+
+**Changes.**
+- Added `tests/PalLLM.Tests/ConcurrencyStressTests.cs` with three deterministic,
+  non-flaky concurrency regression guards (matching the existing
+  `PalStatusLine.NoteActivity` thread-safety idiom). Each fails if its lock is
+  dropped:
+  - `ConversationMemoryStore`: 8 writers (3,200 writes, past the 2,000 cap)
+    racing 4 readers - asserts the cap holds atomically (`Count == 2000`) and
+    readers never throw or observe torn state (null entry / NaN score).
+  - `ChatRateLimiter`: 1,600 concurrent acquires on one bucket with a cap of 50
+    - asserts exactly 50 are admitted (no over-admission within the window).
+  - `RelationshipTracker`: 1,600 concurrent `RecordInteraction` calls - asserts
+    no lost updates (`InteractionCount == 1600`).
+- Cascaded the test count `1306` -> `1309` across `docs/PROJECT_NUMBERS.json`,
+  `agents.json`, `pal.json`, and the gated doc surfaces (README, ROADMAP,
+  ARCHITECTURE, CODE_MAP, HANDOFF) plus the incidental mirrors.
+
+**Verification.** `16/16` drift gates PASS
+(`artifacts/full-audit/20260604-144519`), `1309/1309` tests, `0` warnings. No
+production logic changed - the only `src/` touch is the test-count annotation in
+`PalLlmRuntime.cs`'s AGENT-CARD comment; this pass is test + doc-count hardening.
 
 ### Pass 437 - residual operator-surface purge: finishing the llama.cpp-only campaign (2026-06-03)
 

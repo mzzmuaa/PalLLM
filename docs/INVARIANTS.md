@@ -168,7 +168,7 @@ trace claim -> implementation.
     `Build_Release` gate (the audit fails if `dotnet build`
     surfaces any warning).
 
-22. **`dotnet test` produces 1306 / 1306 green.**
+22. **`dotnet test` produces 1309 / 1309 green.**
     **Enforced:** `Tests` gate plus the
     `Drift_Test_count_docs` gate verifying the count
     matches docs.

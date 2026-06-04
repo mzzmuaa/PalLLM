@@ -1,6 +1,6 @@
 # PalLLM Handoff
 
-Last audited: `2026-06-03`
+Last audited: `2026-06-04`
 
 This is the shortest safe starting point for a temporary coding handoff,
 including Claude, Codex, or any other replacement agent. It is meant to
@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 437)
+## Codex handoff (read first — Pass 438)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -107,7 +107,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs`
 - feature split: `119 ready`, `2 scaffolded`, `1 deferred`
 - `19` deterministic fallback strategies
-- `1306` passing tests from `dotnet test PalLLM.sln`
+- `1309` passing tests from `dotnet test PalLLM.sln`
 - `16 / 16` drift gates PASS on the latest audit
 - `1104` lines in `PalLlmRuntime.cs`, `391` lines in
   `PalLlmRuntime.Helpers.cs`, `360` lines in
@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260603-192406/RESULTS.md`](../artifacts/full-audit/20260603-192406/RESULTS.md)
+  [`../artifacts/full-audit/20260604-144519/RESULTS.md`](../artifacts/full-audit/20260604-144519/RESULTS.md)
   (run dirs under `artifacts/` are git-ignored + auto-pruned to the newest
   `12` by the audit's retention cap, so this pointer is informational, not a
   clone-portable link)
@@ -163,6 +163,37 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
+- **Pass 438 (landed) - concurrency stress guards for shared hot-path
+  state.** Researched current ASP.NET Core/.NET production guidance around
+  hot-path contention, rate-limit validation, and thread-safe task parallelism,
+  plus current llama.cpp server/speculation/multimodal notes; the useful
+  autonomous slice was not a new default-on model feature, but executable proof
+  that the sidecar's existing bounded shared state stays safe under concurrent
+  chat, bridge, and health-poll pressure. Added
+  `tests/PalLLM.Tests/ConcurrencyStressTests.cs` with three deterministic
+  stress guards: `ConversationMemoryStore` concurrent remember/recall stays at
+  the 2,000-entry cap without torn reads; `ChatRateLimiter` admits exactly
+  `MaxPerMinute` attempts from one contended bucket; and `RelationshipTracker`
+  records every concurrent interaction without lost increments. Cascaded the
+  test count `1306` -> `1309` across the primary and secondary mirrors,
+  including the `pal.ps1`, `.cursorrules`, `scripts/onboard.ps1`, and
+  `PalLlmRuntime.cs` meta-test-pinned copies. Verification: focused stress +
+  secondary-mirror tests `4/4`; full `dotnet test` `1309/1309`; full audit
+  `16/16` at `../artifacts/full-audit/20260604-144519/RESULTS.md`; `0`
+  warnings.
+- **Pass 438 (landed) - concurrency regression coverage.** A refactor / perf /
+  bug-test review found the codebase already lean, decomposed, and DRY (hot
+  paths already pooled / source-gen JSON / ArrayPool / TTL-cached), and an
+  adversarial review of seven high-risk surfaces found them correct - so no
+  low-risk perf/DRY churn was warranted. Closed the one real gap: the shared
+  singletons (`ConversationMemoryStore`, `ChatRateLimiter`,
+  `RelationshipTracker`) were only tested single-threaded. Added
+  `tests/PalLLM.Tests/ConcurrencyStressTests.cs` - three deterministic,
+  non-flaky guards (cap-holds-atomically, no rate-limit over-admission, no lost
+  relationship updates) that each fail if the matching lock is dropped. Cascaded
+  the test count `1306` -> `1309`. No production logic changed (only a test-count
+  comment annotation in `PalLlmRuntime.cs`). `16/16` audit, `1309/1309` tests,
+  `0` warnings.
 - **Pass 437 (landed) - residual operator-surface purge; finishes the
   llama.cpp-only campaign.** A follow-up audit found three un-gated surfaces the
   436 passes missed (un-gated is why they survived green CI):

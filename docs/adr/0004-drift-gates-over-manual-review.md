@@ -26,7 +26,7 @@ be checked mechanically gets a **drift gate** in
 `scripts/run_full_audit.ps1`. The current set of 16 gates runs:
 
 1. `Build_Release` - `dotnet build` succeeds with zero warnings
-2. `Tests` - `dotnet test` passes (1306 / 1306 currently)
+2. `Tests` - `dotnet test` passes (1309 / 1309 currently)
 3. `Drift_Mojibake` - no UTF-8 corruption in tracked files
 4. `Drift_Api_route_count` - `api.Map*` calls in `Program.cs` plus
    `RouteRegistrations/*.cs` agree with route counts in README, ROADMAP,

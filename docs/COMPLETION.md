@@ -33,7 +33,7 @@ reach has been pushed to its ceiling:
   `scaffolded` behind kill-switches because they need live build
   validation; one is `deferred` by design - see
   [`adr/0006-opt-in-everything-by-default.md`](adr/0006-opt-in-everything-by-default.md)).
-- **Tests:** `1306 / 1306` passing.
+- **Tests:** `1309 / 1309` passing.
 - **Drift gates:** `16 / 16` green on every audit.
 - **Build warnings:** `0`.
 - **Operator surface:** every script that gates a roadmap queue
@@ -318,7 +318,7 @@ $ pwsh ./pal.ps1 complete
 PalLLM completion status
   honest roadmap   : 76.2%
   remaining        : 23.8%  (live-Palworld + clean-machine work)
-test count       : 1306 / 1306
+test count       : 1309 / 1309
   drift gates      : 16 / 16
   readiness        : ~8.0 / 10 across 23 aspects
 
