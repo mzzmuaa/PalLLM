@@ -515,7 +515,19 @@ public sealed partial class PalLlmRuntime
         GameCharacterSnapshot? character = ResolveCharacter(request.CharacterId, request.CharacterName);
         GameWorldSnapshot snapshot = Adapter.Snapshot;
         PalTaskProfile taskProfile = PalTaskRouter.Resolve(request.TaskTag, request.UserMessage, request.Priority);
-        string activeInferenceModel = (_inferenceClient as IInferenceLaneMetadata)?.GetActiveModelId() ?? _options.Inference.Model;
+        // Two-model mesh routing (Pass 439). A perception turn - one carrying an
+        // image (audio next) - runs end-to-end on the multimodal Edge lane
+        // (Vision.Model = gemma-4-12b) so image understanding AND the reply share a
+        // single loaded model with no mid-turn router swap. Every other turn stays
+        // on the fast Worker lane. Routing is deliberately sticky: only a perception
+        // turn forces the smart lane, so a gaming session never thrashes the 3-10s
+        // router-mode reload, and Palworld keeps VRAM headroom (one model resident).
+        bool perceptionTurn = !string.IsNullOrWhiteSpace(request.ImageBase64)
+            && _options.Vision.Enabled
+            && !string.IsNullOrWhiteSpace(_options.Vision.Model);
+        string activeInferenceModel = perceptionTurn
+            ? _options.Vision.Model
+            : ((_inferenceClient as IInferenceLaneMetadata)?.GetActiveModelId() ?? _options.Inference.Model);
         InferenceExecutionProfile executionProfile = _inferenceExecutionPlanner.Plan(taskProfile, request, activeInferenceModel);
         int maxTokens = executionProfile.MaxTokens;
         float temperature = executionProfile.Temperature;

@@ -137,7 +137,7 @@ public class LlamaCppBundlingTests
 
         Assert.That(text, Does.Contain("_comment_Sampler"),
             "shipping appsettings.json must carry a _comment_Sampler key explaining the sampler choice.");
-        Assert.That(text, Does.Contain("Unsloth canonical Qwen3.6 thinking-OFF"),
+        Assert.That(text, Does.Contain("unsloth.ai/docs/models/qwen3.5"),
             "the _comment_Sampler explanation must name the source profile so future readers can audit.");
     }
 
