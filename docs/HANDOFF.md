@@ -1,6 +1,6 @@
 # PalLLM Handoff
 
-Last audited: `2026-06-04`
+Last audited: `2026-06-05`
 
 This is the shortest safe starting point for a temporary coding handoff,
 including Claude, Codex, or any other replacement agent. It is meant to
@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 445)
+## Codex handoff (read first — Pass 446)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260604-222825/RESULTS.md`](../artifacts/full-audit/20260604-222825/RESULTS.md)
+  [`../artifacts/full-audit/20260605-062841/RESULTS.md`](../artifacts/full-audit/20260605-062841/RESULTS.md)
   (run dirs under `artifacts/` are git-ignored + auto-pruned to the newest
   `12` by the audit's retention cap, so this pointer is informational, not a
   clone-portable link)
@@ -163,6 +163,16 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
+- **Pass 446 (landed) - AGENTS.md hardened into the single source-of-truth root.**
+  Rewrote `AGENTS.md` from a navigational hub of pointers into a self-contained,
+  durable root that lets any human or coding agent understand and operate the
+  whole program from one file: what it is, the three-process + engine
+  architecture, an end-to-end chat turn, the public surface, how to operate /
+  develop / harvest it, and the invariants + gates. Volatile counts now reference
+  `docs/PROJECT_NUMBERS.json` so the doc can't drift; every backticked path and
+  markdown link resolves (the AGENTS path-resolution test + dangling-link gate
+  pass). Doc-only - no code/route/feature/test count moved. `16/16` audit,
+  `1310/1310` tests, `0` warnings.
 - **Pass 445 (landed) - Qwen/Gemma default alignment and autobuild horizon scan.**
   Aligned the compiled defaults, development appsettings, config wizard/show
   output, and environment-variable docs on `Qwen3.5-9B-UD-Q6_K_XL` for the

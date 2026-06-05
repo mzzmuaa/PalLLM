@@ -18,6 +18,34 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 446 - AGENTS.md hardened into the single source-of-truth root document (2026-06-05)
+
+**Context.** PalLLM's description was spread across AGENTS.md (a navigational hub
+of pointers), HANDOFF, CODE_MAP, ARCHITECTURE, INDEX, PITCH, and MENTAL_MODEL. No
+single file let a human or a coding agent understand and operate the whole
+program end to end without following half a dozen links, and AGENTS.md carried
+drift-prone hardcoded counts (e.g. "37 MCP tools") plus a stale stamp.
+
+**Changes.**
+- Rewrote `AGENTS.md` into a self-contained, durable single root that describes
+  the program completely for both humans and coding agents: what it is, the
+  three-process + engine architecture, an end-to-end chat turn, the public
+  surface (HTTP / MCP / feature catalog / dashboard / CLI), how to operate it,
+  how to develop it (green discipline, invariants, gates, conventions,
+  what-not-to-touch), how to harvest it into other programs (the portable seam,
+  ADR 0002), and where the live state lives.
+- Made it always-current by construction: volatile counts are no longer
+  duplicated - they reference `docs/PROJECT_NUMBERS.json` (the drift-gated single
+  source of truth), so the doc cannot go stale on numbers. Stamp refreshed.
+- Every backticked path and markdown link resolves (the
+  `ReadingOrder_FilesNamedInAgentsMd_ExistOnDisk` test + the dangling-link gate
+  both pass); AGENTS.md remains the release-packaged "read first" doorway.
+
+**Verification.** `16/16` drift gates PASS
+(`artifacts/full-audit/20260605-062841`), `1310/1310` tests, `0` warnings, `218`
+link targets resolve. Doc-only change; no code, route, feature, or test count
+moved.
+
 ### Pass 445 - Qwen/Gemma default alignment and autobuild horizon scan (2026-06-04)
 
 **Context.** The recurring automation asked for the local model posture to stay
