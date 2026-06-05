@@ -896,7 +896,8 @@ single biggest remaining player-facing item on the roadmap.
    That validates the current candidate zip against its embedded
    `RELEASE_PACKAGE_MANIFEST.json`, scans shipped text for private
    sibling-project terms, endorsement/approval claims, unrelated franchise
-   references, broad platform-scope drift, and root player-copy brand drift,
+   references, broad platform-scope drift, monetization-solicitation language,
+   and root player-copy brand drift,
    and writes `Runtime/ReleaseEvidence/latest-package-verification.json`.
 9. Failed binds fall through to the existing `ClientMessage` /
    `PrintString` path, so replies never disappear on a bad guess.

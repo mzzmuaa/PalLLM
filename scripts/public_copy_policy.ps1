@@ -70,6 +70,13 @@ function Get-PublicCopyPolicy {
         }
     )
 
+    $blockedPublicMonetizationPatterns = @(
+        [pscustomobject]@{
+            Pattern = '\b(?:donations?|donate|patreon|ko[-\s]?fi|buy\s+me\s+a\s+coffee|paid[-\s]?tiers?|premium\s+tiers?|ads?[-\s]?supported|advertising[-\s]?supported|advertisements?|sponsorships?|sponsors?\s+welcome|become\s+(?:a\s+)?sponsor|support\s+(?:us|me)\s+on)\b'
+            Message = "Public-facing copy should not carry donation, ad, sponsor, or paid-tier solicitation language without a separate publication decision."
+        }
+    )
+
     $blockedSiblingProjectPatterns = @(
         [pscustomobject]@{
             # Pass 372 widening: the repo is going public, so guard
@@ -90,6 +97,7 @@ function Get-PublicCopyPolicy {
         BlockedPublicScopePatterns = $blockedPublicScopePatterns
         BlockedPublicFranchisePatterns = $blockedPublicFranchisePatterns
         BlockedPublicLegalOverclaimPatterns = $blockedPublicLegalOverclaimPatterns
+        BlockedPublicMonetizationPatterns = $blockedPublicMonetizationPatterns
         BlockedSiblingProjectPatterns = $blockedSiblingProjectPatterns
     }
 }

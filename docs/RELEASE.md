@@ -214,6 +214,8 @@ treated as release-facing copy. On those surfaces:
 - avoid broader platform claims that present PalLLM as more than a focused
   Palworld companion mod
 - avoid legal-safety, IP-neutrality, or compliance-certainty overclaims
+- avoid monetization-solicitation language unless a separate publication
+  decision explicitly approves that release posture
 - keep repo-local links valid so copied instructions still resolve cleanly
 
 If a technical compatibility term is required, keep it in a narrow,
@@ -224,7 +226,8 @@ Release-package roots are checked separately during
 `scripts/verify-release-package.ps1`. That scan blocks private sibling-project
 research terms, obvious official-endorsement or approval claims, unrelated
 third-party IP/franchise references, broad platform-scope wording, and legal
-certainty overclaims anywhere in shipped text files. It also keeps root
+certainty overclaims or monetization-solicitation language anywhere in shipped
+text files. It also keeps root
 player-facing copy (`README.md`,
 `PLAYER_README.txt`, and the generated package `CHANGELOG.md`) on
 protocol/provider-neutral wording and blocks current third-party

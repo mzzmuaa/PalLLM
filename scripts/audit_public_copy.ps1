@@ -21,6 +21,7 @@ $blockedPublicBrandPattern = $policy.BlockedPublicBrandPattern
 $blockedPublicScopePatterns = $policy.BlockedPublicScopePatterns
 $blockedPublicFranchisePatterns = $policy.BlockedPublicFranchisePatterns
 $blockedPublicLegalOverclaimPatterns = $policy.BlockedPublicLegalOverclaimPatterns
+$blockedPublicMonetizationPatterns = $policy.BlockedPublicMonetizationPatterns
 $blockedSiblingProjectPatterns = $policy.BlockedSiblingProjectPatterns
 
 function Get-RelativePath {
@@ -51,7 +52,8 @@ function Test-PublicCopyFiles {
         [switch]$CheckSiblingPatterns,
         [switch]$CheckScopePatterns,
         [switch]$CheckFranchisePatterns,
-        [switch]$CheckLegalOverclaimPatterns
+        [switch]$CheckLegalOverclaimPatterns,
+        [switch]$CheckMonetizationPatterns
     )
 
     foreach ($file in $Files) {
@@ -101,6 +103,15 @@ function Test-PublicCopyFiles {
                 }
             }
         }
+
+        if ($CheckMonetizationPatterns) {
+            foreach ($blocked in $blockedPublicMonetizationPatterns) {
+                if ($text -match $blocked.Pattern) {
+                    $match = [regex]::Match($text, $blocked.Pattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+                    Add-Issue -List $issues -FilePath $file -Kind "monetization-solicitation" -Message ("{0} Found: {1}" -f $blocked.Message, $match.Value)
+                }
+            }
+        }
     }
 }
 
@@ -112,13 +123,15 @@ Test-PublicCopyFiles `
     -CheckSiblingPatterns `
     -CheckScopePatterns `
     -CheckFranchisePatterns `
-    -CheckLegalOverclaimPatterns
+    -CheckLegalOverclaimPatterns `
+    -CheckMonetizationPatterns
 Test-PublicCopyFiles `
     -Files $publicSupportFiles `
     -BrandMessage "Contributor/support copy should avoid unnecessary third-party client or model brands when the protocol or file path is enough." `
     -CheckSiblingPatterns `
     -CheckFranchisePatterns `
-    -CheckLegalOverclaimPatterns
+    -CheckLegalOverclaimPatterns `
+    -CheckMonetizationPatterns
 
 $readmePath = Join-Path $repoRoot "README.md"
 if (Test-Path -LiteralPath $readmePath) {
@@ -149,7 +162,7 @@ if (-not (Test-Path -LiteralPath $releaseGuidePath)) {
             Add-Issue -List $issues -FilePath $releaseGuidePath -Kind "missing-release-guidance" -Message "docs/RELEASE.md should mention '$required'."
         }
     }
-    foreach ($required in @('unrelated third-party franchise', 'broader platform', 'sibling-project bleed')) {
+    foreach ($required in @('unrelated third-party franchise', 'broader platform', 'sibling-project bleed', 'monetization-solicitation')) {
         if ($releaseText -notmatch [regex]::Escape($required)) {
             Add-Issue -List $issues -FilePath $releaseGuidePath -Kind "missing-release-guidance" -Message "docs/RELEASE.md should mention '$required' public-copy guardrails."
         }
@@ -182,7 +195,7 @@ foreach ($file in $publicSupportFiles) {
 [void]$report.AppendLine()
 
 if ($issues.Count -eq 0) {
-    [void]$report.AppendLine("- Public copy is neutral enough for publication-facing surfaces, free of blocked sibling-project bleed, unrelated franchise, legal-overclaim, or scope-drift language, and the release/security guidance is present.")
+    [void]$report.AppendLine("- Public copy is neutral enough for publication-facing surfaces, free of blocked sibling-project bleed, unrelated franchise, legal-overclaim, monetization-solicitation, or scope-drift language, and the release/security guidance is present.")
 } else {
     [void]$report.AppendLine("## Issues")
     [void]$report.AppendLine()

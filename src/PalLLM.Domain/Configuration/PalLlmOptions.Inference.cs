@@ -17,7 +17,7 @@ public sealed class InferenceOptions
     // docs/LLAMA_CPP_BUNDLED.md and docs/LOCAL_MODELS_INVENTORY.md.
     public string BaseUrl { get; set; } = "http://127.0.0.1:8080/v1/";
 
-    public string Model { get; set; } = "Qwen3.6-35B-A3B-UD-Q8_K_XL";
+    public string Model { get; set; } = "Qwen3.5-9B-UD-Q6_K_XL";
 
     public string? ApiKey { get; set; }
 
@@ -301,12 +301,12 @@ public sealed class InferenceOptions
     /// configured inference endpoint to see which tier models are actually
     /// available and uses the highest-priority available tier on every chat
     /// request. A background worker re-probes on a cadence so the sidecar
-    /// graduates from the small "instant" tier (e.g. <c>gemma3:4b</c>) to
-    /// the large "quality" tier (e.g. an Unsloth dynamic quant of a 35B
-    /// Qwen-style MoE) the moment the larger model finishes downloading or
-    /// warming in the endpoint — the player gets working replies from the
-    /// first second of the session and automatically upgrades to better
-    /// replies once the heavy tier is ready, without manual config editing.
+    /// graduates from the fast worker tier (for example, a Qwen3.5-9B GGUF)
+    /// to a smarter multimodal tier (for example, Gemma 4 12B) the moment
+    /// the larger model finishes downloading or warming in the endpoint —
+    /// the player gets working replies from the first second of the session
+    /// and automatically upgrades to better replies once the heavy tier is
+    /// ready, without manual config editing.
     /// Empty list (default) disables tier orchestration and <see cref="Model"/>
     /// is used verbatim for every request.
     /// </summary>

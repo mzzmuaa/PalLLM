@@ -385,6 +385,87 @@ public sealed class ScriptExecutionTests
     }
 
     [Test]
+    public void PublicCopyAudit_BlocksMonetizationSolicitationInReleaseCopy()
+    {
+        // Pass 442: execute the public-copy audit against a tiny sandbox
+        // repo so the monetization-solicitation guard is proven by the
+        // script's actual policy loading and error path, not just source
+        // greps or domain-level pack tests.
+        SkipIfNoPwsh();
+        string repoRoot = Path.GetDirectoryName(LocateRepoFile("PalLLM.sln"))!;
+        string script = LocateRepoFile("scripts", "audit_public_copy.ps1");
+        string policyScript = LocateRepoFile("scripts", "public_copy_policy.ps1");
+        string toolingScript = LocateRepoFile("scripts", "PalLLM.Tooling.ps1");
+        string sandbox = Path.Combine(Path.GetTempPath(), $"PalLLM.PublicCopy.{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(sandbox, "scripts"));
+            Directory.CreateDirectory(Path.Combine(sandbox, "docs"));
+            Directory.CreateDirectory(Path.Combine(sandbox, ".github", "ISSUE_TEMPLATE"));
+            Directory.CreateDirectory(Path.Combine(sandbox, "package"));
+            File.Copy(script, Path.Combine(sandbox, "scripts", "audit_public_copy.ps1"));
+            File.Copy(policyScript, Path.Combine(sandbox, "scripts", "public_copy_policy.ps1"));
+            File.Copy(toolingScript, Path.Combine(sandbox, "scripts", "PalLLM.Tooling.ps1"));
+
+            File.WriteAllText(Path.Combine(sandbox, "README.md"),
+                "PalLLM is a focused Palworld companion mod. Donations welcome for bonus packs. See docs/RELEASE.md.");
+            File.WriteAllText(Path.Combine(sandbox, "NOTICE.md"), "PalLLM test notice.");
+            File.WriteAllText(Path.Combine(sandbox, "SECURITY.md"),
+                "Use private vulnerability reporting. Secret scanning push protection stays enabled.");
+            File.WriteAllText(Path.Combine(sandbox, "CONTRIBUTING.md"),
+                "Run the pre-commit hooks and publication audits before release.");
+            File.WriteAllText(Path.Combine(sandbox, "docs", "INDEX.md"), "# Index");
+            File.WriteAllText(Path.Combine(sandbox, "docs", "RELEASE.md"),
+                "Run public copy audit, path reference audit, and publish-audit. " +
+                "Keep push protection and private vulnerability reporting on. " +
+                "Publication blockers include unrelated third-party franchise, broader platform, sibling-project bleed, and monetization-solicitation.");
+            File.WriteAllText(Path.Combine(sandbox, ".github", "ISSUE_TEMPLATE", "bug_report.md"),
+                "Bug report template.");
+
+            ProcessResult r = RunPwsh(
+                Path.Combine(sandbox, "scripts", "audit_public_copy.ps1"),
+                "-RepoRoot", sandbox);
+
+            string allOutput = r.Stdout + " " + r.Stderr;
+            Assert.That(r.ExitCode, Is.Not.EqualTo(0),
+                "audit_public_copy.ps1 must fail when release-facing copy contains solicitation-style monetization language.");
+            Assert.That(allOutput, Does.Contain("monetization-solicitation").And.Contain("Donations"),
+                $"Audit output must name the stable issue kind and offending text. stdout=<<<{r.Stdout}>>> stderr=<<<{r.Stderr}>>>");
+            Assert.That(allOutput, Does.Not.Contain(repoRoot),
+                "Sandbox audit failures should report paths relative to the scanned repo, not leak the real PalLLM checkout path.");
+
+            File.WriteAllText(Path.Combine(sandbox, "package", "PLAYER_README.txt"),
+                "This candidate package advertises premium tiers for bonus packs.");
+            string toolingProbePath = Path.Combine(sandbox, "scripts", "run-tooling-publication-scan.ps1");
+            File.WriteAllText(toolingProbePath,
+                """
+                . (Join-Path $PSScriptRoot 'PalLLM.Tooling.ps1')
+                $packageRoot = Join-Path (Split-Path -Parent $PSScriptRoot) 'package'
+                $result = Test-PalLlmPublicationTextSurface -RootPath $packageRoot
+                if ($result.CheckedFileCount -ne 1) {
+                    throw "expected exactly 1 checked package text file; found $($result.CheckedFileCount)"
+                }
+                if (@($result.Violations).Count -ne 1) {
+                    throw "expected exactly 1 publication violation; found $(@($result.Violations).Count)"
+                }
+                Write-Output $result.Violations[0]
+                """);
+
+            ProcessResult tooling = RunPwsh(toolingProbePath);
+            Assert.That(tooling.ExitCode, Is.EqualTo(0),
+                $"PalLLM.Tooling.ps1 publication scanner probe must exit 0. stdout=<<<{tooling.Stdout}>>> stderr=<<<{tooling.Stderr}>>>");
+            Assert.That(tooling.Stdout, Does.Contain("PLAYER_README.txt")
+                    .And.Contain("paid-tier solicitation")
+                    .And.Contain("premium tiers"),
+                "The shared package/proof/support publication scanner must return a monetization-solicitation violation for shipped package text.");
+        }
+        finally
+        {
+            try { if (Directory.Exists(sandbox)) Directory.Delete(sandbox, recursive: true); } catch { }
+        }
+    }
+
+    [Test]
     public void HotPathDoc_DeclaresColdStartBudgetRow()
     {
         // Pass 360: HOT_PATH.md must include the cold-start section

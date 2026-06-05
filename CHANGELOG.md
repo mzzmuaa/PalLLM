@@ -8,7 +8,7 @@ All notable changes to PalLLM are documented here. Format follows
 First public-ready revision. Collapsed from multiple in-flight drafts
 dated `2026-04-18`, `2026-04-19`, `2026-04-22`, and `2026-04-23`.
 
-**Current baseline (rolling):** `1309` passing tests - `16/16` drift
+**Current baseline (rolling):** `1310` passing tests - `16/16` drift
 gates green - `122` feature-catalog entries (119 ready / 2 scaffolded
 / 1 deferred) - `57` `/api` routes - `38` MCP tools - `19`
 deterministic fallback strategies - `6` ADRs accepted - honest
@@ -17,6 +17,190 @@ roadmap `76.2%` - `0` build warnings.
 Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
+
+### Pass 445 - Qwen/Gemma default alignment and autobuild horizon scan (2026-06-04)
+
+**Context.** The recurring automation asked for the local model posture to stay
+strictly on Qwen3.5 9B + Gemma 4 12B through llama.cpp, and for the 2035
+autobuild/base-planning ideas to be refreshed against current research without
+turning PalLLM into a broader AI product catalog.
+
+**Changes.**
+- Aligned compiled defaults, development appsettings, config wizard/show
+  output, and environment-variable docs on `Qwen3.5-9B-UD-Q6_K_XL` for the
+  fast Worker lane and `gemma-4-12b-it-UD-Q6_K_XL` for the multimodal Edge /
+  vision lane.
+- Reworked `MODELS_2026.md` and `MODEL_COLLABORATION.md` so the current
+  recommendation is Qwen3.5 + Gemma 4 + deterministic fallback; TTS, ASR,
+  embeddings, and rerank stay disabled or deterministic unless an operator
+  wires a separately proven local lane.
+- Refreshed `FUTURE_2035.md` with a June 2026 research scan, an advisory
+  base-layout/autobuild planner shape, bounded reasoning-critique and
+  audio-event ideas, and an explicit hard no on unapproved structure placement.
+- Fixed chat routing so reactive screenshot barks stay on the fast Worker lane
+  with snapshot fallback, while deliberate image turns can still promote to the
+  Gemma multimodal Edge lane.
+
+**Verification.** Focused config/meta/runtime checks passed `120/120`; the
+affected runtime/planner checks passed `4/4`; full `dotnet test PalLLM.sln
+--configuration Release --no-restore --nologo --verbosity minimal` passed
+`1310/1310`; `scripts/path_reference_audit.ps1` passed with `0` findings; full
+audit passed `16/16` at `artifacts/full-audit/20260604-222825/RESULTS.md` with
+`0` warnings. No route, MCP, OpenAPI, feature-catalog, or executable-test count
+changed.
+
+### Pass 444 - monetization plural wording guard (2026-06-04)
+
+**Context.** A fourth layered review of the publication-safety scanners found
+one remaining wording bypass class: the shared monetization pattern blocked
+`donation`, `paid tier`, and `premium tier`, but ordinary release/package copy
+could use common plural forms such as `donations` or `premium tiers` without
+tripping the guard.
+
+**Changes.**
+- Extended the monetization-solicitation regex in `scripts/public_copy_policy.ps1`,
+  `scripts/PalLLM.Tooling.ps1`, and `PackPublicationSafetyValidator` to cover
+  plural donation, paid-tier, premium-tier, ad-supported, and sponsorship
+  wording while preserving the Pass 443 false-positive fix for neutral
+  `advertise` prose.
+- Reused existing executable tests instead of adding count churn:
+  `ScriptExecutionTests.PublicCopyAudit_BlocksMonetizationSolicitationInReleaseCopy`
+  now proves public-copy audit output catches `Donations`, and the tooling
+  package probe catches `premium tiers`.
+- Updated the narrative/personality pack-validator tests and meta source guards
+  so shareable pack validation and shipped-text scanners cannot silently drop
+  plural solicitation coverage later.
+
+**Verification.** Focused scanner / pack-validator / meta checks passed `4/4`;
+full `dotnet test PalLLM.sln --configuration Release --no-restore --nologo
+--verbosity minimal` passed `1310/1310`; full audit passed `16/16` at
+`artifacts/full-audit/20260604-185314/RESULTS.md` with `0` warnings. No runtime
+routes, MCP tools, OpenAPI schema, feature count, or executable test count
+changed.
+
+### Pass 443 - monetization scanner false-positive guard (2026-06-04)
+
+**Context.** A third layered review of the Pass 441/442 publication guards
+found the package/proof/support scanner path still had one subtle behavior
+risk: the monetization regex matched neutral text like `advertises` before the
+intended blocker phrase `premium tier`. That made the scanner stricter than the
+policy intended and noisier for ordinary release prose.
+
+**Changes.**
+- Tightened the shared monetization-solicitation regex in
+  `scripts/public_copy_policy.ps1`, `scripts/PalLLM.Tooling.ps1`, and
+  `PackPublicationSafetyValidator` so it still blocks donation, sponsor,
+  paid-tier, premium-tier, ad-supported, advertising-supported, and
+  advertisement copy without treating the plain verb `advertise` as a blocker.
+- Extended the existing
+  `ScriptExecutionTests.PublicCopyAudit_BlocksMonetizationSolicitationInReleaseCopy`
+  sandbox to execute `Test-PalLlmPublicationTextSurface` through
+  `PalLLM.Tooling.ps1` against shipped-package text and prove the reported
+  match is `premium tier`, not a neutral preceding verb.
+- Corrected this changelog's rolling baseline from `1309` to `1310` passing
+  tests so it matches the audited current-state mirrors after Pass 442.
+
+**Verification.** Focused publication scanner test passed `1/1`; full
+`dotnet test PalLLM.sln --configuration Release --no-restore --nologo
+--verbosity minimal` passed `1310/1310`; full audit passed `16/16` at
+`artifacts/full-audit/20260604-184518/RESULTS.md` with `0` warnings. No runtime
+routes, MCP tools, OpenAPI schema, feature count, or executable test count
+changed.
+
+### Pass 442 - public-copy monetization audit execution test (2026-06-04)
+
+**Context.** A second layered review of Pass 441 found no runtime defect in the
+new monetization-solicitation guard, but did identify one test-depth gap: the
+suite proved the policy strings existed and that authored packs reject the new
+class, yet it did not execute `scripts/audit_public_copy.ps1` against a positive
+release-facing example.
+
+**Changes.**
+- Added `ScriptExecutionTests.PublicCopyAudit_BlocksMonetizationSolicitationInReleaseCopy`,
+  which creates a minimal sandbox repo, copies the public-copy audit and policy
+  scripts into it, inserts `Support us on Patreon` into release-facing README
+  text, and proves the script exits nonzero with the stable
+  `monetization-solicitation` issue kind.
+- The test also verifies the failure output does not leak the real PalLLM
+  checkout path when scanning the sandbox.
+- Cascaded the rolling executable test count from `1309` to `1310` across
+  `PROJECT_NUMBERS.json` and the current-state doc/script mirrors.
+
+**Verification.** Focused new test passed `1/1`; count/mirror checks passed
+`3/3`; full `dotnet test` passed `1310/1310`; full audit passed `16/16` at
+`artifacts/full-audit/20260604-164212/RESULTS.md` with `0` warnings.
+
+### Pass 441 - monetization-solicitation publication guard (2026-06-04)
+
+**Context.** A read-only sibling publication-hygiene scan reinforced a useful
+gap class for PalLLM's own release posture: public/package text already blocked
+sibling bleed, unrelated franchise references, endorsement claims, broad scope
+drift, and legal overclaims, but did not separately block solicitation-style
+monetization copy.
+
+**Changes.**
+- Extended `scripts/public_copy_policy.ps1` and `scripts/audit_public_copy.ps1`
+  with a `BlockedPublicMonetizationPatterns` guard for release-facing repo docs
+  and support-facing issue templates.
+- Extended `scripts/PalLLM.Tooling.ps1` so packaged releases, proof bundles,
+  and support bundles reject the same solicitation-style monetization language
+  during publication text-surface scans.
+- Extended `PackPublicationSafetyValidator` so shareable personality/narrative
+  pack text rejects that class before load/publish, then updated existing tests
+  and source guards without adding new `[Test]` attributes.
+- Updated the release/API/architecture/operator docs and the feature-catalog
+  note so the central handoff surfaces describe the new blocker class.
+
+**Verification.** Focused publication-safety tests plus the meta-test source
+guards passed `30/30`; `scripts/audit_public_copy.ps1` passed clean; full
+`dotnet test PalLLM.sln --configuration Release --no-restore --nologo
+--verbosity minimal` passed `1309/1309`; full audit passed `16/16` at
+`artifacts/full-audit/20260604-163126/RESULTS.md` with `0` warnings. No runtime
+routes, MCP tools, OpenAPI schema, feature count, or executable test count
+changed.
+
+### Pass 440 - handoff label regression guard (2026-06-04)
+
+**Context.** A layered logical review of Pass 439 found no runtime/API defect,
+but did find a missing invariant in the tests: `PalScript_ExposesHandoffVerb`
+proved the `handoff` verb existed and told agents to audit first, but it did
+not prove the displayed pass label followed `docs/HANDOFF.md`. That left the
+exact stale-label failure mode from Pass 439 able to recur.
+
+**Changes.**
+- Strengthened the existing `PalScript_ExposesHandoffVerb` source guard in
+  `tests/PalLLM.Tests/LlamaCppBundlingTests.cs` to require the
+  `docs/HANDOFF.md` read path, the derived `$handoffPass` / `$passLabel` title
+  assembly, and the absence of the stale
+  `PalLLM handoff briefing (Pass 417)` literal.
+- Updated `docs/HANDOFF.md` to mark Pass 440 as the current handoff context.
+
+**Verification.** Focused `LlamaCppBundlingTests` passed `57/57`. Full
+`pal.ps1 audit` passed `16/16` at
+`artifacts/full-audit/20260604-162247/RESULTS.md` with `1309/1309` tests and
+`0` warnings. No new `[Test]` attribute was added, so the rolling executable
+test count remains `1309`.
+
+### Pass 439 - operator handoff label follows the central handoff (2026-06-04)
+
+**Context.** Baseline verification was green (`1309/1309` tests, `16/16`
+drift gates, `0` warnings), but the one-screen launcher handoff still printed
+"Pass 417" while `docs/HANDOFF.md` and this changelog had advanced to Pass 438.
+That made the fastest agent onboarding path look stale even when the audited
+state was current.
+
+**Changes.**
+- Updated `pal.ps1 handoff` to parse the pass number from the
+  `docs/HANDOFF.md` "Codex handoff" heading and render the title underline from
+  the actual title length. The launcher now follows the central handoff
+  document instead of carrying a second hard-coded pass mirror.
+- Updated `docs/HANDOFF.md` to mark Pass 439 as the current handoff context and
+  record this cleanup in "What just landed."
+
+**Verification.** `pal.ps1 handoff` now prints Pass 439. Full `pal.ps1 audit`
+after the edit passed `16/16` at
+`artifacts/full-audit/20260604-161545/RESULTS.md` with `1309/1309` tests and
+`0` warnings. Runtime/API behavior unchanged; no count-bearing surface moved.
 
 ### Pass 438 - concurrency stress guards for shared hot-path state (2026-06-04)
 

@@ -949,7 +949,7 @@ public sealed class RuntimeTests
             inferenceEnabled: true,
             visionClient: visionClient,
             visionEnabled: true);
-        fixture.Options.Inference.Model = "hf.co/unsloth/Qwen3.6-35B-A3B-Instruct-UD-Q4_K_XL-GGUF";
+        fixture.Options.Inference.Model = "Qwen3.5-9B-UD-Q6_K_XL";
         fixture.Options.Fallback.Enabled = false;
         fixture.Options.Fallback.EnablePolicyBypass = false;
         fixture.Runtime.UpdateSnapshot(new GameWorldSnapshot
@@ -1026,7 +1026,7 @@ public sealed class RuntimeTests
     {
         var inferenceClient = new CountingInferenceClient(() => InferenceResult.Succeeded("Keep Verdant Hub on production and push scouting from the east ridge."));
         using var fixture = new TestFixtureContext(inferenceClient, inferenceEnabled: true);
-        fixture.Options.Inference.Model = "unsloth/Qwen3.6-27B-GGUF";
+        fixture.Options.Inference.Model = "gemma-4-12b-it-UD-Q6_K_XL";
         fixture.Options.Fallback.Enabled = false;
         fixture.Options.Fallback.EnablePolicyBypass = false;
         fixture.Runtime.UpdateSnapshot(new GameWorldSnapshot
@@ -1061,7 +1061,7 @@ public sealed class RuntimeTests
         Assert.That(inferenceClient.LastPrompt.PresencePenalty, Is.EqualTo(0.55f).Within(0.001f));
         Assert.That(inferenceClient.LastPrompt.MaxTokens, Is.EqualTo(320));
         Assert.That(response.InferenceProfileId, Is.EqualTo("dense-deliberate"));
-        Assert.That(response.InferenceModel, Does.Contain("27B"));
+        Assert.That(response.InferenceModel, Does.Contain("gemma-4-12b"));
         Assert.That(response.ThinkingRequested, Is.True);
     }
 
@@ -3789,7 +3789,7 @@ public sealed class RuntimeTests
         string json = JsonSerializer.Serialize(new
         {
             Name = "Official Palworld Multi-Game Pack",
-            Description = "A lawyer-proof endorsed Pocketpair Pok\u00E9mon story tuned around Qwen, Gemma, SGLang, and NVIDIA TensorRT notes for a generic AI platform.",
+            Description = "A lawyer-proof endorsed Pocketpair Pok\u00E9mon story tuned around Qwen, Gemma, SGLang, and NVIDIA TensorRT notes for a generic AI platform with Donations welcome.",
             Author = "QA",
             Characters = new object[]
             {
@@ -3824,6 +3824,10 @@ public sealed class RuntimeTests
             error => error.Path == "Description" &&
                      error.Message.Contains("legal", StringComparison.OrdinalIgnoreCase) &&
                      error.Message.Contains("lawyer-proof", StringComparison.OrdinalIgnoreCase)));
+        Assert.That(result.Errors, Has.Some.Matches<NarrativePackValidationError>(
+            error => error.Path == "Description" &&
+                     error.Message.Contains("donation", StringComparison.OrdinalIgnoreCase) &&
+                     error.Message.Contains("Donations", StringComparison.Ordinal)));
         Assert.That(result.Errors, Has.Some.Matches<NarrativePackValidationError>(
             error => error.Path == "Description" &&
                      error.Message.Contains("broader platform", StringComparison.OrdinalIgnoreCase)));

@@ -1,6 +1,6 @@
 # Future direction - companion-runtime ideas through 2035
 
-Last audited: `2026-05-22`
+Last audited: `2026-06-04`
 
 PalLLM today is a local-first companion runtime with a portable adapter
 seam, a deterministic fallback director, a 38-tool MCP surface, an
@@ -24,6 +24,28 @@ If you are an agent or a contributor reading this looking for a
 non-trivial change, every idea below has a clear first deliverable and
 a clear stop condition. Pick one, ship the slice, and the next slice
 becomes obvious.
+
+## June 2026 research refresh
+
+The current external scan reinforces three constraints for PalLLM:
+
+- **Keep the local model surface narrow.** The default local lane is
+  `Qwen3.5-9B-UD-Q6_K_XL` for fast companion text and
+  `gemma-4-12b-it-UD-Q6_K_XL` for multimodal edge work, both behind
+  llama.cpp `llama-server`. Gemma 4 12B now fits the "local multimodal
+  edge" slot because it targets laptop-class memory, supports native image
+  and audio input, and ships with MTP drafter support.
+- **Treat Palworld base automation as advisory until live hooks prove more.**
+  Palworld's public surface still frames building/crafting as core Early
+  Access systems and base operation as Palbox-bounded, pathing-sensitive,
+  storage/production/farming work. Recent public notes emphasize building
+  fixes and base AI/pathing improvements, not a stable external placement API.
+- **Use hybrid planning, not unchecked autonomy.** Current agent and embodied
+  AI research is converging on world models, world-action models, and grounded
+  reflective planning, but those are still proof tools for PalLLM. Any 2035
+  "AGI-like" base helper must compile a plan, simulate or explain expected
+  effects, show uncertainty, and wait for explicit operator approval before
+  a guarded action path is even considered.
 
 > **Companion to:** [`ROADMAP.md`](ROADMAP.md) (the current build
 > queue, weighted by player-experience), `AGENTIC_PATTERNS_2026.md` (retired Pass 418)
@@ -141,9 +163,8 @@ limiter). Cancellable.
 
 **Where it fits.**
 [`src/PalLLM.Domain/Memory/ReflectionService.cs`](../src/PalLLM.Domain/Memory/ReflectionService.cs)
-gains a triggered-on-idle path. New
-`src/PalLLM.Sidecar/SleepModeDreamWorker.cs` background service
-fires when the sidecar has been idle for N minutes.
+gains a triggered-on-idle path. A future sleep-mode dream worker background
+service fires when the sidecar has been idle for N minutes.
 
 **First deliverable.** When the bridge inbox has been quiet for
 >=10 minutes AND the operator opted in via
@@ -159,84 +180,78 @@ dream to land somewhere useful.
 **Hard-rule check.** Opt-in. Bounded (one entry per idle window).
 Cancellable on bridge wake.
 
-### 5a. Hierarchical-reasoning small-model advisor
+### 5a. Local reasoning critique advisor
 
-**Where it fits.** New
-`src/PalLLM.Domain/Inference/HrmAdvisor.cs` runs alongside the
-existing Duo planner. Targets the May 2026 wave of small models
-(`sapientinc/HRM-Text-1B`, `FrontiersMind/Nandi-Mini-600M`) that
-ship with built-in hierarchical scratchpad / chain-of-thought. The
-advisor exposes a `Reason(prompt) -> (reasoning, finalAnswer)`
-shape so a fallback strategy can ask "would a small reasoning model
-have a more grounded answer here?" without paying the full
-inference-lane cost.
+**Where it fits.** A future reasoning-critique advisor runs alongside the
+existing Duo planner. It does not introduce a third default model. The advisor
+asks the configured Qwen3.5 fast lane or Gemma 4 smart lane for a bounded
+critique packet: assumptions, missing receipts, risk flags, and final answer.
+That gives PalLLM an "AGI-style" self-check shape without exposing raw
+chain-of-thought or broadening the model catalog.
 
-**First deliverable.** A `HrmReasoningResponse` record + an opt-in
-HTTP route `POST /api/inference/reason` that forwards to a configured
-HRM-class endpoint, returns both the scratchpad and the answer. The
-chat path stays on the existing Duo planner; the reasoning lane is
-an explicit operator choice.
+**First deliverable.** A `ReasoningCritiqueResponse` record plus an opt-in
+HTTP route `POST /api/inference/critique` that forwards to the existing local
+llama.cpp endpoint and returns only bounded, operator-safe critique fields and
+the final answer. The chat path stays on the existing Duo planner; the critique
+lane is an explicit operator choice.
 
-**What blocks it today.** Hierarchical-reasoning models are still
-new on the Hub (HRM-Text-1B started trending Nov 2025). Worth
-implementing once one model in this class has six months of
-production usage data.
+**What blocks it today.** The repo still needs replay fixtures that prove the
+critique packet improves bad planning answers without teaching the model to
+over-refuse ordinary companion chat. Implement after a small proof set exists
+for base layout, raid triage, and crafting-priority decisions.
 
-**Hard-rule check.** Local-first (HRM models are small enough to
-run on edge tier). Opt-in (new endpoint, not on the chat hot path).
-Deterministic fallback preserved (the chat path still works without
-the reasoning lane).
+**Hard-rule check.** Local-first, llama.cpp-only, opt-in, not on the chat hot
+path. Deterministic fallback is preserved because ordinary chat still works
+without the critique lane.
 
-Source: [`MODELS_2026.md` §1 — Fast-start chat lane](MODELS_2026.md#1-chat--fast-start-lane-instant-boot).
+Source: [`MODELS_2026.md` §1 — Fast worker lane](MODELS_2026.md#1-chat--fast-worker-lane).
 
 ### 5b. Always-on realtime audio understanding
 
 **Where it fits.** Today's ASR lane transcribes player speech on
-demand. A realtime-audio model like
-`mistralai/Voxtral-Mini-4B-Realtime-2602` could continuously listen
-to *game audio* (not just player voice) and inject signal-level
-events back into the bridge — "footsteps approaching from the
-north," "boss music started," "raid horn sounded." The companion
-then narrates with hearing-grounded awareness, not just snapshot-state
-guessing.
+demand. The Gemma 4 12B smart lane could optionally classify short,
+operator-approved game-audio windows and inject signal-level events
+back into the bridge: "footsteps approaching from the north," "boss
+music started," "raid horn sounded." The companion then narrates with
+hearing-grounded awareness, not just snapshot-state guessing.
 
 **First deliverable.** A new `audio_event` bridge envelope kind
 (filesystem one-way, same shape as `chat_message`) carrying detected
-audio events from a player-side Voxtral process. PalLLM's runtime
-treats them as ambient world events the narration advisor can pick
-up. No PalLLM-side audio capture — the realtime model lives in the
-operator's chosen audio pipeline.
+audio events from an operator-approved local audio classifier. PalLLM's
+runtime treats them as ambient world events the narration advisor can pick up.
+No PalLLM-side audio capture; any experiment must run through the same local
+llama.cpp/Gemma proof path as the smart multimodal lane.
 
-**What blocks it today.** Voxtral-class realtime models are
-brand-new (May 2026). Detected-event taxonomy ("boss-music",
-"footsteps", "ambient-rain") needs a stable schema before PalLLM
-commits to consuming them.
+**What blocks it today.** Gemma audio classification needs route-level
+llama.cpp proof for short game-audio windows, and the detected-event taxonomy
+("boss-music", "footsteps", "ambient-rain") needs a stable schema before
+PalLLM commits to consuming it.
 
 **Hard-rule check.** Filesystem one-way (audio events flow inbound
 only, same as every other bridge event). Opt-in (default off; the
 realtime model runs in a separate operator-managed process).
 Local-first (no cloud audio service involved).
 
-Source: [`MODELS_2026.md` §5 — ASR](MODELS_2026.md#5-asr--speech-to-text) (Voxtral realtime entry).
+Source: [`MODELS_2026.md` §5 — ASR](MODELS_2026.md#5-asr--speech-to-text).
 
 ### 5c. Hybrid-retrieval memory upgrade
 
 **Where it fits.**
 [`src/PalLLM.Domain/Memory/ConversationMemoryStore.cs`](../src/PalLLM.Domain/Memory/ConversationMemoryStore.cs)
 already does deterministic FNV-1a bag-of-tokens recall. The 2026
-generation of embedding models (`BAAI/bge-m3`) ships dense + sparse
-+ multivector retrieval in one model, plus a context-aware exact-token
-companion. The upgrade preserves the local-first guarantee — the
-embedder still lives in-process — but the *retrieval algorithm*
-upgrades from bag-of-tokens-similarity to hybrid scoring.
+retrieval lesson is still useful, but PalLLM should apply it as an
+algorithmic upgrade first, not as another default model. The upgrade preserves
+the local-first guarantee — the embedder still lives in-process — while the
+retrieval algorithm upgrades from bag-of-tokens-similarity to hybrid scoring.
 
 **First deliverable.** Implement `HybridLocalEmbedder` next to the
 existing `SemanticEmbedder` in
 `Portable/PortableAdapterContracts.cs`. Initially the dense lane is
 still the FNV-1a projection; the sparse lane is BM25 over the
 turn's tokens. Both stay deterministic and in-process. Operators can
-later wire an external `bge-m3` server if they want the model-quality
-dense lane, with the local two-lane hybrid as fallback.
+later wire an external embedding server only after separate opt-in, license,
+latency, and deterministic-fallback proof; the local two-lane hybrid remains
+the supported default.
 
 **What blocks it today.** No urgency — the exact-token reranker
 added by an earlier pass already covers the worst loss-of-recall
@@ -249,6 +264,40 @@ preserves the no-network promise. Filesystem-only persistence
 unchanged.
 
 Source: [`MODELS_2026.md` §6 — Embeddings](MODELS_2026.md#6-embeddings--memory-recall).
+
+### 5d. Advisory base-layout and autobuild planner
+
+**Where it fits.** A future base-layout advisor, surfaced later as
+`POST /api/base/layout/advise` plus a read-only MCP tool. It consumes
+`GameWorldSnapshot.KnownBases`, latest `production` / `travel` / `raid`
+events, optional screenshot-derived clutter/pathing notes, and the current
+automation allowlist. It returns a `BaseLayoutAdvice` record: goals,
+zones, structures to consider, required materials, Pal work-type needs,
+pathing risks, raid exposure, and an operator-visible proof packet.
+
+**First deliverable.** Ship the pure advisor only. Input is a small
+`BaseLayoutRequest` such as `{ Goal: "ore-and-food", BaseId?, Risk? }`.
+Output is a dry-run plan and never writes bridge outbox action files. Reuse the
+existing base-network and crafting-discipline presentation families so the plan
+appears as a card/readout instead of another doc-only artifact.
+
+**What blocks it today.** PalLLM does not yet have a validated live structure
+catalog, build-snap validity check, Pal pathing clearance metric, or stable
+native placement hook. The `production-sampler` also remains scaffolded until
+live hook validation. Without those receipts, automatic placement would look
+impressive while being brittle after a Palworld patch.
+
+**Hard-rule check.** Read-only by default. Any later bridge action must be
+behind `Automation.Enabled`, an explicit allowlist, dry-run preview, and
+native proof evidence. The sidecar still never reaches into the Palworld
+process; it only emits filesystem bridge advice for the UE4SS side to consume.
+
+**2035 extension.** Once live hooks exist, the same advisor can grow a shadow
+simulator: candidate base plans are replayed against recent production/travel
+events, scored for pathing, material flow, raid exposure, and player effort,
+then ranked with uncertainty. World-model or world-action-model research can
+inform that simulator, but the first shippable contract stays symbolic and
+auditable.
 
 ### 5. Per-companion LoRA hot-swap
 
@@ -480,6 +529,10 @@ the rejection.
 - **Auto-applying promotion suggestions to source.** Violates the
   human-in-loop guarantee on the promotion pipeline. Apply writes to
   `PromotionStaging/`, never source files.
+- **Unapproved autobuild placement.** Violates observer-only and would be
+  fragile without a live structure catalog, snap-validation hook, pathing
+  receipt, and player approval. PalLLM may propose a base plan; it may not
+  place or destroy structures automatically.
 - **Persistent telemetry without explicit consent.** Privacy
   posture surface (`/api/privacy/posture`) classifies every
   data-emitting surface; nothing leaves the machine on a fresh
@@ -514,5 +567,19 @@ deliverable, the PR can also include the implementation slice.
   audio pipeline patterns.
 - [`adr/`](adr/) - six accepted architecture decisions; load-bearing
   for any new idea.
+
+## Sources
+
+Research refreshed on 2026-06-04:
+
+- [Google: Introducing Gemma 4 12B](https://blog.google/innovation-and-ai/technology/developers-tools/introducing-gemma-4-12b/)
+- [Qwen/Qwen3.5-9B model card](https://huggingface.co/Qwen/Qwen3.5-9B)
+- [Unsloth Qwen3.5-9B MTP GGUF](https://huggingface.co/unsloth/Qwen3.5-9B-MTP-GGUF)
+- [llama.cpp multimodal documentation](https://github.com/ggml-org/llama.cpp/blob/master/docs/multimodal.md)
+- [Palworld on Steam](https://store.steampowered.com/app/1623730/Palworld/)
+- [Palworld Wiki: Base](https://palworld.wiki.gg/wiki/Base)
+- [Microsoft Research: World Model for Robot Learning survey](https://www.microsoft.com/en-us/research/publication/world-model-for-robot-learning-a-comprehensive-survey/)
+- [World Action Models: The Next Frontier in Embodied AI](https://arxiv.org/abs/2605.12090)
+- [IBM Research: SPIRAL symbolic LLM planning](https://research.ibm.com/publications/spiral-symbolic-llm-planning-via-grounded-and-reflective-search)
 
 

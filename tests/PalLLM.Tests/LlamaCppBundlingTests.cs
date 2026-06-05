@@ -1124,6 +1124,14 @@ public class LlamaCppBundlingTests
             "Run-Handoff must explicitly tell the next agent to run the audit first.");
         Assert.That(palScript, Does.Contain("Do-not-touch list"),
             "Run-Handoff must surface the do-not-touch surfaces inline.");
+        Assert.That(palScript, Does.Contain("$handoffPath = Join-Path $repoRoot 'docs/HANDOFF.md'"),
+            "Run-Handoff must read the central handoff doc before rendering its pass label.");
+        Assert.That(palScript, Does.Contain("$handoffPass"),
+            "Run-Handoff must derive its pass label from docs/HANDOFF.md instead of hard-coding it.");
+        Assert.That(palScript, Does.Contain("$title = \"PalLLM handoff briefing ($passLabel)\""),
+            "Run-Handoff title must be assembled from the derived pass label.");
+        Assert.That(palScript, Does.Not.Contain("PalLLM handoff briefing (Pass 417)"),
+            "Run-Handoff must not reintroduce the stale hard-coded Pass 417 title.");
 
         string palJson = File.ReadAllText(LocateRepoFile("pal.json"));
         Assert.That(palJson, Does.Contain("handoff").Or.Contain("\"handoff\""),

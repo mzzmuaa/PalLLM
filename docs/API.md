@@ -692,8 +692,9 @@ text.
 Publication-safety findings use the same `Errors[]` shape. The validator is a
 deterministic guardrail, not legal advice: it rejects obvious official
 endorsement/sponsorship claims, unrelated third-party IP references,
-model/runtime/vendor brand references, and broad multi-game platform language
-before shareable pack text is loaded or published.
+model/runtime/vendor brand references, broad multi-game platform language, and
+monetization-solicitation language before shareable pack text is loaded or
+published.
 
 ### GameWorldSnapshot (snapshot body)
 

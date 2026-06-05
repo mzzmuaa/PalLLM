@@ -25,7 +25,7 @@ Current solution shape:
 
 Audit-backed test status:
 
-- `1309` tests passed on `2026-06-03`
+- `1310` tests passed on `2026-06-04`
 
 HTTP ingress is bounded before and after JSON binding. The sidecar applies
 `PalLLM:Http:ApiRequestBodyMaxBytes` (`10 MiB` default) to `/api` and `/mcp`
@@ -611,7 +611,8 @@ privacy redaction pass and then the shared publication text-surface scanner; the
 manifest records `PrivacyRedaction*` fields plus `PublicationScanPassed`,
 checked file count, and violations. The bundle becomes `invalid` when the scan
 finds sibling-project bleed, endorsement/approval claims, unrelated franchise
-references, broad platform-scope drift, or legal certainty overclaims. The
+references, broad platform-scope drift, legal certainty overclaims, or
+monetization-solicitation language. The
 stricter root-package pass also keeps player-facing root copy free of
 third-party model/runtime/vendor brands. Old bundles without redaction evidence
 are routed toward recapture before sharing.
