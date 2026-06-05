@@ -1,13 +1,15 @@
 # PalLLM Documentation Index
 
-Last audited: `2026-05-24`
+Last audited: `2026-06-05`
 
 Docs are organised by the [Diataxis](https://diataxis.fr/) framework: the
 right doc depends on what you're trying to do right now, not who you are.
 
-> **Coding agents** — [`../AGENTS.md`](../AGENTS.md) is the root-level
-> briefing. [`../CLAUDE.md`](../CLAUDE.md) is the Claude-Code-specific
-> shortcut. Read those first, then come back here for the doc map.
+> **Source of truth** — [`../README.md`](../README.md) describes PalLLM
+> completely; its Develop it section is the authority model for contributors and agents.
+> [`../AGENTS.md`](../AGENTS.md) adds the engine specifics README is not allowed
+> to name; [`../CLAUDE.md`](../CLAUDE.md) is the Claude-Code shortcut. Read
+> README first, then come back here for the full doc map.
 
 ## Start here
 
@@ -157,8 +159,8 @@ right doc depends on what you're trying to do right now, not who you are.
 
 ### Reference - information-oriented
 
-- [`../README.md`](../README.md) - canonical route inventory, runtime posture, bridge flow, feature pointers.
-- [`../AGENTS.md`](../AGENTS.md) - agent-oriented root-level briefing: essential reading order, non-negotiable invariants, working loop, anti-patterns, handoff protocol.
+- [`../README.md`](../README.md) - the single source of truth: what PalLLM is, how it is shaped, the full public surface, how to operate it, and (in its Develop it section) the complete authority model for contributors and agents.
+- [`../AGENTS.md`](../AGENTS.md) - agent entry point: defers to README and adds the engine/model specifics README is not allowed to name.
 - [`../CLAUDE.md`](../CLAUDE.md) - Claude-Code-specific quick reference with drift-gate shortcuts.
 - [`CHEAT_SHEET.md`](CHEAT_SHEET.md) - one-page summary of everything: every `pal.ps1` verb, every key file, every drift gate, the hard rules, the layout, and the "I want to add X" quick map.
 - [`QUICKREF.md`](QUICKREF.md) - sortable / grep-able alphabetical table of every surface: pal.ps1 verbs, drift gates, hot-path budgets, OpenTelemetry spans, ResponsePath values, bridge directories, runtime root layout, health endpoints, configuration root keys, environment variables, doc map.

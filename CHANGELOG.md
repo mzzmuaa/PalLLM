@@ -18,6 +18,36 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 447 - README promoted to the single source of truth; AGENTS deduped (2026-06-05)
+
+**Context.** Pass 446 made `AGENTS.md` the single source of truth, but the
+publication-hygiene gate forbids the README from naming the engine/models while
+the count gates *require* the README to carry the live numbers - so the two
+files had inverted constraints and both tried to be "the whole picture." The
+front door a human or coding agent hits first (and industry practice) is the
+README; this pass makes it the authoritative one and dedupes the rest.
+
+**Changes.**
+- Rewrote `README.md` as the complete, brand-free, self-contained source of
+  truth with an industry-standard structure (what it is / how it works / public
+  surface / operate / develop / roadmap / harvest / doc map), adding a new
+  inlined §5 "Develop it - the authority model" so a contributor or coding agent
+  gets the one rule, the seven invariants, the drift-gate cascade, the working
+  loop, the what-not-to-touch list, and the two verify commands without leaving
+  the page. Added an explicit before/after-every-change review ritual.
+- Preserved every drift-gated string verbatim (the `**57 `/api` routes**` bold
+  span, the `122` + `119 ready / 2 scaffolded / 1 deferred` feature blockquote,
+  and `Passed: 1310`) and kept the file free of the blocked vendor brand names.
+- Deduped `AGENTS.md` from a parallel full description into a lean agent entry
+  point that defers to README §5 and carries only the engine/model specifics the
+  README is not allowed to name (the bundled engine is `llama.cpp`; the per-turn
+  mesh lives in `src/PalLLM.Sidecar/appsettings.json` + the operator docs).
+- Repointed the agent doorways at README as the source of truth: `CLAUDE.md` and
+  `docs/INDEX.md` now name README §5 as the authority model, with their gated
+  test-count / hot-file line-count claims preserved.
+- Documentation architecture only - no code, route, feature, or test-count
+  change. Audit green: 16/16 gates, 1310 tests, 0 warnings.
+
 ### Pass 446 - AGENTS.md hardened into the single source-of-truth root document (2026-06-05)
 
 **Context.** PalLLM's description was spread across AGENTS.md (a navigational hub

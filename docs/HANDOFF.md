@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 446)
+## Codex handoff (read first — Pass 447)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260605-062841/RESULTS.md`](../artifacts/full-audit/20260605-062841/RESULTS.md)
+  [`../artifacts/full-audit/20260605-155019/RESULTS.md`](../artifacts/full-audit/20260605-155019/RESULTS.md)
   (run dirs under `artifacts/` are git-ignored + auto-pruned to the newest
   `12` by the audit's retention cap, so this pointer is informational, not a
   clone-portable link)
@@ -163,6 +163,22 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
+- **Pass 447 (landed) - README promoted to the single source of truth; AGENTS deduped.**
+  Inverted the Pass 446 split: `README.md` (the front door, and the file the
+  count gates require to carry the live numbers) is now the complete, brand-free
+  source of truth. Added an inlined section "Develop it - the authority model"
+  that gives a contributor or coding agent the one rule, the seven invariants,
+  the drift-gate cascade, the working loop, the what-not-to-touch list, and the
+  two verify commands without leaving the page, plus an explicit
+  before/after-every-change review ritual. Every drift-gated README string was
+  preserved verbatim (the bold route-count span, the feature-count blockquote
+  and status split, and the pinned test-status line) and the file stays free of
+  the blocked vendor brand names. `AGENTS.md` deduped to a lean agent entry point
+  that defers to the README and carries only the engine/model specifics the
+  README is not allowed to name; `CLAUDE.md` and `docs/INDEX.md` repointed at the
+  README as the authority model, with their gated test-count / hot-file
+  line-count claims intact. Doc-only - no code/route/feature/test count moved.
+  `16/16` audit, `1310/1310` tests, `0` warnings.
 - **Pass 446 (landed) - AGENTS.md hardened into the single source-of-truth root.**
   Rewrote `AGENTS.md` from a navigational hub of pointers into a self-contained,
   durable root that lets any human or coding agent understand and operate the

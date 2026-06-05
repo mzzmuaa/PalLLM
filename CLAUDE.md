@@ -1,7 +1,11 @@
 # Claude Code — PalLLM Quick Reference
 
-This file is what Claude Code reads when it loads the repo. It's a
-subset of [`AGENTS.md`](AGENTS.md) with Claude-specific shortcuts.
+This file is what Claude Code reads when it loads the repo.
+[`README.md`](README.md) is the complete source of truth - its
+[Develop it section](README.md#develop-it---the-authority-model) is the
+authority model (the one rule, the invariants, the verify commands). [`AGENTS.md`](AGENTS.md) adds
+the engine specifics README is not allowed to name. This file is the
+Claude-Code-specific shortcut into them.
 
 ## Project
 
@@ -43,7 +47,7 @@ these will usually fire until you update the docs:
 - `Drift_Test_count_docs` — for `[Test]` attributes in `tests/PalLLM.Tests/*.cs`
 - `Drift_OpenApi_snapshot` — for the committed `docs/openapi/palllm-sidecar-v1.json`
 - `Drift_Doc_freshness` — 45-day cap on `Last audited: \`YYYY-MM-DD\`` stamps
-- Full list in `AGENTS.md` § "Working loop"
+- Full list in `scripts/run_full_audit.ps1`; the authority model is the `README.md` Develop it section
 
 ## Handoff
 
@@ -62,4 +66,5 @@ these will usually fire until you update the docs:
 - **Never skip the drift audit.** It's 5 seconds and catches 90% of
   doc-code mismatches before they ship.
 
-See [`AGENTS.md`](AGENTS.md) for the full briefing.
+See [`README.md`](README.md) for the complete picture and [`AGENTS.md`](AGENTS.md)
+for the engine specifics.
