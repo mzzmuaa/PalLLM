@@ -63,6 +63,16 @@ History is **append-only**: never rewrite past `CHANGELOG.md` /
 the README's Develop it section; after a change, update `README.md` and its
 drift-gated numbers so they never go stale - the audit fails if they do.
 
+## Your per-agent worklog
+
+You are not the only agent here. To keep parallel work conflict-free, log what
+you change in your **own** file under `docs/AgentWork/` - create
+`docs/AgentWork/<YourName>.md` if it does not exist, name yourself in it, and
+append one short entry per pass (what / why / files / how you verified). That
+keeps the shared `CHANGELOG.md` and `docs/HANDOFF.md` from becoming
+merge-conflict hot spots while still leaving a clear, attributable trail. The
+protocol is in [`docs/AgentWork/README.md`](docs/AgentWork/README.md).
+
 ---
 
 The other agent doorways defer here and to `README.md`:
