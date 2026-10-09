@@ -58,6 +58,7 @@ changes terms in a future version.
 | Package | Scope | SPDX license expression |
 |---|---|---|
 | `Microsoft.AspNetCore.OpenApi` | Runtime/build OpenAPI support | `MIT` |
+| `Microsoft.OpenApi` | Runtime/build OpenAPI parser security pin | `MIT` |
 | `Microsoft.Extensions.ApiDescription.Server` | Build-time OpenAPI export | `MIT` |
 | `ModelContextProtocol.AspNetCore` | Runtime MCP server surface | `Apache-2.0` |
 | `OpenTelemetry.Exporter.OpenTelemetryProtocol` | Optional OTLP tracing export | `Apache-2.0` |
