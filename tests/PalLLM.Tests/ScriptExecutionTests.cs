@@ -205,7 +205,7 @@ public sealed class ScriptExecutionTests
         ProcessResult r = RunPwsh(script,
             "-LlamaCppUrl", "http://127.0.0.1:9",
             "-SpecType", "draft-mtp",
-            "-ModelProfile", "qwen36",
+            "-ModelProfile", "qwen35",
             "-DryRun");
 
         Assert.That(r.ExitCode, Is.EqualTo(0),
@@ -220,22 +220,22 @@ public sealed class ScriptExecutionTests
     }
 
     [Test]
-    public void ConnectLlamaCpp_Qwen3CoderWithSpecType_FailsBeforePrintingUnsafeCommand()
+    public void ConnectLlamaCpp_UnsupportedModelProfile_FailsBeforePrintingCommand()
     {
         SkipIfNoPwsh();
         string script = LocateRepoFile("scripts", "connect-llamacpp.ps1");
 
         ProcessResult r = RunPwsh(script,
             "-LlamaCppUrl", "http://127.0.0.1:9",
-            "-ModelProfile", "qwen3-coder",
+            "-ModelProfile", "legacy-profile",
             "-SpecType", "draft-mtp",
             "-DryRun");
 
         string allOutput = r.Stdout + " " + r.Stderr;
         Assert.That(r.ExitCode, Is.Not.EqualTo(0),
-            "Qwen3-Coder-Next speculative decode must fail fast until the lane has upstream and route-smoke proof.");
-        Assert.That(allOutput, Does.Contain("Qwen3-Coder-Next").And.Contain("-SpecType none"),
-            "Failure output must tell the operator to keep Qwen3-Coder-Next on the no-spec lane.");
+            "Unsupported sampler profiles must fail fast before any launch recipe is printed.");
+        Assert.That(allOutput, Does.Contain("does not belong to the set").And.Contain("qwen35").And.Contain("gemma"),
+            "Failure output must show the supported current profiles.");
         Assert.That(allOutput, Does.Not.Contain("Copy-paste setup"),
             "The connector must not print an unsafe launch command after rejecting the profile/spec combination.");
     }

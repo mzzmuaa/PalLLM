@@ -104,6 +104,13 @@ Three ideas define it, and everything else follows from them:
   it never reaches into Palworld to act without an explicit, guarded opt-in
   ([`docs/adr/0003-one-way-advisory-bridge.md`](docs/adr/0003-one-way-advisory-bridge.md)).
 
+**Scope and ownership boundary.** PalLLM is a Palworld + UE4SS integration
+with a neutral, reusable sidecar core. Adjacent local projects may inspire only
+generic engineering patterns; tracked PalLLM code and docs must not import their
+names, assets, prompts, lore, characters, gameplay rules, or product identity.
+Keep feature copy about this mod, keep reusable interfaces generic, and keep
+the affiliation disclaimer in [`NOTICE.md`](NOTICE.md) current.
+
 **What it actually does** (every shipped capability is an explicit, drift-gated
 entry in `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs`; grouped here so
 nothing is missed):
@@ -409,6 +416,7 @@ index is [`docs/INDEX.md`](docs/INDEX.md).
 | Prepare a release | [`docs/RELEASE.md`](docs/RELEASE.md) |
 | Read the roadmap / build queue | [`docs/ROADMAP.md`](docs/ROADMAP.md) / [`docs/IMPLEMENTATION_QUEUE.md`](docs/IMPLEMENTATION_QUEUE.md) |
 | Resume after a coding handoff | [`docs/HANDOFF.md`](docs/HANDOFF.md) |
+| Review per-agent work notes | [`docs/AgentWork/Codex.md`](docs/AgentWork/Codex.md) |
 | Audit what leaves the machine | [`docs/PRIVACY.md`](docs/PRIVACY.md) |
 | Review the latest changes | [`CHANGELOG.md`](CHANGELOG.md) |
 

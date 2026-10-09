@@ -11,7 +11,7 @@ save a full repo re-audit before the next implementation pass.
 > To lift one capability into another project without the rest of the
 > repo, read [`HARVEST.md`](HARVEST.md) first.
 
-## Codex handoff (read first — Pass 447)
+## Codex handoff (read first — Pass 452)
 
 If you are picking this repo up cold (Codex, a fresh Claude session,
 any agent), this section is your single-page briefing. Everything
@@ -109,48 +109,48 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 - `19` deterministic fallback strategies
 - `1310` passing tests from `dotnet test PalLLM.sln`
 - `16 / 16` drift gates PASS on the latest audit
-- `1104` lines in `PalLlmRuntime.cs`, `391` lines in
+- `1115` lines in `PalLlmRuntime.cs`, `409` lines in
   `PalLlmRuntime.Helpers.cs`, `360` lines in
-  `PalLlmRuntime.Inference.cs`, `628` lines in
-  `PalLlmRuntime.UiProbe.cs`, `482` lines in
+  `PalLlmRuntime.Inference.cs`, `647` lines in
+  `PalLlmRuntime.UiProbe.cs`, `498` lines in
   `PalLlmRuntime.BridgeBoot.cs`, `912` lines in
-  `PalLlmRuntime.Bridge.cs`, `312` lines in
-  `PalLlmRuntime.Prompt.cs`, `489` lines in
-  `PalLlmRuntime.Snapshot.cs`, and `289` lines in
+  `PalLlmRuntime.Bridge.cs`, `328` lines in
+  `PalLlmRuntime.Prompt.cs`, `507` lines in
+  `PalLlmRuntime.Snapshot.cs`, and `305` lines in
   `PalLlmRuntime.Outbox.cs` after the Phase 1h split
 - `336` lines in `Program.cs` after the post-Phase-2 static-asset route extraction;
-  service companions are `172` lines (`Core`), `142` (`Inference`),
-  `56` (`MCP`), `46` (`Health/OpenAPI`), and `76` (`Observability`);
+  service companions are `188` lines (`Core`), `158` (`Inference`),
+  `69` (`MCP`), `58` (`Health/OpenAPI`), and `90` (`Observability`);
   route companions are
   `src/PalLLM.Sidecar/RouteRegistrations/PalLlmStaticAssetRoutes.cs`
-  (`125` lines) and
+  (`139` lines) and
   `src/PalLLM.Sidecar/RouteRegistrations/PalLlmInferenceRoutes.cs`
-  (`99` lines) and
+  (`111` lines) and
   `src/PalLLM.Sidecar/RouteRegistrations/PalLlmBridgeRoutes.cs`
-  (`32` lines) and
+  (`44` lines) and
   `src/PalLLM.Sidecar/RouteRegistrations/PalLlmMediaRoutes.cs`
-  (`92` lines) and
+  (`104` lines) and
   `src/PalLLM.Sidecar/RouteRegistrations/PalLlmHealthRoutes.cs`
-  (`143` lines) and
+  (`155` lines) and
   `src/PalLLM.Sidecar/RouteRegistrations/PalLlmInspectionRoutes.cs`
-  (`200` lines) and
+  (`212` lines) and
   `src/PalLLM.Sidecar/RouteRegistrations/PalLlmStateRoutes.cs`
-  (`65` lines) and
+  (`77` lines) and
   `src/PalLLM.Sidecar/RouteRegistrations/PalLlmContentWorldRoutes.cs`
-  (`127` lines) and
+  (`139` lines) and
   `src/PalLLM.Sidecar/RouteRegistrations/PalLlmPromotionRoutes.cs`
-  (`203` lines) and
+  (`217` lines) and
   `src/PalLLM.Sidecar/RouteRegistrations/PalLlmProofReadinessRoutes.cs`
-  (`91` lines) and
+  (`104` lines) and
   `src/PalLLM.Sidecar/RouteRegistrations/PalLlmConversationRoutes.cs`
-  (`358` lines) and
+  (`370` lines) and
   `src/PalLLM.Sidecar/RouteRegistrations/PalLlmPlanningRoutes.cs`
-  (`95` lines)
+  (`108` lines)
 - bridge-directory health counts are exact up to `1024` files per
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260605-155019/RESULTS.md`](../artifacts/full-audit/20260605-155019/RESULTS.md)
+  `../artifacts/full-audit/20260605-225518/RESULTS.md`
   (run dirs under `artifacts/` are git-ignored + auto-pruned to the newest
   `12` by the audit's retention cap, so this pointer is informational, not a
   clone-portable link)
@@ -163,6 +163,81 @@ Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):
 
+- **Pass 452 (landed) - secondary documentation truth resync.**
+  Refreshed the secondary current-state docs that drift gates do not pin
+  directly: `docs/COMPATIBILITY.md`, `docs/COMPLETION.md`,
+  `docs/CHEAT_SHEET.md`, `docs/COOKBOOK.md`, `docs/INVARIANTS.md`,
+  `docs/READINESS.md`, `docs/adr/0004-drift-gates-over-manual-review.md`,
+  and `docs/REFACTORING_ROADMAP.md`. The stale `1309/1309` mirrors now say
+  `1310/1310`, the line-count maps match the current dirty tree, and secondary
+  readiness/compatibility copy now reflects the narrow local surface: Qwen3.5
+  9B fast lane + Gemma 4 12B smart/multimodal lane through llama.cpp, with
+  deterministic fallback and the cloud escape path for below-reference rigs.
+  No code, route, MCP, feature-catalog, OpenAPI, or executable-test surface
+  changed. Start-state `dotnet test PalLLM.sln -c Release --nologo` passed
+  `1310/1310`; start-state full audit passed `16/16` at
+  `../artifacts/full-audit/20260605-223811/RESULTS.md` with `0` warnings.
+  Final logged-state `dotnet test PalLLM.sln -c Release --nologo` passed
+  `1310/1310`; full audit passed `16/16` at
+  `../artifacts/full-audit/20260605-225518/RESULTS.md` with `0` warnings.
+- **Pass 451 (landed) - README scope boundary hardening.**
+  Added a concise scope/ownership boundary to the central README: adjacent local
+  projects may inspire generic engineering patterns only, while tracked PalLLM
+  code/docs must not import their names, assets, prompts, lore, characters,
+  gameplay rules, or product identity. This preserves the single-source README
+  shape and the publication-facing brand-free rule; concrete engine/model names
+  remain in the agent/operator docs. No code, route, MCP, feature-catalog, or
+  test-count surface changed. Start-state `dotnet test PalLLM.sln -c Release
+  --nologo` passed `1310/1310`; start-state full audit passed `16/16` at
+  `../artifacts/full-audit/20260605-192517/RESULTS.md` with `0` warnings.
+  Final `dotnet test PalLLM.sln -c Release --nologo` passed `1310/1310`; final
+  full audit passed `16/16` at
+  `../artifacts/full-audit/20260605-192935/RESULTS.md` with `0` warnings.
+- **Pass 450 (landed) - active local-model examples follow Qwen3.5/Gemma 4.**
+  A follow-up scan of the Pass 448/449 tree found stale retired-model examples
+  in active operator surfaces that a player or agent could still copy:
+  `docs/examples/compose.yaml`, `docs/MCP_QUICKSTART.md`,
+  `docs/OPERATIONS.md`, `docs/API.md`, `docs/ARCHITECTURE.md`,
+  `docs/CHEAT_SHEET.md`, and `scripts/connect-llamacpp.ps1`. Updated those
+  examples to the current supported llama.cpp local mesh:
+  `Qwen3.5-9B-UD-Q6_K_XL` as the fast Worker and
+  `gemma-4-12b-it-UD-Q6_K_XL` as the smart/multimodal Edge. The compose sample
+  now launches the Qwen3.5 fast lane, keeps vision off until Gemma screenshot
+  proof exists, and no longer enables speculative decoding by default.
+  Strengthened the existing `BundledDoc_DoesNotPromoteRetiredHeavyweightFamilies`
+  test so the active llama.cpp documentation and scripts surface cannot re-promote retired
+  local model families. Test count unchanged. Focused
+  `LlamaCppBundlingTests` passed `57/57`; `dotnet test PalLLM.sln -c Release
+  --nologo` passed `1310/1310`; full audit passed `16/16` at
+  `../artifacts/full-audit/20260605-191553/RESULTS.md` with `0` warnings.
+- **Pass 449 (landed) - agent-work log and 2035 base-planning refresh.**
+  Added the missing `docs/AgentWork/Codex.md` handoff log, linked it from the
+  README and docs index, and refreshed `docs/FUTURE_2035.md` with a June 5,
+  2026 research scan. The base-layout/autobuild guidance now anchors on the
+  current Palworld server API limits, recent building/crafting changes,
+  world-action-model research, grounded reflective planning, and agentic-AI
+  oversight/risk-management work. The practical conclusion is unchanged but
+  sharper: PalLLM may advise, score, explain, and produce proof receipts for a
+  base plan, but it must not place or destroy structures automatically without
+  live hook proof, explicit operator approval, and guarded bridge allowlisting.
+  During verification, the path-reference gate caught a hypothetical future
+  `PyramidRouter.cs` path in `FUTURE_2035.md`; it was rewritten as a non-path
+  type description. Test count unchanged. `dotnet test PalLLM.sln -c Release
+  --nologo` passed `1310/1310`; full audit passed `16/16` with `0` warnings.
+- **Pass 448 (landed) - llama.cpp local mesh narrowed to Qwen3.5/Gemma 4.**
+  Tightened the active local-engine surface to the current two-lane llama.cpp
+  mesh: `Qwen3.5-9B-UD-Q6_K_XL` as the fast Worker and
+  `gemma-4-12b-it-UD-Q6_K_XL` as the smart/multimodal Edge. Replaced the old
+  bundled-engine, local-inventory, minimum-requirements, and tuning guides with
+  shorter active-only operator docs; updated `install-llama-cpp.ps1` and
+  `connect-llamacpp.ps1` so recommendation, launch, sampler, and write-config
+  paths expose only `qwen35`, `gemma`, and `generic` profiles. Updated runtime
+  collaboration/role/hardware copy so public surfaces describe the Qwen3.5 +
+  Gemma 4 mesh instead of retired local lanes; adjusted bundling, script,
+  collaboration, MCP, and sidecar tests to protect the current contract. Test
+  count unchanged. `dotnet test PalLLM.sln -c Release --nologo` passed
+  `1310/1310`; full audit passed `16/16` at
+  `../artifacts/full-audit/20260605-164804/RESULTS.md` with `0` warnings.
 - **Pass 447 (landed) - README promoted to the single source of truth; AGENTS deduped.**
   Inverted the Pass 446 split: `README.md` (the front door, and the file the
   count gates require to carry the live numbers) is now the complete, brand-free

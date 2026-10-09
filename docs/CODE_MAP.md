@@ -1,6 +1,6 @@
 # PalLLM Code Map
 
-Last audited: `2026-06-03`
+Last audited: `2026-06-05`
 
 "Where does X live?" � symbol-to-file navigation for coding agents and
 harvesters. Maintained alongside the code; freshness gated by the
@@ -35,7 +35,7 @@ D:\Coding\PalLLM\
 
 | File | Lines | What lives there |
 |---|---|---|
-| `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs` | `1105` | `ChatAsync` - THE hot path. Also TTS/ASR entry points, memory, vision description, relationships, and session persistence. |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs` | `1115` | `ChatAsync` - THE hot path. Also TTS/ASR entry points, memory, vision description, relationships, and session persistence. |
 | `src/PalLLM.Domain/Runtime/PalLlmRuntime.Helpers.cs` | `409` | Extracted pure static helpers for endpoint timing, MIME routing, bounded directory counts, receipt text sanitizing, and sorted bridge file enumeration. |
 | `src/PalLLM.Domain/Runtime/PalLlmRuntime.Inference.cs` | `360` | Extracted inference partial: performance snapshots, circuit/model metadata, warmup, and operation receipts. |
 | `src/PalLLM.Domain/Runtime/PalLlmRuntime.UiProbe.cs` | `647` | Extracted `ui_probe` diagnostics partial: bounded metadata-keyed dump parse cache, dump parsing, HUD candidate ranking, UI-probe cloning, and local diagnostics retention. |
@@ -60,7 +60,7 @@ D:\Coding\PalLLM\
 | `src/PalLLM.Sidecar/RouteRegistrations/PalLlmProofReadinessRoutes.cs` | `104` | Extracted proof/readiness route companion: proof packets, release-readiness snapshots, and bridge-proof snapshots. |
 
 If you're here to find the chat path: start at `PalLlmRuntime.ChatAsync`
-(`PalLlmRuntime.cs` around line 476). Upstream: `PalLlmConversationRoutes`
+(`PalLlmRuntime.cs` around line 477). Upstream: `PalLlmConversationRoutes`
 route `POST /api/chat`. Downstream: `ChatResponse` contract in
 `src/PalLLM.Domain/Integration/Contracts.cs`.
 

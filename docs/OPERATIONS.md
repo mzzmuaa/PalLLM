@@ -1242,17 +1242,18 @@ either lane only after `/v1/models`, structured JSON, tool-call, p50/p95
 latency, and deterministic fallback behavior have all been captured on PalLLM
 replay traffic.
 
-**The shipping default** in `appsettings.json` configures two tiers:
+**The shipping default** in `appsettings.json` configures two supported local
+lanes:
 
 | Tier id | Model tag (OpenAI-compat, llama-server passthrough) | Priority | Why |
 |---|---|---:|---|
-| `small` | `gemma-4-E4B-it-UD-Q4_K_XL` | 1 | 5 GB unsloth UD-Q4_K_XL Gemma 4 E4B. Loads in seconds; usable from the first minute of the session. Lives at `D:\Models\Gemma\gemma-4-E4B-it-UD-Q4_K_XL.gguf` per `LOCAL_MODELS_INVENTORY.md`. |
-| `large` | `Qwen3.6-35B-A3B-UD-Q8_K_XL` | 10 | 39 GB unsloth UD-Q8_K_XL Qwen 3.6-A3B MoE (3 B active, MTP-capable). Orchestrator graduates automatically once llama-server reports it loaded. Lives at `D:\Models\Qwen\Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf`. |
+| `fast` | `Qwen3.5-9B-UD-Q6_K_XL` | 1 | Fast Worker lane for routine companion text and tool drafts. Lives at `D:\Models\Qwen\Qwen3.5-9B-UD-Q6_K_XL.gguf` per `LOCAL_MODELS_INVENTORY.md`. |
+| `smart` | `gemma-4-12b-it-UD-Q6_K_XL` | 10 | Smart multimodal Edge lane for screenshot/vision/audio proof and deliberate review. Lives at `D:\Models\Gemma\gemma-4-12b-it-UD-Q6_K_XL.gguf`. |
 
 **How it works:**
 
 1. On startup, the orchestrator seeds the active tier with the
-   lowest-priority entry in list order (typically `small`) so the
+   lowest-priority entry in list order (typically `fast`) so the
    very first chat request works before any probe completes.
 2. `InferenceWarmupWorker` primes the current active lane once on startup.
    If `PalLLM:Inference:WarmupIntervalSeconds > 0`, it also performs a
@@ -1272,8 +1273,8 @@ replay traffic.
    for the new lane so the first player turn after graduation is less likely
    to pay the full model-load cost.
 5. The worker re-probes every `PalLLM:Inference:TierProbeIntervalSeconds`
-   (default 30s) so the moment a large pull completes, the next
-   request uses it.
+   (default 30s) so the moment the smart lane becomes visible, deliberate
+   and multimodal work can use it.
 6. Transient probe failures (network blip, endpoint restart) **keep
    the current tier** - no thrashing down to `small` on every flap.
 7. Every tier transition emits a `pal.model_tier.transition` span on
@@ -1286,30 +1287,26 @@ replay traffic.
 curated `D:\Models` library — see `LOCAL_MODELS_INVENTORY.md`):
 
 ```powershell
-# Terminal 1: start llama-server pointing at the small (fast-start) GGUF.
-# Loads in seconds; usable from the first chat request.
-llama-server -m D:\Models\Gemma\gemma-4-E4B-it-UD-Q4_K_XL.gguf `
-    --host 127.0.0.1 --port 8080 -c 8192 -ngl 99 `
-    --flash-attn on --metrics --no-webui --alias gemma-4-E4B-it-UD-Q4_K_XL
+# Preferred: let PalLLM detect hardware, install llama.cpp, pick the backend,
+# wire appsettings.json, and print the exact launch line.
+pwsh ./pal.ps1 install-llama-cpp -AutoLaunch
 
-# Terminal 2: start the PalLLM sidecar. It picks up the small tier
+# Manual fast Worker lane:
+llama-server -m D:\Models\Qwen\Qwen3.5-9B-UD-Q6_K_XL.gguf `
+    --host 127.0.0.1 --port 8080 -c 8192 -ngl 99 `
+    --flash-attn on --metrics --no-webui --alias Qwen3.5-9B-UD-Q6_K_XL
+
+# Terminal 2: start the PalLLM sidecar. It picks up the fast tier
 # immediately and starts serving chat replies.
 dotnet run --project src\PalLLM.Sidecar\PalLLM.Sidecar.csproj
 # or:
 sidecar\publish\PalLLM.Sidecar.exe   # self-contained release
 
-# When ready for the quality tier (large MoE), swap llama-server to:
-llama-server -m D:\Models\Qwen\Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf `
-    --mmproj D:\Models\mmproj\mmproj-F16.gguf `
-    --host 127.0.0.1 --port 8080 -c 16384 -ngl 99 `
-    --flash-attn on --spec-type ngram-mod `
-    --metrics --no-webui --alias Qwen3.6-35B-A3B-UD-Q8_K_XL
-
-# Within 30 seconds of llama-server announcing the new model, the
-# sidecar logs:
-#   Model tier graduated small -> large (Qwen3.6-35B-A3B-UD-Q8_K_XL).
-# and the next chat request automatically uses the large tier with
-# native MTP speculative decoding (`--spec-type ngram-mod`).
+# Manual smart/multimodal proof lane. Add --mmproj only after the exact
+# Gemma projector passes local Palworld screenshot replay on this host.
+llama-server -m D:\Models\Gemma\gemma-4-12b-it-UD-Q6_K_XL.gguf `
+    --host 127.0.0.1 --port 8080 -c 8192 -ngl 99 `
+    --flash-attn on --metrics --no-webui --alias gemma-4-12b-it-UD-Q6_K_XL
 ```
 
 **Customising tiers:**
@@ -1322,10 +1319,8 @@ without renumbering.
 
 ```json
 "ModelTiers": [
-  { "Id": "tiny",   "Model": "qwen3.6-mini-4B-A1B-UD-Q4_K_XL",   "Priority": 1 },
-  { "Id": "small",  "Model": "gemma-4-E4B-it-UD-Q4_K_XL",        "Priority": 5 },
-  { "Id": "medium", "Model": "Qwen3.6-27B-UD-Q8_K_XL",           "Priority": 20 },
-  { "Id": "large",  "Model": "Qwen3.6-35B-A3B-UD-Q8_K_XL",       "Priority": 50 }
+  { "Id": "fast",  "Model": "Qwen3.5-9B-UD-Q6_K_XL",       "Priority": 1 },
+  { "Id": "smart", "Model": "gemma-4-12b-it-UD-Q6_K_XL",   "Priority": 10 }
 ]
 ```
 

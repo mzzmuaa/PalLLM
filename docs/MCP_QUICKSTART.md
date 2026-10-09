@@ -19,32 +19,30 @@ minutes if you also need to download a fresh GGUF.
 - [Claude Desktop](https://claude.ai/download) (Mac or Windows).
 - [llama.cpp](https://github.com/ggml-org/llama.cpp) - any recent build of
   `llama-server`.
-- 5 GB of disk headroom for the small fast-start model (`gemma-4-E4B`).
+- Disk headroom for the current local mesh:
+  `Qwen3.5-9B-UD-Q6_K_XL` for fast text and
+  `gemma-4-12b-it-UD-Q6_K_XL` for multimodal edge proof.
 
-## Step 1 - download the small GGUF first
+## Step 1 - stage the supported GGUFs
 
-PalLLM's tier orchestrator graduates from a fast-start model
-(`gemma-4-E4B-it-UD-Q4_K_XL`, 5 GB unsloth UD-Q4_K_XL Gemma 4 E4B) to a larger
-quality model once the larger one is loaded by llama-server. Pull the small
-one from Hugging Face into your `D:\Models\Gemma` directory (or wherever your
-curated library lives — see `docs/LOCAL_MODELS_INVENTORY.md`):
-
-```bash
-huggingface-cli download unsloth/gemma-4-E4B-it-GGUF \
-    gemma-4-E4B-it-UD-Q4_K_XL.gguf --local-dir D:\Models\Gemma
-```
-
-Optional - schedule the quality tier (`Qwen3.6-35B-A3B-UD-Q8_K_XL`, 39 GB) to
-download in the background:
+PalLLM's current local mesh is intentionally small: Qwen3.5 handles fast
+text turns, and Gemma 4 12B handles slower multimodal edge work. Pull both
+into your curated model library (or wherever your operator layout lives - see
+`docs/LOCAL_MODELS_INVENTORY.md`):
 
 ```bash
-huggingface-cli download unsloth/Qwen3.6-35B-A3B-Instruct-GGUF \
-    Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf --local-dir D:\Models\Qwen
+huggingface-cli download unsloth/Qwen3.5-9B-MTP-GGUF \
+    Qwen3.5-9B-UD-Q6_K_XL.gguf --local-dir D:\Models\Qwen
 ```
 
-The sidecar will auto-graduate to the 35B-A3B MoE once llama-server reports it
-loaded, without any restart or config edit on your part (see
-[OPERATIONS section "Configuring tiered model loading"](OPERATIONS.md#configuring-tiered-model-loading)).
+```bash
+huggingface-cli download unsloth/gemma-4-12b-it-GGUF \
+    gemma-4-12b-it-UD-Q6_K_XL.gguf --local-dir D:\Models\Gemma
+```
+
+`scripts/install-llama-cpp.ps1 -AutoLaunch` remains the preferred path because
+it detects hardware, picks the backend, wires `appsettings.json`, and prints
+the exact `llama-server` launch line.
 
 ## Step 2 - start the PalLLM sidecar
 
@@ -72,7 +70,7 @@ Verify the sidecar is alive:
 
 ```bash
 curl http://localhost:5088/health/live         # -> Healthy
-curl http://localhost:5088/api/features | ...  # -> 121 feature catalog entries
+curl http://localhost:5088/api/features | ...  # -> 122 feature catalog entries
 ```
 
 ## Step 3 - point Claude Desktop at PalLLM
@@ -197,6 +195,5 @@ Complete list of what PalLLM exposes via MCP:
   configurable parameter.
 - [`API.md`](API.md) - full REST API reference if you prefer raw HTTP over MCP.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) - why PalLLM is shaped the way it is.
-
 
 

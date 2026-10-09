@@ -44,6 +44,7 @@ right doc depends on what you're trying to do right now, not who you are.
 | Prepare a publishable release | [`RELEASE.md`](RELEASE.md) |
 | Run a focused local publication preflight | `pwsh ../pal.ps1 publish-audit` |
 | Check sidecar trim / Native AOT readiness before a native publish experiment | `pwsh ../pal.ps1 aot-readiness` |
+| Read succinct per-agent work notes | [`AgentWork/Codex.md`](AgentWork/Codex.md) |
 | Write or validate a narrative pack | [`PACK_AUTHORING.md`](PACK_AUTHORING.md) |
 | Browse the top-level runtime posture and route inventory | [`../README.md`](../README.md) |
 | Know what's shipped vs coming | [`ROADMAP.md`](ROADMAP.md) |

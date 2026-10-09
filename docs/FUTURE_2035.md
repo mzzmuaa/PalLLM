@@ -1,6 +1,6 @@
 # Future direction - companion-runtime ideas through 2035
 
-Last audited: `2026-06-04`
+Last audited: `2026-06-05`
 
 PalLLM today is a local-first companion runtime with a portable adapter
 seam, a deterministic fallback director, a 38-tool MCP surface, an
@@ -25,7 +25,7 @@ non-trivial change, every idea below has a clear first deliverable and
 a clear stop condition. Pick one, ship the slice, and the next slice
 becomes obvious.
 
-## June 2026 research refresh
+## June 5, 2026 research refresh
 
 The current external scan reinforces three constraints for PalLLM:
 
@@ -36,16 +36,48 @@ The current external scan reinforces three constraints for PalLLM:
   edge" slot because it targets laptop-class memory, supports native image
   and audio input, and ships with MTP drafter support.
 - **Treat Palworld base automation as advisory until live hooks prove more.**
-  Palworld's public surface still frames building/crafting as core Early
-  Access systems and base operation as Palbox-bounded, pathing-sensitive,
-  storage/production/farming work. Recent public notes emphasize building
-  fixes and base AI/pathing improvements, not a stable external placement API.
+  The current public server API is still administrative: server info,
+  players, settings, metrics, announcements, moderation, save, and shutdown.
+  It is explicitly LAN-oriented and protected by Basic Auth, and it does not
+  expose a supported structure-placement endpoint. Recent public game updates
+  improved building pieces, coloring, build-menu usability, raid battlefields,
+  blueprint access from base chests, and invalid floating-structure cases.
+  That points PalLLM toward base-layout advice, storage/crafting discipline,
+  and proof capture rather than automatic building.
 - **Use hybrid planning, not unchecked autonomy.** Current agent and embodied
-  AI research is converging on world models, world-action models, and grounded
-  reflective planning, but those are still proof tools for PalLLM. Any 2035
-  "AGI-like" base helper must compile a plan, simulate or explain expected
-  effects, show uncertainty, and wait for explicit operator approval before
-  a guarded action path is even considered.
+  AI research is converging on world-action models, grounded reflective search,
+  and externally faithful human oversight. Current safety work also treats
+  agent autonomy as a risk-management problem: bounded authority, monitoring,
+  containment, escalation points, and rollback evidence matter more than
+  persuasive "AGI" language. Any 2035 base helper must compile a plan,
+  simulate or explain expected effects, show uncertainty, and wait for
+  explicit operator approval before a guarded action path is considered.
+
+External anchors checked for this refresh:
+
+- Palworld Server Guide 0.7.2 REST API:
+  <https://docs.palworldgame.com/api/rest-api/palwold-rest-api/>
+- Palworld Server Guide 0.7.2 settings and metrics endpoints:
+  <https://docs.palworldgame.com/api/rest-api/settings/> and
+  <https://docs.palworldgame.com/api/rest-api/metrics/>
+- Palworld v0.7 Home Sweet Home and v0.7.1 patch notes via Steam Community
+  mirror:
+  <https://steamdb.info/patchnotes/21102090/> and
+  <https://steamdb.info/patchnotes/21506394/>
+- "World Action Models: The Next Frontier in Embodied AI" (2026-05-12):
+  <https://arxiv.org/abs/2605.12090>
+- IBM Research "SPIRAL: Symbolic LLM Planning via Grounded and Reflective
+  Search" (AAAI 2026):
+  <https://research.ibm.com/publications/spiral-symbolic-llm-planning-via-grounded-and-reflective-search>
+- "Designing meaningful human oversight in AI" (2026-05-04):
+  <https://link.springer.com/article/10.1007/s43681-026-01147-7>
+- Berkeley CLTC Agentic AI Risk-Management Standards Profile summary
+  (2026-02-01):
+  <https://vcresearch.berkeley.edu/news/new-cltc-report-provides-framework-managing-risks-agentic-ai>
+- METR Frontier Risk Report (2026-05-19):
+  <https://metr.org/blog/2026-05-19-frontier-risk-report/>
+- International AI Safety Report 2026:
+  <https://internationalaisafetyreport.org/sites/default/files/2026-02/international-ai-safety-report-2026_1.pdf>
 
 > **Companion to:** [`ROADMAP.md`](ROADMAP.md) (the current build
 > queue, weighted by player-experience), `AGENTIC_PATTERNS_2026.md` (retired Pass 418)
@@ -281,6 +313,21 @@ Output is a dry-run plan and never writes bridge outbox action files. Reuse the
 existing base-network and crafting-discipline presentation families so the plan
 appears as a card/readout instead of another doc-only artifact.
 
+**Planner contract as of June 5, 2026.** The advisor should think like a
+licensed site planner, not an autopilot:
+
+- Inputs: known base bounds, visible structure clusters, storage/crafting
+  signals, active server settings (`BaseCampMaxNum`, `BaseCampWorkerMaxNum`,
+  `MaxBuildingLimitNum` when available), recent raid/travel/production events,
+  and optional screenshot-derived clutter notes.
+- Outputs: zones and priorities rather than exact placements; material and
+  blueprint deltas; Pal work-type needs; blocked-path and raid-exposure risks;
+  storage/crafting cleanup recommendations; confidence; and the proof receipts
+  a native-hook experiment would need before any action can move beyond advice.
+- Explicit non-goals: no claim that the official REST API can place structures;
+  no exploit-dependent layouts; no bypass of server build limits; no
+  destructive edits; no automatic placement or demolition.
+
 **What blocks it today.** PalLLM does not yet have a validated live structure
 catalog, build-snap validity check, Pal pathing clearance metric, or stable
 native placement hook. The `production-sampler` also remains scaffolded until
@@ -294,10 +341,11 @@ process; it only emits filesystem bridge advice for the UE4SS side to consume.
 
 **2035 extension.** Once live hooks exist, the same advisor can grow a shadow
 simulator: candidate base plans are replayed against recent production/travel
-events, scored for pathing, material flow, raid exposure, and player effort,
-then ranked with uncertainty. World-model or world-action-model research can
-inform that simulator, but the first shippable contract stays symbolic and
-auditable.
+events, scored for pathing, material flow, raid exposure, server strain, and
+player effort, then ranked with uncertainty. World-model or world-action-model
+research can inform that simulator, and grounded reflective search can critique
+bad plans, but the first shippable contract stays symbolic, auditable, and
+operator-approved.
 
 ### 5. Per-companion LoRA hot-swap
 
@@ -329,9 +377,8 @@ already validates pack content.
 
 ### 6. Pyramid Mixture-of-Agents router
 
-**Where it fits.** New
-`src/PalLLM.Domain/Inference/PyramidRouter.cs` - sits in front of
-`DuoOrchestratorPlanner`. Reads the chat request, decides between
+**Where it fits.** Future `PyramidRouter` type under the inference namespace -
+sits in front of `DuoOrchestratorPlanner`. Reads the chat request, decides between
 `{direct, escalate, escalate-full}` based on a tiny dense router
 model (Gemma 4 E2B / Qwen3-4B class).
 

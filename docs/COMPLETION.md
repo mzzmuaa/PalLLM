@@ -1,6 +1,6 @@
 # Completion status - "are we 100%?"
 
-Last audited: `2026-06-03`
+Last audited: `2026-06-05`
 
 > A single canonical answer to the question that matters: **is the
 > program 100% complete?** This doc consolidates the per-phase numbers
@@ -33,7 +33,7 @@ reach has been pushed to its ceiling:
   `scaffolded` behind kill-switches because they need live build
   validation; one is `deferred` by design - see
   [`adr/0006-opt-in-everything-by-default.md`](adr/0006-opt-in-everything-by-default.md)).
-- **Tests:** `1309 / 1309` passing.
+- **Tests:** `1310 / 1310` passing.
 - **Drift gates:** `16 / 16` green on every audit.
 - **Build warnings:** `0`.
 - **Operator surface:** every script that gates a roadmap queue
@@ -81,22 +81,22 @@ Windows machine** (Q6). None can be flipped autonomously.
 ## Autonomous progress (already at ceiling)
 
 These are the dimensions a coding agent can move from the repo. As
-of `2026-05-06`, every one of them is either at `10/10` or at the
+of `2026-06-05`, every one of them is either at `10/10` or at the
 ceiling of what's possible without live hardware:
 
 | Dimension | Score | Notes |
 |---|---|---|
 | Privacy posture | `10/10` | zero outbound traffic by default |
 | Security / supply chain | `10/10` | sigstore, SLSA, SBOM, CodeQL, gitleaks |
-| Performance (Blackwell + NVFP4 GGUF on llama.cpp) | `9.8/10` | sub-second `Chat.Inference` on a 5090 |
+| Performance (Qwen3.5 + Gemma 4 on llama.cpp) | `9.8/10` | current two-lane local mesh stays measured and proof-gated |
 | Agent-native discoverability | `9.9/10` | `agents.json` + `pal.json` + AGENT-CARD coverage |
 | Diagnose / troubleshoot | `9.7/10` | `pal doctor`, `pal logs`, `pal preflight`, RUNBOOK |
 | Install (one-click) | `9.5/10` | `play.bat` atomic install with rollback |
 | Uninstall (one-click + manifest) | `9.5/10` | preserves chat history by default |
 | Fun / personality | `9.2/10` | 5 ritual catalogs, 19 fallback families |
-| First chat (with inference) | `9/10` | nine connectors, `pal connect <target>` |
+| First chat (with inference) | `9/10` | two connect lanes: `llamacpp` locally, `cloud` as the escape path |
 | MCP integration | `9/10` | 38 tools, 6 resources + 1 template, 4 prompts |
-| Documentation | `9/10` | 63 fresh docs, drift-gated, Diataxis-organized |
+| Documentation | `9/10` | 63 top-level docs, drift-gated, Diataxis-organized |
 | Update / re-install | `8.5/10` | `pal check-updates` + `pal news` |
 | Customize (personality packs) | `8.5/10` | `pal pack list / copy / new` |
 | Configuration UX | `8/10` | `pal config wizard` interactive |
@@ -318,7 +318,7 @@ $ pwsh ./pal.ps1 complete
 PalLLM completion status
   honest roadmap   : 76.2%
   remaining        : 23.8%  (live-Palworld + clean-machine work)
-test count       : 1309 / 1309
+test count       : 1310 / 1310
   drift gates      : 16 / 16
   readiness        : ~8.0 / 10 across 23 aspects
 

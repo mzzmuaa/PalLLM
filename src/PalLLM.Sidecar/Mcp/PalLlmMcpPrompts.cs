@@ -163,7 +163,7 @@ public static class PalLlmMcpPrompts
         string? hardware = null,
         [Description("Optional list of available quants or model variants on the machine.")]
         string? availableQuants = null,
-        [Description("Optional context budget note, e.g. '35B at 32K, 27B at 64K'.")]
+        [Description("Optional context budget note, e.g. 'Qwen3.5 fast lane at 8K, Gemma 4 smart lane at 8K'.")]
         string? contextBudget = null)
     {
         ModelCollaborationSnapshot snapshot = planner.GetSnapshot();

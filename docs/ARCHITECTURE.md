@@ -233,7 +233,7 @@ surface changes:
   the local llama.cpp `llama-server` launch/prompt-cache/state-cache/idle-sleep/
   KV-memory/speculation startup hints, the `pal connect cloud` escape-lane
   hints, GGUF artifact provenance, `--mmproj` vision/audio projectors,
-  Qwen3.6 / Gemma 4 model-native MTP proof guidance, Qwen3.6 long-context
+  Qwen3.5 / Gemma 4 model-native MTP proof guidance, Qwen3.5 context
   receipts, Gemma 3n / Gemma 4 audio proof with family-specific token budgets,
   Qwen Omni talker/code2wav `/v1/audio/speech` audio-output proof, route-labeled
   replay receipts, schema-digest/request-shape structured-output receipts,

@@ -18,19 +18,19 @@ namespace PalLLM.Domain.Inference;
 public enum ModelRole
 {
     /// <summary>Edge perception: screen/audio/UI understanding, fast
-    /// multimodal audits, accessibility. Gemma 4 / Gemma 3n class.</summary>
+    /// multimodal audits, accessibility. Gemma 4 12B class.</summary>
     Edge = 0,
 
     /// <summary>Fast worker: drafts, tool calls, prompt variants,
-    /// branch generation. Qwen3.6-35B-A3B class.</summary>
+    /// branch generation. Qwen3.5 9B class.</summary>
     Worker = 1,
 
     /// <summary>Dense judge: audits, specs, repair planning, proof
-    /// packets, promotion decisions. Qwen3.6-27B class.</summary>
+    /// packets, promotion decisions. Gemma 4 12B class.</summary>
     Judge = 2,
 
     /// <summary>Media generator: images, video, audio, textures.
-    /// Qwen Image / FLUX / Wan / LTX class.</summary>
+    /// Off by default for PalLLM's current local mesh.</summary>
     Media = 3,
 
     /// <summary>Deterministic validator: tests, accessibility checks,
@@ -107,20 +107,20 @@ public sealed class ModelRoleRegistry
 
     private static string DescribeRole(ModelRole role) => role switch
     {
-        ModelRole.Edge => "Edge perception — local screen / audio / UI understanding, accessibility, fast multimodal audits. Gemma 4 / Gemma 3n class.",
-        ModelRole.Worker => "Fast worker — drafts, tool calls, prompt variants, branch generation. Qwen3.6-35B-A3B class.",
-        ModelRole.Judge => "Dense judge — audits, specs, repair planning, proof-packet author, promotion decisions. Qwen3.6-27B class.",
-        ModelRole.Media => "Media generator — images / video / audio / textures. Qwen Image, FLUX, Wan, or LTX class.",
+        ModelRole.Edge => "Edge perception — local screen / audio / UI understanding, accessibility, fast multimodal audits. Gemma 4 12B class.",
+        ModelRole.Worker => "Fast worker — drafts, tool calls, prompt variants, branch generation. Qwen3.5 9B class.",
+        ModelRole.Judge => "Smart judge — audits, specs, repair planning, proof-packet author, promotion decisions. Gemma 4 12B class.",
+        ModelRole.Media => "Media generator — images / video / audio / textures. Off by default for PalLLM's current local mesh.",
         ModelRole.Validator => "Deterministic validator — accessibility / performance / policy / engine-import gates. Not a model; a gate.",
         _ => string.Empty,
     };
 
     private static string RecommendForRole(ModelRole role) => role switch
     {
-        ModelRole.Edge => "Point at a small multimodal endpoint (Gemma 4, Gemma 3n, Phi-Vision, etc.). Used for perception and UI/audio audits.",
-        ModelRole.Worker => "Point at a fast MoE or mid-size instruction model (Qwen3.6-35B-A3B activates ~3B per token, Mistral Small, Llama 3.3 70B at low quant). Generates drafts, tool calls, variants.",
-        ModelRole.Judge => "Point at a dense reasoning model (Qwen3.6-27B, Mistral Large, Llama 3.3 70B full quant). Used sparingly for audits and final decisions.",
-        ModelRole.Media => "Point at a diffusion / video endpoint (WanGP, Qwen Image, FLUX Kontext, LTX). Off by default — only needed for asset generation pipelines.",
+        ModelRole.Edge => "Point at the Gemma 4 12B lane when screenshot or UI/audio proof is enabled.",
+        ModelRole.Worker => "Point at the Qwen3.5 9B fast lane. Generates drafts, tool calls, and variants.",
+        ModelRole.Judge => "Point at the Gemma 4 12B smart lane. Used sparingly for audits and final decisions.",
+        ModelRole.Media => "Keep media generation unbound unless a PalLLM-owned asset pipeline is explicitly added and licensed.",
         ModelRole.Validator => "Attach deterministic check scripts (schema, accessibility, FPS, policy). Not a model endpoint — a list of validators the mesh consults before promoting a change.",
         _ => string.Empty,
     };

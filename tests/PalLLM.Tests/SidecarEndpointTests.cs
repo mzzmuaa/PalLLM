@@ -636,10 +636,10 @@ public sealed class SidecarEndpointTests
         await using var fixture = new SidecarTestFixture(new Dictionary<string, string?>
         {
             ["PalLLM:Inference:ModelTiers:0:Id"] = "worker",
-            ["PalLLM:Inference:ModelTiers:0:Model"] = "unsloth/Qwen3.6-35B-A3B-GGUF",
+            ["PalLLM:Inference:ModelTiers:0:Model"] = "Qwen3.5-9B-UD-Q6_K_XL",
             ["PalLLM:Inference:ModelTiers:0:Priority"] = "10",
             ["PalLLM:Inference:ModelTiers:1:Id"] = "judge",
-            ["PalLLM:Inference:ModelTiers:1:Model"] = "unsloth/Qwen3.6-27B-GGUF",
+            ["PalLLM:Inference:ModelTiers:1:Model"] = "gemma-4-12b-it-UD-Q6_K_XL",
             ["PalLLM:Inference:ModelTiers:1:Priority"] = "9",
         });
 
@@ -789,10 +789,10 @@ public sealed class SidecarEndpointTests
         await using var fixture = new SidecarTestFixture(new Dictionary<string, string?>
         {
             ["PalLLM:Inference:ModelTiers:0:Id"] = "worker",
-            ["PalLLM:Inference:ModelTiers:0:Model"] = "unsloth/Qwen3.6-35B-A3B-GGUF",
+            ["PalLLM:Inference:ModelTiers:0:Model"] = "Qwen3.5-9B-UD-Q6_K_XL",
             ["PalLLM:Inference:ModelTiers:0:Priority"] = "10",
             ["PalLLM:Inference:ModelTiers:1:Id"] = "judge",
-            ["PalLLM:Inference:ModelTiers:1:Model"] = "unsloth/Qwen3.6-27B-GGUF",
+            ["PalLLM:Inference:ModelTiers:1:Model"] = "gemma-4-12b-it-UD-Q6_K_XL",
             ["PalLLM:Inference:ModelTiers:1:Priority"] = "9",
         });
 
@@ -814,8 +814,8 @@ public sealed class SidecarEndpointTests
         Assert.That(document.RootElement.GetProperty("SelectedPolicyId").GetString(), Is.EqualTo("high-risk-deliberate-bookends"));
         Assert.That(document.RootElement.GetProperty("SelectedRecipeId").GetString(), Is.EqualTo("dense-plan-fast-execute-dense-audit"));
         Assert.That(document.RootElement.GetProperty("RunMode").GetString(), Is.EqualTo("parallel"));
-        Assert.That(document.RootElement.GetProperty("FastLaneModel").GetString(), Does.Contain("35B-A3B"));
-        Assert.That(document.RootElement.GetProperty("DeliberateLaneModel").GetString(), Does.Contain("27B"));
+        Assert.That(document.RootElement.GetProperty("FastLaneModel").GetString(), Does.Contain("Qwen3.5-9B"));
+        Assert.That(document.RootElement.GetProperty("DeliberateLaneModel").GetString(), Does.Contain("gemma-4-12b"));
         Assert.That(document.RootElement.GetProperty("HumanReviewRequired").GetBoolean(), Is.True);
         Assert.That(document.RootElement.GetProperty("PromotionCriteria")[0].GetString(), Does.Contain("repeated-run-stability"));
     }

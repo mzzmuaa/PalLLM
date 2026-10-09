@@ -1,6 +1,6 @@
 # Cookbook - recipes for common changes
 
-Last audited: `2026-06-03`
+Last audited: `2026-06-05`
 
 Step-by-step recipes for the changes you'll most often want to
 make to PalLLM. Each recipe names the exact files, the exact
@@ -34,7 +34,7 @@ Before any recipe:
 
 ```powershell
 pwsh ./pal.ps1 fast-audit   # confirm 16 / 16 gates green
-pwsh ./pal.ps1 test         # confirm 1309 / 1309 tests
+pwsh ./pal.ps1 test         # confirm 1310 / 1310 tests
 ```
 
 If either is red, fix that *first*. Don't layer changes on a red
@@ -152,7 +152,7 @@ a domain method, surfaced through the `/mcp` JSON-RPC server.
    response shape.
 3. `docs/API.md` - add the tool to the MCP-tool inventory.
 4. `README.md` + `docs/ARCHITECTURE.md` - bump the MCP tool
-   count (currently `35`).
+   count (currently `38`).
 5. `src/PalLLM.Domain/Runtime/PalLlmFeatureCatalog.cs` - add a
    `FeatureDescriptor` entry if the tool is observably new
    functionality (not just a wrapper).
@@ -343,5 +343,4 @@ the repo.
 - [`CONTRIBUTING.md`](../CONTRIBUTING.md) - the human-facing
   contributor guide
 - [`AGENTS.md`](../AGENTS.md) - the agent-facing briefing
-
 

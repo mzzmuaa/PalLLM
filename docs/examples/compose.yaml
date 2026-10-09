@@ -9,8 +9,10 @@
 #
 # llama.cpp is PalLLM's only local engine (the alt-engine connectors were
 # removed in Pass 436). Use this compose file as the canonical local stack.
-# For Blackwell / NVFP4 GGUF tuning on this same engine, see
-# docs/BLACKWELL_RECIPES.md. Below-reference hardware uses pal connect cloud.
+# The single-server example below launches the Qwen3.5 fast Worker lane.
+# For Gemma 4 multimodal proof, swap the model path/alias to the Gemma
+# smart Edge lane after local screenshot replay passes. Below-reference
+# hardware uses pal connect cloud.
 #
 # ------------------------------------------------------------------------
 # Prerequisites
@@ -73,14 +75,11 @@ services:
       # accidental container write doesn't corrupt your library.
       - "D:\\Models:/models:ro"
     command:
-      # Quality lane: unsloth Qwen 3.6-A3B UD-Q8_K_XL with model-native MTP
-      # speculative decoding (see docs/LOCAL_MODELS_INVENTORY.md for full
-      # path mapping). Adjust the -m argument for whichever model your
-      # curation has set as the canonical chat lane.
+      # Fast Worker lane: Qwen3.5 9B UD-Q6_K_XL. This compose file keeps
+      # speculation and vision off by default; promote either only after
+      # PalLLM route replay on this exact host.
       - "-m"
-      - "/models/Qwen/Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf"
-      - "--mmproj"
-      - "/models/mmproj/mmproj-F16.gguf"
+      - "/models/Qwen/Qwen3.5-9B-UD-Q6_K_XL.gguf"
       - "--host"
       - "0.0.0.0"
       - "--port"
@@ -93,11 +92,8 @@ services:
       - "on"
       - "--metrics"
       - "--no-webui"
-      # Activate the Qwen 3.6 model-native MTP head for speculative
-      # decoding (~30-50% throughput gain). Remove if the GGUF doesn't
-      # ship an MTP head.
-      - "--spec-type"
-      - "ngram-mod"
+      - "--alias"
+      - "Qwen3.5-9B-UD-Q6_K_XL"
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health"]
       interval: 30s
@@ -121,10 +117,14 @@ services:
       # Point inference at the llamacpp service on the compose network.
       PalLLM__Inference__Enabled: "true"
       PalLLM__Inference__BaseUrl: "http://llamacpp:8080/v1/"
-      PalLLM__Inference__Model: "Qwen3.6-35B-A3B-UD-Q8_K_XL"
-      PalLLM__Vision__Enabled: "true"
+      PalLLM__Inference__Model: "Qwen3.5-9B-UD-Q6_K_XL"
+      # Keep vision disabled in this one-server example. To test the
+      # Gemma 4 smart Edge lane, launch llama-server with
+      # /models/Gemma/gemma-4-12b-it-UD-Q6_K_XL.gguf plus its proven
+      # mmproj, then flip Vision.Enabled to true.
+      PalLLM__Vision__Enabled: "false"
       PalLLM__Vision__BaseUrl: "http://llamacpp:8080/v1/"
-      PalLLM__Vision__Model: "Qwen3.6-35B-A3B-UD-Q8_K_XL"
+      PalLLM__Vision__Model: "gemma-4-12b-it-UD-Q6_K_XL"
 
       # The operator-curated model library lives in the llamacpp container at
       # /models, mounted read-only from the host. PalLLM doesn't open this

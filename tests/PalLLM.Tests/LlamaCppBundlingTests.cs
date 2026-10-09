@@ -6,7 +6,7 @@ namespace PalLLM.Tests;
 
 /// <summary>
 /// Pass 347 — pins the hardware-aware bundled-llama.cpp installer and
-/// the Qwen3.6 canonical sampler defaults that pair with it. The
+/// the Qwen3.5 canonical sampler defaults that pair with it. The
 /// research lead-in: as of May 2026 the upstream llama.cpp releases
 /// ship multiple Windows backend variants per tag (CPU, CUDA 12.4,
 /// CUDA 13.1, Vulkan, SYCL, HIP/Radeon). Before Pass 347 the install
@@ -16,7 +16,7 @@ namespace PalLLM.Tests;
 /// rolling the script forward to a CUDA 14.x build that hasn't been
 /// validated on Blackwell).
 ///
-/// They also pin the Unsloth canonical Qwen3.6 thinking-OFF sampler
+/// They also pin the Qwen3.5 thinking-OFF sampler
 /// (temp 0.7, top-p 0.8, top-k 20, min-p 0.0, presence-penalty 1.5)
 /// into the shipping appsettings.json. PalLLM's per-request sampler
 /// must agree with the numbers printed by the install + connect
@@ -102,10 +102,10 @@ public class LlamaCppBundlingTests
             "Source: zenn.dev/toki_mwc benchmark, RTX 5090 MMQ crash on CUDA 13.x as of May 2026.");
     }
 
-    // ---------- Qwen3.6 canonical sampler defaults (Pass 347) ----------
+    // ---------- Qwen3.5 canonical sampler defaults (Pass 347/448) ----------
 
     [Test]
-    public void ShippingAppsettings_InferenceSampler_MatchesUnslothQwen36ThinkingOffProfile()
+    public void ShippingAppsettings_InferenceSampler_MatchesQwen35ThinkingOffProfile()
     {
         string path = LocateShippingAppsettings();
         using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
@@ -113,8 +113,8 @@ public class LlamaCppBundlingTests
             .GetProperty("PalLLM")
             .GetProperty("Inference");
 
-        // Pass 347: the Unsloth Qwen3.6 thinking-OFF canonical profile.
-        // Source: unsloth.ai/docs/models/qwen3.6 ("Non-thinking mode").
+        // Pass 448: the Qwen3.5 fast-lane thinking-OFF profile.
+        // Source: unsloth.ai/docs/models/qwen3.5.
         // The same numbers ship in install-llama-cpp.ps1 + connect-llamacpp.ps1
         // so PalLLM's per-request sampler agrees with the operator's
         // manual server invocation.
@@ -190,19 +190,14 @@ public class LlamaCppBundlingTests
     {
         string text = ReadBundledDoc();
 
-        // Pass 348: every model in LOCAL_MODELS_INVENTORY.md must have
+        // Pass 448: every supported model in LOCAL_MODELS_INVENTORY.md must have
         // its own recipe block in LLAMA_CPP_BUNDLED.md. If a future pass
         // adds a new family to the curated library, this test catches
         // the missing recipe before it ships.
         string[] requiredFamilies = new[]
         {
-            "Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf",  // quality MoE
-            "Qwen3.6-27B-UD-Q8_K_XL.gguf",      // quality dense
-            "Gemma-4-31B-it-UD-Q8_K_XL.gguf",   // dense + vision
-            "Gemma-4-E4B-it-UD-Q4_K_XL.gguf",   // fast-start
-            "Qwen3-Coder-Next-UD-Q6_K_XL",      // coding (multi-shard)
-            "MiniMax-M2.7-UD-IQ4_XS",           // heavyweight (multi-shard)
-            "DeepSeekV4-Flash-158B-Q3_K_M.gguf",// research lane
+            "Qwen3.5-9B-UD-Q6_K_XL.gguf",
+            "gemma-4-12b-it-UD-Q6_K_XL.gguf",
         };
 
         foreach (string family in requiredFamilies)
@@ -214,27 +209,40 @@ public class LlamaCppBundlingTests
     }
 
     [Test]
-    public void BundledDoc_DocumentsMiniMaxSamplerProfile_NotQwenProfile()
+    public void BundledDoc_DocumentsGemmaSamplerProfile_NotQwenProfile()
     {
         string text = ReadBundledDoc();
 
-        // Pass 348: MiniMax-M2.7 has a different canonical sampler than
-        // Qwen 3.6. The doc must call this out so an operator doesn't
-        // silently apply Qwen sampling to MiniMax (degraded quality).
-        Assert.That(text, Does.Contain("--top-k 40 --min-p 0.01"),
-            "LLAMA_CPP_BUNDLED.md must document MiniMax-M2.7's top-k=40 + min-p=0.01 sampler.");
-        Assert.That(text, Does.Contain("--prio 3"),
-            "LLAMA_CPP_BUNDLED.md must document the --prio 3 worker-thread recommendation for MiniMax-M2.7.");
+        // Pass 448: the Gemma 4 smart lane has a different top-p profile
+        // than the Qwen3.5 fast lane, so the operator doc must show the
+        // family-specific sampler instead of implying one profile fits all.
+        Assert.That(text, Does.Contain("gemma-4-12b-it-UD-Q6_K_XL"));
+        Assert.That(text, Does.Contain("--top-p 0.95").And.Contain("--min-p 0.0"),
+            "LLAMA_CPP_BUNDLED.md must document Gemma 4's top-p=0.95 / min-p=0.0 sampler.");
     }
 
     [Test]
-    public void BundledDoc_PinsCuda132GibberishBug_OnMiniMax()
+    public void BundledDoc_DoesNotPromoteRetiredHeavyweightFamilies()
     {
-        string text = ReadBundledDoc();
-
-        Assert.That(text, Does.Contain("CUDA 13.2").And.Contain("gibberish"),
-            "LLAMA_CPP_BUNDLED.md must call out the confirmed CUDA-13.2 gibberish-output bug on MiniMax-M2.7. " +
-            "Source: unsloth.ai/docs/models/tutorials/minimax-m27.");
+        foreach (string relative in new[]
+        {
+            Path.Combine("docs", "LLAMA_CPP_BUNDLED.md"),
+            Path.Combine("docs", "LOCAL_MODELS_INVENTORY.md"),
+            Path.Combine("docs", "MINIMUM_REQUIREMENTS.md"),
+            Path.Combine("docs", "TUNING.md"),
+            Path.Combine("docs", "CHEAT_SHEET.md"),
+            Path.Combine("docs", "MCP_QUICKSTART.md"),
+            Path.Combine("docs", "API.md"),
+            Path.Combine("docs", "ARCHITECTURE.md"),
+            Path.Combine("docs", "OPERATIONS.md"),
+            Path.Combine("docs", "examples", "compose.yaml"),
+            Path.Combine("scripts", "install-llama-cpp.ps1"),
+            Path.Combine("scripts", "connect-llamacpp.ps1"),
+        })
+        {
+            string path = LocateRepoFile(relative.Split(Path.DirectorySeparatorChar));
+            AssertNoRetiredLocalModelPromotion(File.ReadAllText(path), relative);
+        }
     }
 
     [Test]
@@ -250,25 +258,24 @@ public class LlamaCppBundlingTests
     }
 
     [Test]
-    public void BundledDoc_PinsQwen3CoderSpecDecodeBroken()
+    public void BundledDoc_PinsSpeculationProofOnlyForCurrentLanes()
     {
         string text = ReadBundledDoc();
 
-        Assert.That(text, Does.Contain("#21886"),
-            "LLAMA_CPP_BUNDLED.md must reference upstream discussion #21886 (Qwen3-Coder-Next speculative decoding broken).");
-        Assert.That(text, Does.Contain("speculative decoding not supported by this context"),
-            "LLAMA_CPP_BUNDLED.md must quote the exact error string operators see so they can match their llama-server logs.");
+        Assert.That(text, Does.Contain("Speculative decoding").And.Contain("off by default"),
+            "LLAMA_CPP_BUNDLED.md must keep speculation proof-only by default.");
+        Assert.That(text, Does.Contain("Qwen3.5 / Gemma 4 MTP"),
+            "LLAMA_CPP_BUNDLED.md must describe speculation only for the current supported lanes.");
     }
 
     [Test]
-    public void BundledDoc_DocumentsMultiShardAutoLoadConvention()
+    public void BundledDoc_DocumentsSingleShardCurrentCatalog()
     {
         string text = ReadBundledDoc();
 
-        Assert.That(text, Does.Contain("-00001-of-"),
-            "LLAMA_CPP_BUNDLED.md must show the first-shard naming convention (-00001-of-NNNNN.gguf).");
-        Assert.That(text, Does.Contain("auto-loads the remaining shards").Or.Contain("auto-detects and loads"),
-            "LLAMA_CPP_BUNDLED.md must document that llama.cpp auto-loads following shards when -m points at the first one.");
+        Assert.That(text, Does.Contain("single-shard"));
+        Assert.That(text, Does.Not.Contain("-00001-of-"),
+            "LLAMA_CPP_BUNDLED.md must not promote retired multi-shard lanes in the active recipe catalog.");
     }
 
     [Test]
@@ -278,7 +285,7 @@ public class LlamaCppBundlingTests
 
         Assert.That(text, Does.Contain("[string]$ModelProfile"),
             "connect-llamacpp.ps1 must expose -ModelProfile so the operator can pick per-model sampler defaults.");
-        foreach (string profile in new[] { "qwen36", "qwen3-coder", "minimax", "gemma", "deepseek", "generic" })
+        foreach (string profile in new[] { "qwen35", "gemma", "generic" })
         {
             Assert.That(text, Does.Contain($"'{profile}'"),
                 $"connect-llamacpp.ps1 -ModelProfile must accept '{profile}'.");
@@ -286,15 +293,14 @@ public class LlamaCppBundlingTests
     }
 
     [Test]
-    public void ConnectScript_EmitsMiniMaxSamplerWhenProfileMatches()
+    public void ConnectScript_EmitsGemmaSamplerWhenProfileMatches()
     {
         string text = ReadConnectScript();
 
-        // When -ModelProfile minimax is selected, the launch line must
-        // carry MiniMax's canonical sampler (temp 1.0, top-p 0.95,
-        // top-k 40, min-p 0.01), not Qwen's.
-        Assert.That(text, Does.Contain("'--top-k', '40'").And.Contain("'--min-p', '0.01'"),
-            "connect-llamacpp.ps1 must emit --top-k 40 --min-p 0.01 for the minimax profile.");
+        // When -ModelProfile gemma is selected, the launch line must
+        // carry Gemma's sampler, not Qwen's.
+        Assert.That(text, Does.Contain("'--top-p', '0.95'").And.Contain("'--min-p', '0.0'"),
+            "connect-llamacpp.ps1 must emit --top-p 0.95 --min-p 0.0 for the gemma profile.");
     }
 
     [Test]
@@ -399,14 +405,11 @@ public class LlamaCppBundlingTests
         Assert.That(text, Does.Contain("function Get-RecommendedModel"),
             "install-llama-cpp.ps1 must expose Get-RecommendedModel for VRAM-based auto-pick.");
 
-        // The recommendation walks the curated catalog highest-quality
-        // first. Every curated family must appear in the catalog.
+        // The recommendation walks the current PalLLM local catalog.
         foreach (string family in new[]
         {
-            "Qwen3.6-35B-A3B-UD-Q8_K_XL",
-            "Qwen3.6-27B-UD-Q8_K_XL",
-            "gemma-4-31B-it-UD-Q8_K_XL",
-            "gemma-4-E4B-it-UD-Q4_K_XL",
+            "Qwen3.5-9B-UD-Q6_K_XL",
+            "gemma-4-12b-it-UD-Q6_K_XL",
         })
         {
             Assert.That(text, Does.Contain(family),
@@ -443,13 +446,13 @@ public class LlamaCppBundlingTests
     {
         string text = ReadInstallScript();
 
-        // CUDA 13.0-13.2 has the MMQ-crash + MiniMax-gibberish issues.
+        // CUDA 13.0-13.2 has the MMQ-crash / unstable-output issues.
         // The installer must surface this if it detects the operator
         // is running on that band AND has forced -Backend cuda13.
         Assert.That(text, Does.Contain("13.0-13.2"),
             "install-llama-cpp.ps1 must call out the broken CUDA 13.0-13.2 band when the operator is on it.");
-        Assert.That(text, Does.Contain("MiniMax-M2.7"),
-            "install-llama-cpp.ps1 must name MiniMax-M2.7 as the gibberish-affected model.");
+        Assert.That(text, Does.Contain("unstable output"),
+            "install-llama-cpp.ps1 must describe CUDA 13.0-13.2 unstable-output risk without promoting retired model families.");
     }
 
     [Test]
@@ -585,19 +588,12 @@ public class LlamaCppBundlingTests
     {
         string text = ReadInstallScript();
 
-        // Pass 351: the recommendation catalog must include every
-        // family present in LOCAL_MODELS_INVENTORY.md. Pass 350 had
-        // only 4 of 7; this test catches regression to that.
+        // Pass 448: the recommendation catalog must include exactly the
+        // current supported local lanes from LOCAL_MODELS_INVENTORY.md.
         string[] requiredFamilies = new[]
         {
-            "Qwen3.6-35B-A3B-UD-Q8_K_XL",
-            "Qwen3.6-27B-UD-Q8_K_XL",
-            "gemma-4-31B-it-UD-Q8_K_XL",
-            "gemma-4-E4B-it-UD-Q4_K_XL",
-            "Qwen3-Coder-Next-UD-Q6_K_XL",       // Pass 351
-            "MiniMax-M2.7-UD-IQ4_XS",            // Pass 351
-            "MiniMax-M2.7-UD-IQ3_XXS",           // Pass 351
-            "DeepSeekV4-Flash-158B-Q3_K_M",      // Pass 351
+            "Qwen3.5-9B-UD-Q6_K_XL",
+            "gemma-4-12b-it-UD-Q6_K_XL",
         };
 
         foreach (string family in requiredFamilies)
@@ -605,6 +601,11 @@ public class LlamaCppBundlingTests
             Assert.That(text, Does.Contain(family),
                 $"install-llama-cpp.ps1 catalog must include '{family}'.");
         }
+
+        Assert.That(text, Does.Not.Contain("Qwen3.6-35B-A3B"));
+        Assert.That(text, Does.Not.Contain("Qwen3-Coder-Next"));
+        Assert.That(text, Does.Not.Contain("MiniMax"));
+        Assert.That(text, Does.Not.Contain("DeepSeekV4-Flash"));
     }
 
     [Test]
@@ -614,24 +615,13 @@ public class LlamaCppBundlingTests
 
         // Each catalog entry must declare a Sampler field so
         // auto-launch picks the right --temp/--top-p/--top-k/--min-p.
-        Assert.That(text, Does.Contain("Sampler      = 'qwen36'"),
-            "install-llama-cpp.ps1 Qwen3.6 catalog entries must declare Sampler='qwen36'.");
-        Assert.That(text, Does.Contain("Sampler      = 'qwen3-coder'"),
-            "install-llama-cpp.ps1 Qwen3-Coder-Next catalog entry must declare Sampler='qwen3-coder'.");
-        Assert.That(text, Does.Contain("Sampler      = 'minimax'"),
-            "install-llama-cpp.ps1 MiniMax-M2.7 catalog entries must declare Sampler='minimax'.");
-        Assert.That(text, Does.Contain("Sampler      = 'deepseek'"),
-            "install-llama-cpp.ps1 DeepSeekV4-Flash catalog entry must declare Sampler='deepseek'.");
+        Assert.That(text, Does.Contain("Sampler      = 'qwen35'"),
+            "install-llama-cpp.ps1 Qwen3.5 catalog entry must declare Sampler='qwen35'.");
         Assert.That(text, Does.Contain("Sampler      = 'gemma'"),
-            "install-llama-cpp.ps1 Gemma catalog entries must declare Sampler='gemma'.");
+            "install-llama-cpp.ps1 Gemma 4 catalog entry must declare Sampler='gemma'.");
 
-        // MiniMax must request --prio 3 per Unsloth recipe.
-        Assert.That(text, Does.Match(@"MiniMax[\s\S]{0,400}Prio\s*=\s*3"),
-            "install-llama-cpp.ps1 MiniMax-M2.7 catalog entries must set Prio=3 (Unsloth M2.7 recipe).");
-
-        // Qwen3-Coder-Next must mark AllowsSpecDecode=false (upstream #21886).
-        Assert.That(text, Does.Match(@"Qwen3-Coder-Next-UD-Q6_K_XL \(coding[\s\S]{0,800}AllowsSpecDecode\s*=\s*\$false"),
-            "install-llama-cpp.ps1 Qwen3-Coder-Next catalog entry must set AllowsSpecDecode=$false (upstream #21886).");
+        Assert.That(text, Does.Match(@"Qwen3\.5-9B-UD-Q6_K_XL[\s\S]{0,500}Prio\s*=\s*0"));
+        Assert.That(text, Does.Match(@"gemma-4-12b-it-UD-Q6_K_XL[\s\S]{0,500}Prio\s*=\s*0"));
     }
 
     [Test]
@@ -641,15 +631,11 @@ public class LlamaCppBundlingTests
 
         Assert.That(text, Does.Contain("function Get-SamplerFlags"),
             "install-llama-cpp.ps1 must expose Get-SamplerFlags for auto-launch's per-model sampler.");
-        // Each family's canonical numbers must appear.
-        Assert.That(text, Does.Contain("'qwen36'").And.Contain("'0.7'").And.Contain("'0.8'"),
-            "Get-SamplerFlags qwen36 branch must emit temp 0.7 / top-p 0.8.");
-        Assert.That(text, Does.Contain("'minimax'").And.Contain("'1.0'").And.Contain("'40'"),
-            "Get-SamplerFlags minimax branch must emit temp 1.0 / top-k 40.");
-        Assert.That(text, Does.Contain("'qwen3-coder'").And.Contain("'0.6'"),
-            "Get-SamplerFlags qwen3-coder branch must emit temp 0.6.");
-        Assert.That(text, Does.Contain("'deepseek'"),
-            "Get-SamplerFlags deepseek branch must exist.");
+        // Each supported family's canonical numbers must appear.
+        Assert.That(text, Does.Contain("'qwen35'").And.Contain("'0.7'").And.Contain("'0.8'"),
+            "Get-SamplerFlags qwen35 branch must emit temp 0.7 / top-p 0.8.");
+        Assert.That(text, Does.Contain("'gemma'").And.Contain("'0.95'"),
+            "Get-SamplerFlags gemma branch must emit top-p 0.95.");
     }
 
     [Test]
@@ -663,24 +649,18 @@ public class LlamaCppBundlingTests
             "install-llama-cpp.ps1 auto-launch must call Get-SamplerFlags for per-model sampler emission.");
         Assert.That(text, Does.Contain("recommendation.Prio -gt 0"),
             "install-llama-cpp.ps1 auto-launch must check recommendation.Prio before emitting --prio.");
-        Assert.That(text, Does.Contain("recommendation.Sampler -in @('qwen36', 'qwen3-coder')"),
+        Assert.That(text, Does.Contain("recommendation.Sampler -eq 'qwen35'"),
             "install-llama-cpp.ps1 must gate the --chat-template-kwargs emission to Qwen profiles only.");
     }
 
     [Test]
-    public void InstallScript_MultiShardCatalogPathsTargetFirstShard()
+    public void InstallScript_CatalogDoesNotTargetRetiredMultiShardModels()
     {
         string text = ReadInstallScript();
 
-        // Multi-shard models point -m at the FIRST shard; llama.cpp
-        // auto-loads the rest. The catalog entries must follow that
-        // convention.
-        Assert.That(text, Does.Contain("Qwen3-Coder-Next-UD-Q6_K_XL-00001-of-00003.gguf"),
-            "Qwen3-Coder-Next catalog Path must target the first shard (-00001-of-00003.gguf).");
-        Assert.That(text, Does.Contain("MiniMax-M2.7-UD-IQ4_XS-00001-of-00004.gguf"),
-            "MiniMax-M2.7-UD-IQ4_XS catalog Path must target the first shard (-00001-of-00004.gguf).");
-        Assert.That(text, Does.Contain("MiniMax-M2.7-UD-IQ3_XXS-00001-of-00003.gguf"),
-            "MiniMax-M2.7-UD-IQ3_XXS catalog Path must target the first shard (-00001-of-00003.gguf).");
+        Assert.That(text, Does.Not.Contain("-00001-of-"));
+        Assert.That(text, Does.Not.Contain("Qwen3-Coder-Next"));
+        Assert.That(text, Does.Not.Contain("MiniMax"));
     }
 
     // ---------- Pass 352: end-to-end wire + sampler propagation ----------
@@ -692,25 +672,23 @@ public class LlamaCppBundlingTests
 
         // Pass 352: -WriteConfig now mutates PalLLM.Inference's sampler
         // fields when -ModelProfile is set, not just BaseUrl/Model/Enabled.
-        // Without this, PalLLM keeps sending Qwen3.6 sampler values even
-        // when llama-server has a MiniMax model loaded -- PalLLM's
+        // Without this, PalLLM keeps sending Qwen3.5 sampler values even
+        // when llama-server has a Gemma model loaded -- PalLLM's
         // per-request body overrides llama-server's defaults.
         Assert.That(text, Does.Contain("PSBoundParameters.ContainsKey('ModelProfile')"),
             "connect-llamacpp.ps1 -WriteConfig must gate the sampler propagation on -ModelProfile being explicitly set.");
         Assert.That(text, Does.Contain("$samplerSnapshot"),
             "connect-llamacpp.ps1 must build a $samplerSnapshot hashtable per ModelProfile.");
 
-        // Each profile's canonical sampler must appear in the snapshot.
-        Assert.That(text, Does.Match(@"'minimax'\s*\{[^}]*Temperature = 1\.0"),
-            "connect-llamacpp.ps1 minimax sampler snapshot must set Temperature=1.0.");
-        Assert.That(text, Does.Match(@"'minimax'\s*\{[^}]*TopK = 40"),
-            "connect-llamacpp.ps1 minimax sampler snapshot must set TopK=40.");
-        Assert.That(text, Does.Match(@"'minimax'\s*\{[^}]*MinP = 0\.01"),
-            "connect-llamacpp.ps1 minimax sampler snapshot must set MinP=0.01.");
-        Assert.That(text, Does.Match(@"'qwen3-coder'\s*\{[^}]*Temperature = 0\.6"),
-            "connect-llamacpp.ps1 qwen3-coder sampler snapshot must set Temperature=0.6.");
-        Assert.That(text, Does.Match(@"'deepseek'\s*\{[^}]*TopK = 40"),
-            "connect-llamacpp.ps1 deepseek sampler snapshot must set TopK=40.");
+        // Each supported profile's canonical sampler must appear in the snapshot.
+        Assert.That(text, Does.Match(@"'qwen35'\s*\{[^}]*Temperature = 0\.7"),
+            "connect-llamacpp.ps1 qwen35 sampler snapshot must set Temperature=0.7.");
+        Assert.That(text, Does.Match(@"'qwen35'\s*\{[^}]*PresencePenalty = 1\.5"),
+            "connect-llamacpp.ps1 qwen35 sampler snapshot must set PresencePenalty=1.5.");
+        Assert.That(text, Does.Match(@"'gemma'\s*\{[^}]*TopP = 0\.95"),
+            "connect-llamacpp.ps1 gemma sampler snapshot must set TopP=0.95.");
+        Assert.That(text, Does.Match(@"'gemma'\s*\{[^}]*PresencePenalty = \$null"),
+            "connect-llamacpp.ps1 gemma sampler snapshot must not set a presence penalty.");
     }
 
     [Test]
@@ -838,13 +816,10 @@ public class LlamaCppBundlingTests
             "MINIMUM_REQUIREMENTS.md must name the new CPU baseline (6-core).");
         Assert.That(text, Does.Contain("Windows 10").Or.Contain("Windows 11"),
             "MINIMUM_REQUIREMENTS.md must name the OS baseline (Windows 10/11).");
-        // The 35B-A3B model is now the auto-graduation target for 24 GB
-        // VRAM + 32 GB RAM hosts, not the v1.0 shipping default; it must
-        // still be named in the doc as the next-tier model.
-        Assert.That(text, Does.Contain("Qwen3.6-35B-A3B-UD-Q8_K_XL"),
-            "MINIMUM_REQUIREMENTS.md must still name the larger MoE model as the next-tier auto-graduation target.");
-        Assert.That(text, Does.Contain("gemma-4-E4B-it-UD-Q4_K_XL"),
-            "MINIMUM_REQUIREMENTS.md must name the small-tier model that ships on the new reference rig.");
+        Assert.That(text, Does.Contain("Qwen3.5-9B-UD-Q6_K_XL"),
+            "MINIMUM_REQUIREMENTS.md must name the Qwen3.5 fast Worker lane.");
+        Assert.That(text, Does.Contain("gemma-4-12b-it-UD-Q6_K_XL"),
+            "MINIMUM_REQUIREMENTS.md must name the Gemma 4 12B smart/multimodal lane.");
     }
 
     [Test]
@@ -912,28 +887,17 @@ public class LlamaCppBundlingTests
     }
 
     [Test]
-    public void InstallScript_CatalogMarksHeavyweightFamiliesPostRelease()
+    public void InstallScript_CatalogContainsOnlyCurrentSupportedFamilies()
     {
         string text = ReadInstallScript();
 
-        // Each heavyweight family must carry PostRelease=$true so
-        // Get-RecommendedModel skips it on the reference rig.
-        Assert.That(text, Does.Match(@"Qwen3-Coder-Next[\s\S]{0,800}PostRelease\s*=\s*\$true"),
-            "Qwen3-Coder-Next catalog entry must set PostRelease=$true (Pass 356).");
-        Assert.That(text, Does.Match(@"MiniMax-M2.7-UD-IQ4_XS[\s\S]{0,800}PostRelease\s*=\s*\$true"),
-            "MiniMax-M2.7-UD-IQ4_XS catalog entry must set PostRelease=$true.");
-        Assert.That(text, Does.Match(@"MiniMax-M2.7-UD-IQ3_XXS[\s\S]{0,800}PostRelease\s*=\s*\$true"),
-            "MiniMax-M2.7-UD-IQ3_XXS catalog entry must set PostRelease=$true.");
-        Assert.That(text, Does.Match(@"DeepSeekV4-Flash[\s\S]{0,800}PostRelease\s*=\s*\$true"),
-            "DeepSeekV4-Flash catalog entry must set PostRelease=$true.");
-
-        // Reference-rig families must NOT carry PostRelease=$true.
-        Assert.That(text, Does.Match(@"Qwen3\.6-35B-A3B-UD-Q8_K_XL[\s\S]{0,500}Sampler"),
-            "Qwen3.6-35B-A3B must appear in the catalog without PostRelease (it's the reference-rig quality tier).");
-
-        // Get-RecommendedModel must honor PostRelease.
-        Assert.That(text, Does.Contain("PostRelease"),
-            "Get-RecommendedModel must check the PostRelease flag and skip post-release entries.");
+        Assert.That(text, Does.Contain("Qwen3.5-9B-UD-Q6_K_XL"));
+        Assert.That(text, Does.Contain("gemma-4-12b-it-UD-Q6_K_XL"));
+        Assert.That(text, Does.Not.Contain("PostRelease"));
+        Assert.That(text, Does.Not.Contain("Qwen3.6-35B-A3B"));
+        Assert.That(text, Does.Not.Contain("Qwen3-Coder-Next"));
+        Assert.That(text, Does.Not.Contain("MiniMax"));
+        Assert.That(text, Does.Not.Contain("DeepSeekV4-Flash"));
     }
 
     [Test]
@@ -1028,36 +992,15 @@ public class LlamaCppBundlingTests
     // ---------- Pass 373: lower minimum spec to RTX 3060 / 16 GB / 6-core ----------
 
     [Test]
-    public void InstallScript_GuardsMoeRecommendationOnSystemRam()
+    public void InstallScript_DoesNotRecommendMoeOffloadByDefault()
     {
-        // Pass 373: the 35B-A3B MoE model has roughly 25 GB of expert FFN
-        // tensors that --n-cpu-moe pushes into system RAM. On a 16 GB host
-        // that thrashes. The catalog entry must carry a MoeMinSystemRamGb
-        // floor and Get-RecommendedModel must consult it before picking
-        // the MoE entry. Without both, a 3060/16GB rig would be steered
-        // toward the 35B model and grind to a halt.
         string script = ReadInstallScript();
 
-        Assert.That(script, Does.Contain("MoeMinSystemRamGb"),
-            "Catalog entries must declare a MoeMinSystemRamGb floor so " +
-            "Get-RecommendedModel can skip MoE picks that don't fit the host's RAM.");
-
-        // The Qwen3.6-35B-A3B catalog entry specifically must carry the
-        // 32 GB floor — that's the model whose offload tensors don't fit
-        // the new 16 GB reference rig.
-        int qwenIndex = script.IndexOf("'Qwen3.6-35B-A3B-UD-Q8_K_XL", StringComparison.Ordinal);
-        Assert.That(qwenIndex, Is.GreaterThanOrEqualTo(0), "Qwen3.6-35B-A3B entry missing from catalog.");
-        // Look ahead ~1.5 KB for the MoeMinSystemRamGb assignment within
-        // the same hashtable literal (the entry has a long comment block).
-        string qwenBlock = script.Substring(qwenIndex, Math.Min(1500, script.Length - qwenIndex));
-        Assert.That(qwenBlock, Does.Match(@"MoeMinSystemRamGb\s*=\s*32\b"),
-            "Qwen3.6-35B-A3B-UD-Q8_K_XL must declare MoeMinSystemRamGb = 32 " +
-            "(its --n-cpu-moe offload would thrash a 16 GB host).");
-
-        // The recommender's MoE branch must consult MoeMinSystemRamGb.
-        Assert.That(script, Does.Match(@"\$SystemRamGb\s+-ge\s+\$moeMinSystemRamGb"),
-            "Get-RecommendedModel's MoE branch must require " +
-            "$SystemRamGb -ge $moeMinSystemRamGb before recommending a MoE entry.");
+        Assert.That(script, Does.Match(@"Qwen3\.5-9B-UD-Q6_K_XL[\s\S]{0,700}IsMoE\s*=\s*\$false"),
+            "The Qwen3.5 fast Worker lane must not require MoE offload by default.");
+        Assert.That(script, Does.Match(@"gemma-4-12b-it-UD-Q6_K_XL[\s\S]{0,700}IsMoE\s*=\s*\$false"),
+            "The Gemma 4 smart lane must not require MoE offload by default.");
+        Assert.That(script, Does.Not.Contain("Qwen3.6-35B-A3B"));
     }
 
     [Test]
@@ -1074,14 +1017,16 @@ public class LlamaCppBundlingTests
             "MINIMUM_REQUIREMENTS.md must name the 16 GB RAM minimum.");
         Assert.That(text, Does.Contain("6-core"),
             "MINIMUM_REQUIREMENTS.md must name the 6-core CPU minimum.");
-        Assert.That(text, Does.Contain("gemma-4-E4B-it-UD-Q4_K_XL"),
-            "MINIMUM_REQUIREMENTS.md must name the small-tier model that ships on the new reference rig.");
+        Assert.That(text, Does.Contain("Qwen3.5-9B-UD-Q6_K_XL"),
+            "MINIMUM_REQUIREMENTS.md must name the fast Worker model that ships on the reference rig.");
+        Assert.That(text, Does.Contain("gemma-4-12b-it-UD-Q6_K_XL"),
+            "MINIMUM_REQUIREMENTS.md must name the smart/multimodal model kept in the supported local set.");
         Assert.That(text, Does.Contain("connect-cloud.ps1"),
             "MINIMUM_REQUIREMENTS.md must keep the cloud-API escape path callout.");
         Assert.That(text, Does.Contain("connect-llamacpp.ps1"),
             "MINIMUM_REQUIREMENTS.md must keep the remote-PC escape path callout.");
-        Assert.That(text, Does.Contain("Pass 373"),
-            "MINIMUM_REQUIREMENTS.md must reference Pass 373 in its migration callout.");
+        Assert.That(text, Does.Contain("Pass 448"),
+            "MINIMUM_REQUIREMENTS.md must reference Pass 448 in its current-lane callout.");
     }
 
     [Test]
@@ -1156,6 +1101,24 @@ public class LlamaCppBundlingTests
     }
 
     // ---------- Helpers ----------
+
+    private static void AssertNoRetiredLocalModelPromotion(string text, string label)
+    {
+        foreach (string retired in new[]
+        {
+            "Qwen3.6-35B-A3B",
+            "Qwen3.6-27B",
+            "gemma-4-E4B",
+            "gemma-3-4b",
+            "Qwen3-Coder-Next",
+            "MiniMax",
+            "DeepSeekV4",
+        })
+        {
+            Assert.That(text, Does.Not.Contain(retired),
+                $"{label} must not promote retired local model family '{retired}' in the active llama.cpp operator surface.");
+        }
+    }
 
     private static void AssertNumericFieldEqual(JsonElement parent, string name, double expected)
     {

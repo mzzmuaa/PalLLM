@@ -18,6 +18,152 @@ Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
 
+### Pass 452 - secondary documentation truth resync (2026-06-05)
+
+**Context.** The main drift-gated mirrors were green, but a read-through of
+secondary operator and agent docs found stale current-state claims that could
+still mislead a small coding agent: several pages still said `1309/1309`
+tests, the refactoring roadmap still carried older hot-file line counts, and
+some readiness/compatibility prose still implied broad retired local-model
+lanes.
+
+**Changes.**
+- Updated secondary current-state docs to the live `1310/1310` test count:
+  `docs/COMPATIBILITY.md`, `docs/COMPLETION.md`, `docs/CHEAT_SHEET.md`,
+  `docs/COOKBOOK.md`, `docs/INVARIANTS.md`,
+  `docs/adr/0004-drift-gates-over-manual-review.md`, and
+  `docs/READINESS.md`.
+- Refreshed `docs/CODE_MAP.md`, `docs/REFACTORING_ROADMAP.md`, and the
+  `docs/HANDOFF.md` current-state block with the current hot-file line counts.
+- Narrowed secondary readiness/compatibility copy so it describes the active
+  local surface as Qwen3.5 9B fast lane + Gemma 4 12B smart/multimodal lane
+  through llama.cpp, with deterministic fallback and the cloud escape path for
+  hardware that cannot run that mesh.
+- No code, route, MCP, feature-catalog, OpenAPI, or executable-test surface
+  changed.
+
+**Verification.** Start-state `dotnet test PalLLM.sln -c Release --nologo`
+passed `1310/1310`; start-state full audit passed `16/16` at
+`artifacts/full-audit/20260605-223811/RESULTS.md` with `0` warnings. Final
+logged-state `dotnet test PalLLM.sln -c Release --nologo` passed `1310/1310`;
+full audit passed `16/16` at `artifacts/full-audit/20260605-225518/RESULTS.md`
+with `0` warnings.
+
+### Pass 451 - README scope boundary hardening (2026-06-05)
+
+**Context.** After the README became the single source of truth and the local
+model surface was narrowed to the current two-lane llama.cpp mesh, the next safe
+autonomous pass was documentation hardening: make the public front door clearer
+about project scope and sibling-project boundaries without changing runtime
+behavior.
+
+**Changes.**
+- Added a README scope/ownership boundary that says adjacent local projects may
+  inspire generic engineering patterns only, and that PalLLM tracked code/docs
+  must not import their names, assets, prompts, lore, characters, gameplay
+  rules, or product identity.
+- Preserved the brand-free README rule for publication-facing files; concrete
+  engine/model names remain in the agent/operator docs where the policy allows
+  them.
+- Updated the append-only handoff and Codex work log for this pass. No code,
+  route, MCP, feature-catalog, or test-count surface changed.
+
+**Verification.** Start-state `dotnet test PalLLM.sln -c Release --nologo`
+passed `1310/1310`; start-state full audit passed `16/16` at
+`artifacts/full-audit/20260605-192517/RESULTS.md` with `0` warnings. Final
+`dotnet test PalLLM.sln -c Release --nologo` passed `1310/1310`; final full
+audit passed `16/16` at `artifacts/full-audit/20260605-192935/RESULTS.md` with
+`0` warnings.
+
+### Pass 450 - active local-model examples follow Qwen3.5/Gemma 4 (2026-06-05)
+
+**Context.** Pass 448 narrowed PalLLM's active local-engine contract to the
+two-lane llama.cpp mesh, and Pass 449 refreshed the forward-looking base planner
+notes. A follow-up active-doc scan found several copyable operator examples that
+still described retired local model families or the old small-to-large
+graduation flow.
+
+**Changes.**
+- Updated active operator docs and examples to the current supported local mesh:
+  `Qwen3.5-9B-UD-Q6_K_XL` as the fast Worker and
+  `gemma-4-12b-it-UD-Q6_K_XL` as the smart/multimodal Edge.
+- Reworked `docs/examples/compose.yaml` so the one-server sample launches the
+  Qwen3.5 fast lane, keeps vision disabled until a Gemma screenshot proof
+  exists, and does not enable speculative decoding by default.
+- Updated `docs/MCP_QUICKSTART.md`, `docs/OPERATIONS.md`, `docs/API.md`,
+  `docs/ARCHITECTURE.md`, `docs/CHEAT_SHEET.md`, and the
+  `connect-llamacpp.ps1` help example so their copyable model ids and sampler
+  language match the current inventory.
+- Strengthened the existing `BundledDoc_DoesNotPromoteRetiredHeavyweightFamilies`
+  test to scan the active llama.cpp operator documentation and scripts surface for retired
+  local model families. No new `[Test]` attribute was added, so the test count
+  remains `1310`.
+
+**Verification.** Start-state `dotnet test PalLLM.sln -c Release --nologo`
+passed `1310/1310`; start-state full audit passed `16/16` at
+`artifacts/full-audit/20260605-190346/RESULTS.md` with `0` warnings. Focused
+`LlamaCppBundlingTests` passed `57/57`; final `dotnet test PalLLM.sln -c
+Release --nologo` passed `1310/1310`; full audit passed `16/16` at
+`artifacts/full-audit/20260605-191553/RESULTS.md` with `0` warnings.
+
+### Pass 449 - agent-work log and 2035 base-planning refresh (2026-06-05)
+
+**Context.** The README was already the project source of truth, but the
+automation prompt also asks every agent to keep a succinct per-agent work log
+under `docs/AgentWork/`. That folder did not exist yet. The forward-looking
+base/autobuild notes also needed a June 5, 2026 refresh against current
+Palworld server/API limits and current agentic-AI oversight research.
+
+**Changes.**
+- Added `docs/AgentWork/Codex.md` with Codex pass notes, start-state
+  verification, adjacent-local-project process scan notes, and the current
+  interpretation of the non-autonomous blocker.
+- Linked the new agent work log from `README.md` and `docs/INDEX.md` so humans
+  and agents do not miss it.
+- Refreshed `docs/FUTURE_2035.md` with current external anchors for Palworld
+  server REST/API limits, recent building/crafting changes, world-action-model
+  research, grounded reflective planning, meaningful human oversight, and
+  agentic-AI risk-management work.
+- Hardened the advisory base-layout/autobuild planner contract: inputs,
+  outputs, proof receipts, and explicit non-goals now make clear that PalLLM
+  may plan and explain but must not place or destroy structures automatically
+  without live hook proof, operator approval, and guarded bridge allowlisting.
+- Fixed a newly surfaced broken future-path reference by describing the
+  hypothetical router as a future type instead of a file that already exists.
+
+**Verification.** Start-state `dotnet test PalLLM.sln -c Release --nologo`
+passed `1310/1310`; start-state full audit passed `16/16` at
+`artifacts/full-audit/20260605-172504/RESULTS.md` with `0` warnings. After the
+documentation edits, `dotnet test PalLLM.sln -c Release --nologo` passed
+`1310/1310`; the first audit rerun exposed the broken future-path reference
+above, which was fixed before final verification.
+
+### Pass 448 - llama.cpp local mesh narrowed to Qwen3.5/Gemma 4 (2026-06-05)
+
+**Context.** The README and sidecar defaults already pointed at the current
+two-lane local mesh, but active operator scripts and tests still preserved
+retired model-profile examples. That made the setup path harder to understand
+and risked agents re-promoting unsupported local lanes.
+
+**Changes.**
+- Replaced `docs/LLAMA_CPP_BUNDLED.md`, `docs/LOCAL_MODELS_INVENTORY.md`,
+  `docs/MINIMUM_REQUIREMENTS.md`, and `docs/TUNING.md` with shorter active-only
+  guides for the supported llama.cpp mesh: `Qwen3.5-9B-UD-Q6_K_XL` as the fast
+  Worker and `gemma-4-12b-it-UD-Q6_K_XL` as the smart/multimodal Edge.
+- Updated `scripts/install-llama-cpp.ps1` and `scripts/connect-llamacpp.ps1` so
+  the recommendation catalog, launch recipes, sampler profiles, and write-config
+  propagation expose only `qwen35`, `gemma`, and `generic` profiles.
+- Updated runtime collaboration, role, hardware, MCP prompt, and feature-catalog
+  copy so public surfaces describe the current Qwen3.5 + Gemma 4 mesh instead of
+  retired local lanes. The planner now treats curated `UD-Q` / `UD-IQ` ids as
+  GGUF local lanes.
+- Retuned bundling, script-execution, collaboration, MCP, and sidecar endpoint
+  tests to guard the current contract. Test count unchanged.
+
+**Verification.** `dotnet test PalLLM.sln -c Release --nologo` passed
+`1310/1310`; full audit passed `16/16` at
+`artifacts/full-audit/20260605-164804/RESULTS.md` with `0` warnings.
+
 ### Pass 447 - README promoted to the single source of truth; AGENTS deduped (2026-06-05)
 
 **Context.** Pass 446 made `AGENTS.md` the single source of truth, but the

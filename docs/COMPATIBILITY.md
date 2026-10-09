@@ -1,6 +1,6 @@
 # PalLLM Compatibility Matrix
 
-Last audited: `2026-06-03`
+Last audited: `2026-06-05`
 
 Known-compatible and known-conflicting setups for PalLLM. Consumed by
 `scripts/doctor.ps1` via [`scripts/compatibility.json`](../scripts/compatibility.json)
@@ -65,7 +65,7 @@ has no architecture gates beyond `<TargetFramework>net10.0</TargetFramework>`.
 
 To verify on your platform after a source build:
 ```powershell
-dotnet test PalLLM.sln --configuration Release    # 1309 / 1309 expected
+dotnet test PalLLM.sln --configuration Release    # 1310 / 1310 expected
 ```
 Tests use only platform-agnostic APIs (`HttpClient`, `JsonDocument`,
 `MemoryStream`); they pass on every supported RID.
@@ -79,19 +79,16 @@ deterministically from `(coreCount, ramGiB, gpuPresent)` - see
 
 | Tier | Classification rule (live code) | Recommended for | What runs |
 |---|---|---|---|
-| `Constrained` | no GPU, OR `< 8 cores`, OR `< 16 GiB RAM` | 2016-era CPU-only laptops, basic desktops | Deterministic fallback always; small local model (1-3B) optional via `pal connect llamacpp` |
-| `Standard` | GPU present + `>= 8 cores` + `>= 16 GiB RAM` | 2018-2024 mid-range gaming PCs | All of Constrained, plus 7-13B local models, vision describe, TTS |
-| `Generous` | GPU present + `>= 16 cores` + `>= 48 GiB RAM` | 2022+ high-end workstations | All of Standard, plus 30-70B local models, multimodal lanes, Duo mesh |
+| `Constrained` | no GPU, OR `< 8 cores`, OR `< 16 GiB RAM` | 2016-era CPU-only laptops, basic desktops | Deterministic fallback always; use the cloud escape path if no local GGUF fits |
+| `Standard` | GPU present + `>= 8 cores` + `>= 16 GiB RAM` | 2018-2024 mid-range gaming PCs | Qwen3.5 fast lane when VRAM proof fits; deterministic fallback remains the floor |
+| `Generous` | GPU present + `>= 16 cores` + `>= 48 GiB RAM` | 2022+ high-end workstations | Qwen3.5 fast lane plus Gemma 4 smart/multimodal lane through llama.cpp |
 
 The three values are the live `DuoHardwareTier` enum
-(`src/PalLLM.Domain/Inference/DuoOrchestratorPlanner.cs:400`).
-For 2025+ Blackwell hardware (5090 / B-series with an NVFP4 GGUF on llama.cpp)
-the system still reports `Generous` - Blackwell is a sub-recipe
-of Generous, not a fourth enum value. The `pal benchmark`
-script defines an additional `Blackwell` budget row for live
-latency reporting only (`scripts/pal-benchmark.ps1:108-111`).
-See [`BLACKWELL_RECIPES.md`](BLACKWELL_RECIPES.md) for the
-recipe-specific tuning.
+(`src/PalLLM.Domain/Inference/DuoOrchestratorPlanner.cs`). Current local
+inference guidance is intentionally narrow: Qwen3.5 9B for fast text turns and
+Gemma 4 12B for smart/multimodal turns, both served by llama.cpp. Hardware that
+cannot run that mesh stays fully usable through deterministic fallback or the
+documented cloud escape path.
 
 **Anything older than 2016 may still work but isn't tested.** The
 deterministic fallback director runs on essentially any system
@@ -110,7 +107,7 @@ profile (Intel i5-6500, 8 GiB DDR4, no discrete GPU, Windows 10):
 | Field Console dashboard | Renders in any 2017+ browser (ES2017 minimum) |
 | `/api/*` (57 routes) | All routes respond; latency in `Constrained` tier budget (1500 ms warm) |
 | `/mcp` (38 tools) | All tools respond |
-| Local inference | warning: 1-3B model recommended; 7B+ will be slow |
+| Local inference | warning: deterministic fallback recommended; use the cloud escape path if the current Qwen3.5/Gemma 4 local mesh does not fit |
 | Vision describe | warning: off by default; CPU-only multimodal is impractical at this tier |
 | TTS synthesis | warning: off by default; CPU-only voice synthesis is slow |
 | UE4SS Lua mod | depends on whether the system can run Palworld at all (Palworld's own minimum is GTX 1050 Ti / 16 GiB RAM) |
@@ -188,7 +185,6 @@ is missing.
 | llama.cpp server (bundled, loopback) | `http://127.0.0.1:8080/v1/` | **Reference** | Default in `appsettings.json`; installed via `pal install-llama-cpp` |
 | llama.cpp server (LAN) | `http://<host>:8080/v1/` | Supported | Set `PalLLM:Inference:BaseUrl` |
 | OpenAI-compatible cloud API | `https://<provider>/v1/` | Supported (escape path) | Below-reference-rig escape via `pal connect cloud`; leaves the air-gap boundary |
-| OpenAI direct | `https://api.openai.com/v1/` | Works but not recommended | Leaks chat traffic off-device; `/api/airgap/verify` will mark `public-internet` |
 
 ## Reporting a new compatibility entry
 
@@ -214,4 +210,3 @@ machine-readable mirror of this table). At run time it:
 
 This way a new known issue can be added by patching the JSON - no
 code release required to surface the warning to operators.
-
