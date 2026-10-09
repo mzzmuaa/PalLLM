@@ -4462,8 +4462,8 @@ local function render_reply(body)
     stash_native_hud_context(reply)
 
     local cards = build_render_cards(reply)
-    local rendered, reason = try_render_cards(reply, cards)
-    if not rendered and reason == "empty" then
+    local rendered, render_reason = try_render_cards(reply, cards)
+    if not rendered and render_reason == "empty" then
         local screen_lines = {
             string.format("[%s] %s", reply.speaker, reply.message),
         }
