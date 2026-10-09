@@ -29,6 +29,8 @@
          APIs. Generates a JSON Schema 2020-12-compliant spec from the
          route registrations in Program.cs. See docs/API.md. -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+    <!-- Compatible 2.x parser security fix: GHSA-v5pm-xwqc-g5wc. -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
 
     <!-- Opt-in OpenTelemetry distributed tracing. The runtime only
          activates when OTEL_EXPORTER_OTLP_ENDPOINT is set in the

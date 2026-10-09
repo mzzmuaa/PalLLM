@@ -150,7 +150,7 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
   snapshot and cap there to keep backlog polling bounded
 - honest roadmap position: `76.2%`
 - latest passing full audit:
-  [`../artifacts/full-audit/20260604-144519/RESULTS.md`](../artifacts/full-audit/20260604-144519/RESULTS.md)
+  `../artifacts/full-audit/20260604-144519/RESULTS.md`
   (run dirs under `artifacts/` are git-ignored + auto-pruned to the newest
   `12` by the audit's retention cap, so this pointer is informational, not a
   clone-portable link)
