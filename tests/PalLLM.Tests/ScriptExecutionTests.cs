@@ -448,6 +448,17 @@ public sealed class ScriptExecutionTests
                 if (@($result.Violations).Count -ne 1) {
                     throw "expected exactly 1 publication violation; found $(@($result.Violations).Count)"
                 }
+                foreach ($rootName in @('package', 'package %23# root')) {
+                    $pathRoot = Join-Path (Split-Path -Parent $PSScriptRoot) $rootName
+                    foreach ($name in @('plain.txt', 'with space.txt', 'with#hash.txt', 'with%23hash.txt', 'with%2Fslash.txt', 'with%25percent.txt', 'with%2e%2e.txt')) {
+                        $expected = 'docs/' + $name
+                        $target = Join-Path (Join-Path $pathRoot 'docs') $name
+                        $actual = ConvertTo-PalLlmRelativePath -RootPath $pathRoot -FilePath $target
+                        if ($actual -cne $expected) {
+                            throw "relative filename changed: expected '$expected', found '$actual'"
+                        }
+                    }
+                }
                 Write-Output $result.Violations[0]
                 """);
 

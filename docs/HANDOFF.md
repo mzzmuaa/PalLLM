@@ -159,6 +159,12 @@ gh run watch $(gh run list --repo mzzmuaa/PalLLM --branch main --workflow=CI --l
 
 ## What just landed
 
+- **2026-10-09 tooling review:** fixed literal percent escapes in filesystem
+  paths used by publication audits and release verification. The Unix explicit
+  file-URI fix remains. Existing script execution coverage now checks percent
+  filenames and roots alongside plain, space and hash controls. Focused gates
+  pass; this does not refresh historical audit dates or close live proof.
+
 Most recent batch (see [`../CHANGELOG.md`](../CHANGELOG.md) for the full
 per-pass log, including Passes 48-190 which were trimmed from this file
 once they reached the changelog):

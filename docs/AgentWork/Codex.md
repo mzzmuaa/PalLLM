@@ -113,3 +113,14 @@ Current interpretation:
 ## 2026-10-08 — GitHub publication refresh review
 
 Preserved the five unpublished committed passes and newer local lane/documentation simplification as a publication candidate. Added the compatible Microsoft.OpenApi 2.7.5 security pin for GHSA-v5pm-xwqc-g5wc; 1310 tests passed. Changed the current-status historical ignored-artifact pointer to plain text so it survives a fresh clone. Full audit retains its stale-document finding: old audit dates were not falsely refreshed. No live Palworld or model proof.
+
+## 2026-10-09 — Independent tooling filename review
+
+The explicit file-URI change decoded literal percent escapes in filenames.
+The original helper preserved those names on Windows; the portability change
+did not. Protecting percent characters before URI construction retains exact
+paths for publication scans and release manifest matching. The extended owning
+script regression fails before the repair and passes after it; 29 focused
+metadata/script tests pass, and 21 filename/root controls pass under both
+PowerShell 7 and Windows PowerShell 5.1. Test counts are unchanged. No canonical
+files, live game, model or runtime environment were changed by this follow-up.

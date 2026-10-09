@@ -5,6 +5,15 @@ All notable changes to PalLLM are documented here. Format follows
 
 ## [Unreleased]
 
+### Tooling filename preservation (2026-10-09)
+
+The shared relative-path helper now preserves literal percent sequences in
+filesystem names while retaining explicit file URIs for Unix portability.
+Publication audit and release-verification paths no longer change `%23`,
+`%2F`, or `%25` into different filenames. Focused metadata/script tests pass;
+the broader source snapshot remains a review draft with existing documentation
+freshness debt and outstanding live proof.
+
 First public-ready revision. Collapsed from multiple in-flight drafts
 dated `2026-04-18`, `2026-04-19`, `2026-04-22`, and `2026-04-23`.
 
