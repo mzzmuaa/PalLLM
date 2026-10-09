@@ -6,23 +6,16 @@ name: Lua lint
 # silent "nothing happened" in-game.
 #
 # Config lives in `.luacheckrc` at the repo root; UE4SS-specific globals
-# are whitelisted there. Runs on every push and pull request touching
-# the Lua tree; kept as a dedicated workflow (separate from ci.yml) so
-# the C# and Lua surfaces can fail independently.
+# are whitelisted there. This check is required by the main-branch
+# ruleset, so it must report on every push and pull request. Workflow
+# path filters would leave unrelated changes blocked on a pending check.
+# Keep it separate from ci.yml so C# and Lua failures stay independent.
 
 on:
   push:
     branches: ["main", "master"]
-    paths:
-      - "mod/**"
-      - ".luacheckrc"
-      - ".github/workflows/lua.yml"
   pull_request:
     branches: ["main", "master"]
-    paths:
-      - "mod/**"
-      - ".luacheckrc"
-      - ".github/workflows/lua.yml"
   workflow_dispatch:
 
 concurrency:
