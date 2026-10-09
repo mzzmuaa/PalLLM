@@ -253,12 +253,10 @@ public sealed class VisionOptions
     /// Ollama port 11434.)
     public string BaseUrl { get; set; } = "http://127.0.0.1:8080/v1/";
 
-    /// Default model id matches the chat tier (the curated Qwen3.6-A3B GGUF
-    /// is MTP-capable and ships with an mmproj projector, so one loaded model
-    /// serves both text and vision). Matches appsettings.json; replace with
-    /// any id your configured HTTP endpoint recognises. (Pass 426: was the
-    /// illustrative Ollama-style tag gemma4:e2b.)
-    public string Model { get; set; } = "Qwen3.6-35B-A3B-UD-Q8_K_XL";
+    /// Default model id targets the curated Gemma 4 12B multimodal edge lane
+    /// from appsettings.json. Replace with any id your configured HTTP
+    /// endpoint recognises.
+    public string Model { get; set; } = "gemma-4-12b-it-UD-Q6_K_XL";
 
     public string? ApiKey { get; set; }
 

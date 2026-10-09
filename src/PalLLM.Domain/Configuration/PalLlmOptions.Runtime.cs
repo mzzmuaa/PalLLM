@@ -224,8 +224,9 @@ public sealed class ModelRoleBinding
     /// <c>"qwen-fast"</c>, <c>"qwen-dense"</c>).</summary>
     public string Id { get; set; } = string.Empty;
 
-    /// <summary>The model tag the endpoint expects (e.g.
-    /// <c>"gemma3:4b"</c>, <c>"qwen3.6:35b-a3b"</c>). Informational —
+    /// <summary>The model tag the endpoint expects (for example,
+    /// <c>"Qwen3.5-9B-UD-Q6_K_XL"</c> or
+    /// <c>"gemma-4-12b-it-UD-Q6_K_XL"</c>). Informational —
     /// the runtime does not re-issue this to the endpoint automatically.</summary>
     public string ModelId { get; set; } = string.Empty;
 

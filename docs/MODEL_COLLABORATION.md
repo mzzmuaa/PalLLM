@@ -1,6 +1,6 @@
 # Local Model Collaboration
 
-Last audited: `2026-06-03`
+Last audited: `2026-06-04`
 
 > **Quantization choice → see [`QUANTIZATION.md`](QUANTIZATION.md)** for
 > the full NVFP4 / MXFP4 / FP8 / Q4_K_M / Q8_0 matrix with community
@@ -31,20 +31,24 @@ It is not a generic "AI studio" guide.
 
 ## Current posture
 
-PalLLM's default collaboration shape is a fast lane plus a deliberate lane:
+PalLLM's default collaboration shape is a fast Worker lane plus a smart
+multimodal Edge lane:
 
-- `Qwen3.6-35B-A3B` as the fast worker, scout, and watchdog
-- `Qwen3.6-27B` as the slower dense planner, reviewer, and final judge
+- `Qwen3.5-9B-UD-Q6_K_XL` as the fast worker, scout, and watchdog
+- `gemma-4-12b-it-UD-Q6_K_XL` as the multimodal edge, vision/audio lane,
+  complex-turn planner, and reviewer
 
 That split is useful in this repo because PalLLM has two very different kinds
 of work:
 
 - quick bridge, documentation, or runtime edits where latency matters
-- release-facing and native-seam work where correctness matters more than speed
+- screenshot/audio/native-seam work where multimodal grounding or extra
+  deliberation matters more than speed
 
-Both lanes are served by the same bundled llama-server (swap the loaded GGUF,
-or run two llama-server processes on separate ports), or by the cloud escape
-endpoint on below-reference hardware.
+Both lanes are served by the same bundled llama-server in router mode, or by
+separate loopback llama-server processes when an operator wants explicit port
+isolation. The cloud escape remains available only for below-reference
+hardware.
 
 ## What each lane should own
 
@@ -124,7 +128,7 @@ The profile then carries these arrays:
 - `Speculation` — machine-readable flags for `SupportsNgramSpeculation`,
   `SupportsDraftModelSpeculation`, `SupportsModelNativeMtp`,
   `RequiresModalityIsolatedProof`, and `RequiresPrefixCacheOffForLatencyMtp`,
-  plus the recommended first mode and the promotion guard. Qwen3.6 local GGUF
+  plus the recommended first mode and the promotion guard. Qwen3.5 local GGUF
   lanes report model-native MTP after replay proof; Gemma 4 lanes report a
   matching-Gemma-4-drafter mode.
 - `RequestHints[]` — keep PalLLM text chat on `/v1/chat/completions` as the
@@ -135,7 +139,7 @@ The profile then carries these arrays:
   `InferencePrompt.ResponseFormat` / `StructuredOutputs` / `Tools` /
   `ToolChoice` / `Prediction` / `Logprobs` / `Modalities` / `Audio` /
   `UserContent` proof hooks, the llama.cpp-only `cache_prompt` / `id_slot` /
-  `n_cache_reuse` canaries, and model-native Qwen3.6 / Gemma 4 MTP guidance.
+  `n_cache_reuse` canaries, and model-native Qwen3.5 / Gemma 4 MTP guidance.
   Ordinary companion chat omits every optional field so strict endpoints stay
   portable.
 - `CacheHints[]` — stable-prefix guidance, JSON-schema request shaping,
@@ -167,7 +171,7 @@ The profile then carries these arrays:
   route-labeled replay (companion chat, vision describe, world-state
   extraction, screenshot proof loops, audio/ASR, long proof/docs), runtime
   capability handshakes, model-artifact provenance, package/redistribution
-  decisions, GGUF prompt/state-cache canaries, Qwen3.6 context receipts, Gemma
+  decisions, GGUF prompt/state-cache canaries, Qwen3.5 context receipts, Gemma
   audio-budget receipts, llama.cpp speculation A/B proof, multimodal
   media-admission proof, Qwen Omni streaming-video / speech fallback proof, and
   PalLLM's own `/metrics` receipts (`palllm_chat_duration_seconds`,
@@ -269,12 +273,12 @@ promotion.
   canary with a required object, enum, bounded array, deliberate violation
   prompt, and changed-schema digest. The PalLLM validator remains authoritative
   even when the upstream server claims constrained decoding.
-- Treat Qwen3.6 or Gemma 4 MTP as a separate model-native speculation mode:
+- Treat Qwen3.5 or Gemma 4 MTP as a separate model-native speculation mode:
   keep strict JSON, tool-call, judge, and save-replay routes no-spec until each
-  route proves stable. For Qwen3.6 low-concurrency latency proof, compare an
+  route proves stable. For Qwen3.5 low-concurrency latency proof, compare an
   MTP-1 lane with prefix caching disabled against the normal prefix-cache lane
   and a no-spec baseline.
-- Qwen3.6 official cards advertise very large context windows, but ordinary
+- Qwen3.5 official cards advertise very large context windows, but ordinary
   companion turns should stay short; reserve 128K+ contexts for proof,
   docs-sync, or deliberate review lanes that can afford the KV cache. Record
   served model id, runtime context cap, extension flags, route token budget,
@@ -391,7 +395,7 @@ stack is the bundled engine pointed at an NVFP4 GGUF:
 
 ```
 llama-server
-  -m <model-NVFP4.gguf>   (e.g. an NVFP4 Qwen3.6-A3B GGUF)
+  -m <model-NVFP4.gguf>   (e.g. a Qwen3.5-9B GGUF)
   --host 127.0.0.1 --port 8080 -c 8192 -ngl 99 --flash-attn on --metrics --no-webui
 
 PalLLM
@@ -471,16 +475,15 @@ into generic asset, video, or product-studio work, it is out of scope.
 
 Primary sources:
 
-- [Qwen3.6-27B model card](https://huggingface.co/Qwen/Qwen3.6-27B)
-- [Qwen3.6-35B-A3B model card](https://huggingface.co/Qwen/Qwen3.6-35B-A3B)
-- [Qwen3.6 GitHub repo](https://github.com/QwenLM/Qwen3.6)
+- [Qwen/Qwen3.5-9B model card](https://huggingface.co/Qwen/Qwen3.5-9B)
+- [Unsloth Qwen3.5-9B MTP GGUF](https://huggingface.co/unsloth/Qwen3.5-9B-MTP-GGUF)
+- [Google Gemma 4 12B announcement](https://blog.google/innovation-and-ai/technology/developers-tools/introducing-gemma-4-12b/)
 - [Qwen3-Omni GitHub repo](https://github.com/QwenLM/Qwen3-Omni)
 - [Gemma 3n model overview](https://ai.google.dev/gemma/docs/gemma-3n)
 - [Gemma audio understanding](https://ai.google.dev/gemma/docs/capabilities/audio)
 - [Gemma video understanding](https://ai.google.dev/gemma/docs/capabilities/vision/video-understanding)
 - [Google Gemma 4 MTP drafter announcement](https://blog.google/innovation-and-ai/technology/developers-tools/multi-token-prediction-gemma-4/)
-- [Unsloth Qwen3.6-27B-GGUF](https://huggingface.co/unsloth/Qwen3.6-27B-GGUF)
-- [Unsloth Qwen3.6-35B-A3B-GGUF](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF)
+- [Unsloth Qwen3.5 local-run guidance](https://unsloth.ai/docs/models/qwen3.5)
 - [Unsloth Qwen run and fine-tune guide](https://unsloth.ai/docs/models/qwen3-how-to-run-and-fine-tune)
 - [Unsloth Dynamic 2.0 GGUFs](https://unsloth.ai/docs/basics/unsloth-dynamic-2.0-ggufs)
 - [llama.cpp server README](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md)

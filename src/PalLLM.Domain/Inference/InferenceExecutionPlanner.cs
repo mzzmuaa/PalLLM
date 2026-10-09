@@ -262,8 +262,14 @@ public sealed class InferenceExecutionPlanner
 
     private static bool IsFastIterativeModel(string? modelId)
     {
+        // Fast Worker lane = the snappy default model PalLLM routes most turns to.
+        // The two-model mesh (Pass 439) makes Qwen3.5-9B (native MTP) the fast lane
+        // and gemma-4-12b the dense / multimodal Edge lane. The MoE / A3B markers
+        // stay so older curated MoE workers still classify as fast-iterative.
         string normalized = Normalize(modelId);
-        return normalized.Contains("a3b", StringComparison.Ordinal)
+        return normalized.Contains("qwen3.5", StringComparison.Ordinal)
+            || normalized.Contains("mtp", StringComparison.Ordinal)
+            || normalized.Contains("a3b", StringComparison.Ordinal)
             || normalized.Contains("moe", StringComparison.Ordinal)
             || normalized.Contains("mixtral", StringComparison.Ordinal)
             || normalized.Contains("deepseek-v3", StringComparison.Ordinal);

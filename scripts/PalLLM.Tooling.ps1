@@ -187,8 +187,12 @@ function ConvertTo-PalLlmRelativePath {
         $basePath += [IO.Path]::DirectorySeparatorChar
     }
 
-    $baseUri = [Uri]$basePath
-    $targetUri = [Uri]$targetPath
+    # Explicit file URIs keep Unix absolute paths absolute under .NET.
+    # Protect literal percent sequences before UriBuilder interprets URI escapes.
+    # UriBuilder also escapes fragment/query characters in real filenames.
+    # Retain .NET Framework compatibility for Windows PowerShell 5.1.
+    $baseUri = [UriBuilder]::new([Uri]::UriSchemeFile, '', -1, $basePath.Replace('%', '%25')).Uri
+    $targetUri = [UriBuilder]::new([Uri]::UriSchemeFile, '', -1, $targetPath.Replace('%', '%25')).Uri
     return [Uri]::UnescapeDataString($baseUri.MakeRelativeUri($targetUri).ToString()).Replace('\', '/')
 }
 
@@ -217,6 +221,7 @@ function Test-PalLlmPublicationTextSurface {
     $unrelatedFranchisePattern = '(?i)\b(?:Pok(?:e|\u00E9)mon|Pikachu|Nintendo|Mario|Zelda|Star\s+Wars|Jedi|Sith|Marvel|Avengers|DC(?:\s+Comics)?|Batman|Superman|Wonder\s+Woman|Disney|Minecraft|Fortnite|Roblox|RimWorld|Skyrim|Fallout|Cyberpunk\s+2077|Harry\s+Potter|Hogwarts|Warhammer|Mass\s+Effect|Dragon\s+Age|The\s+Witcher|League\s+of\s+Legends|Dungeons\s*(?:&|and)\s*Dragons|D\s*&\s*D|DnD|Baldur.?s\s+Gate|Elden\s+Ring|Dark\s+Souls|Monster\s+Hunter|Final\s+Fantasy|World\s+of\s+Warcraft|Warcraft|One\s+Piece|Dragon\s+Ball|Naruto|Gundam|Studio\s+Ghibli|Ghibli|ARK\s*:?\s*Survival)\b'
     $scopeDriftPattern = '(?i)\b(?:generic\s+AI\s+platform|generic\s+platform|multi[-\s]?game|cross[-\s]?game|game[-\s]?agnostic|universal\s+game\s+agent|all\s+games|browser\s+agent|computer\s+use)\b'
     $legalOverclaimPattern = '(?i)\b(?:lawyer[-\s]?proof|legal[-\s]?risk[-\s]?free|no\s+legal\s+risk|guaranteed\s+legal|fully\s+IP[-\s]?neutral|100%\s+IP[-\s]?neutral|compliance[-\s]?certified)\b'
+    $monetizationSolicitationPattern = '(?i)\b(?:donations?|donate|patreon|ko[-\s]?fi|buy\s+me\s+a\s+coffee|paid[-\s]?tiers?|premium\s+tiers?|ads?[-\s]?supported|advertising[-\s]?supported|advertisements?|sponsorships?|sponsors?\s+welcome|become\s+(?:a\s+)?sponsor|support\s+(?:us|me)\s+on)\b'
     $brandMinimalRootPattern = '(?i)\b(OpenAI|Anthropic|Claude Desktop|ChatGPT|Copilot|Cursor|VS Code|Visual Studio Code|Ollama|LM Studio|vLLM|SGLang|llama\.cpp|DashScope|Qwen[0-9A-Za-z:._-]*|Gemma[0-9A-Za-z:._-]*|Mistral|Unsloth|NVIDIA|TensorRT(?:-LLM)?|Hugging\s+Face|OpenVINO|Foundry\s+Local|DeepSeek|OpenRouter)\b'
     $rootBrandMinimalSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     $scannerFileSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
@@ -274,6 +279,11 @@ function Test-PalLlmPublicationTextSurface {
         $legalOverclaimMatch = [regex]::Match($text, $legalOverclaimPattern)
         if ($legalOverclaimMatch.Success) {
             Add-UniqueString -List $violations -Value ("{0}: package copy should not claim legal, IP-neutrality, or compliance certainty. Found '{1}'" -f $relativePath, $legalOverclaimMatch.Value)
+        }
+
+        $monetizationMatch = [regex]::Match($text, $monetizationSolicitationPattern)
+        if ($monetizationMatch.Success) {
+            Add-UniqueString -List $violations -Value ("{0}: package copy should not carry donation, ad, sponsor, or paid-tier solicitation language without a separate publication decision. Found '{1}'" -f $relativePath, $monetizationMatch.Value)
         }
 
         if ($rootBrandMinimalSet.Contains($relativePath)) {

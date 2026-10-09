@@ -205,7 +205,7 @@ public sealed class ScriptExecutionTests
         ProcessResult r = RunPwsh(script,
             "-LlamaCppUrl", "http://127.0.0.1:9",
             "-SpecType", "draft-mtp",
-            "-ModelProfile", "qwen36",
+            "-ModelProfile", "qwen35",
             "-DryRun");
 
         Assert.That(r.ExitCode, Is.EqualTo(0),
@@ -220,22 +220,22 @@ public sealed class ScriptExecutionTests
     }
 
     [Test]
-    public void ConnectLlamaCpp_Qwen3CoderWithSpecType_FailsBeforePrintingUnsafeCommand()
+    public void ConnectLlamaCpp_UnsupportedModelProfile_FailsBeforePrintingCommand()
     {
         SkipIfNoPwsh();
         string script = LocateRepoFile("scripts", "connect-llamacpp.ps1");
 
         ProcessResult r = RunPwsh(script,
             "-LlamaCppUrl", "http://127.0.0.1:9",
-            "-ModelProfile", "qwen3-coder",
+            "-ModelProfile", "legacy-profile",
             "-SpecType", "draft-mtp",
             "-DryRun");
 
         string allOutput = r.Stdout + " " + r.Stderr;
         Assert.That(r.ExitCode, Is.Not.EqualTo(0),
-            "Qwen3-Coder-Next speculative decode must fail fast until the lane has upstream and route-smoke proof.");
-        Assert.That(allOutput, Does.Contain("Qwen3-Coder-Next").And.Contain("-SpecType none"),
-            "Failure output must tell the operator to keep Qwen3-Coder-Next on the no-spec lane.");
+            "Unsupported sampler profiles must fail fast before any launch recipe is printed.");
+        Assert.That(allOutput, Does.Contain("does not belong to the set").And.Contain("qwen35").And.Contain("gemma"),
+            "Failure output must show the supported current profiles.");
         Assert.That(allOutput, Does.Not.Contain("Copy-paste setup"),
             "The connector must not print an unsafe launch command after rejecting the profile/spec combination.");
     }
@@ -377,6 +377,98 @@ public sealed class ScriptExecutionTests
                 "pal-cleanup.ps1 in preview mode MUST NOT delete the sentinel file. This is the production-safety contract: no -Apply, no deletes.");
             Assert.That(Directory.Exists(fakeCoverage), Is.True,
                 "pal-cleanup.ps1 in preview mode MUST NOT delete the candidate directory.");
+        }
+        finally
+        {
+            try { if (Directory.Exists(sandbox)) Directory.Delete(sandbox, recursive: true); } catch { }
+        }
+    }
+
+    [Test]
+    public void PublicCopyAudit_BlocksMonetizationSolicitationInReleaseCopy()
+    {
+        // Pass 442: execute the public-copy audit against a tiny sandbox
+        // repo so the monetization-solicitation guard is proven by the
+        // script's actual policy loading and error path, not just source
+        // greps or domain-level pack tests.
+        SkipIfNoPwsh();
+        string repoRoot = Path.GetDirectoryName(LocateRepoFile("PalLLM.sln"))!;
+        string script = LocateRepoFile("scripts", "audit_public_copy.ps1");
+        string policyScript = LocateRepoFile("scripts", "public_copy_policy.ps1");
+        string toolingScript = LocateRepoFile("scripts", "PalLLM.Tooling.ps1");
+        string sandbox = Path.Combine(Path.GetTempPath(), $"PalLLM.PublicCopy.{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(sandbox, "scripts"));
+            Directory.CreateDirectory(Path.Combine(sandbox, "docs"));
+            Directory.CreateDirectory(Path.Combine(sandbox, ".github", "ISSUE_TEMPLATE"));
+            Directory.CreateDirectory(Path.Combine(sandbox, "package"));
+            File.Copy(script, Path.Combine(sandbox, "scripts", "audit_public_copy.ps1"));
+            File.Copy(policyScript, Path.Combine(sandbox, "scripts", "public_copy_policy.ps1"));
+            File.Copy(toolingScript, Path.Combine(sandbox, "scripts", "PalLLM.Tooling.ps1"));
+
+            File.WriteAllText(Path.Combine(sandbox, "README.md"),
+                "PalLLM is a focused Palworld companion mod. Donations welcome for bonus packs. See docs/RELEASE.md.");
+            File.WriteAllText(Path.Combine(sandbox, "NOTICE.md"), "PalLLM test notice.");
+            File.WriteAllText(Path.Combine(sandbox, "SECURITY.md"),
+                "Use private vulnerability reporting. Secret scanning push protection stays enabled.");
+            File.WriteAllText(Path.Combine(sandbox, "CONTRIBUTING.md"),
+                "Run the pre-commit hooks and publication audits before release.");
+            File.WriteAllText(Path.Combine(sandbox, "docs", "INDEX.md"), "# Index");
+            File.WriteAllText(Path.Combine(sandbox, "docs", "RELEASE.md"),
+                "Run public copy audit, path reference audit, and publish-audit. " +
+                "Keep push protection and private vulnerability reporting on. " +
+                "Publication blockers include unrelated third-party franchise, broader platform, sibling-project bleed, and monetization-solicitation.");
+            File.WriteAllText(Path.Combine(sandbox, ".github", "ISSUE_TEMPLATE", "bug_report.md"),
+                "Bug report template.");
+
+            ProcessResult r = RunPwsh(
+                Path.Combine(sandbox, "scripts", "audit_public_copy.ps1"),
+                "-RepoRoot", sandbox);
+
+            string allOutput = r.Stdout + " " + r.Stderr;
+            Assert.That(r.ExitCode, Is.Not.EqualTo(0),
+                "audit_public_copy.ps1 must fail when release-facing copy contains solicitation-style monetization language.");
+            Assert.That(allOutput, Does.Contain("monetization-solicitation").And.Contain("Donations"),
+                $"Audit output must name the stable issue kind and offending text. stdout=<<<{r.Stdout}>>> stderr=<<<{r.Stderr}>>>");
+            Assert.That(allOutput, Does.Not.Contain(repoRoot),
+                "Sandbox audit failures should report paths relative to the scanned repo, not leak the real PalLLM checkout path.");
+
+            File.WriteAllText(Path.Combine(sandbox, "package", "PLAYER_README.txt"),
+                "This candidate package advertises premium tiers for bonus packs.");
+            string toolingProbePath = Path.Combine(sandbox, "scripts", "run-tooling-publication-scan.ps1");
+            File.WriteAllText(toolingProbePath,
+                """
+                . (Join-Path $PSScriptRoot 'PalLLM.Tooling.ps1')
+                $packageRoot = Join-Path (Split-Path -Parent $PSScriptRoot) 'package'
+                $result = Test-PalLlmPublicationTextSurface -RootPath $packageRoot
+                if ($result.CheckedFileCount -ne 1) {
+                    throw "expected exactly 1 checked package text file; found $($result.CheckedFileCount)"
+                }
+                if (@($result.Violations).Count -ne 1) {
+                    throw "expected exactly 1 publication violation; found $(@($result.Violations).Count)"
+                }
+                foreach ($rootName in @('package', 'package %23# root')) {
+                    $pathRoot = Join-Path (Split-Path -Parent $PSScriptRoot) $rootName
+                    foreach ($name in @('plain.txt', 'with space.txt', 'with#hash.txt', 'with%23hash.txt', 'with%2Fslash.txt', 'with%25percent.txt', 'with%2e%2e.txt')) {
+                        $expected = 'docs/' + $name
+                        $target = Join-Path (Join-Path $pathRoot 'docs') $name
+                        $actual = ConvertTo-PalLlmRelativePath -RootPath $pathRoot -FilePath $target
+                        if ($actual -cne $expected) {
+                            throw "relative filename changed: expected '$expected', found '$actual'"
+                        }
+                    }
+                }
+                Write-Output $result.Violations[0]
+                """);
+
+            ProcessResult tooling = RunPwsh(toolingProbePath);
+            Assert.That(tooling.ExitCode, Is.EqualTo(0),
+                $"PalLLM.Tooling.ps1 publication scanner probe must exit 0. stdout=<<<{tooling.Stdout}>>> stderr=<<<{tooling.Stderr}>>>");
+            Assert.That(tooling.Stdout, Does.Contain("PLAYER_README.txt")
+                    .And.Contain("paid-tier solicitation")
+                    .And.Contain("premium tiers"),
+                "The shared package/proof/support publication scanner must return a monetization-solicitation violation for shipped package text.");
         }
         finally
         {

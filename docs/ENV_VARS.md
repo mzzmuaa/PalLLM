@@ -81,7 +81,7 @@ Common overrides:
 |---|---|
 | `PalLLM__Inference__Enabled` | `true` / `false` — turn live inference on / off |
 | `PalLLM__Inference__BaseUrl` | Inference HTTP endpoint (default: bundled llama.cpp at `http://127.0.0.1:8080/v1/`) |
-| `PalLLM__Inference__Model` | Model id passed to the inference API (default `Qwen3.6-35B-A3B-UD-Q8_K_XL`) |
+| `PalLLM__Inference__Model` | Model id passed to the inference API (default `Qwen3.5-9B-UD-Q6_K_XL`) |
 | `PalLLM__Inference__ApiKey` | Bearer token for the inference endpoint, if it requires one |
 | `PalLLM__Inference__PrefixCacheSalt` | Optional OpenAI-compatible `cache_salt` trust-domain value for isolating prefix-cache reuse on shared endpoints |
 | `PalLLM__Inference__PromptCacheKey` | Optional OpenAI-compatible `prompt_cache_key` for hosted prompt-cache routing; omitted unless explicitly configured |
@@ -119,7 +119,7 @@ Common overrides:
 | `PalLLM__Inference__ModelCatalogMaxResponseBytes` | Cap on the OpenAI-compatible `/v1/models` catalog discovery payload in bytes (default `262144`, 256 KB) |
 | `PalLLM__Vision__Enabled` | `true` / `false` — vision describe on / off |
 | `PalLLM__Vision__BaseUrl` | Vision HTTP endpoint |
-| `PalLLM__Vision__Model` | Vision model id sent to the configured multimodal endpoint (default `Qwen3.6-35B-A3B-UD-Q8_K_XL`) |
+| `PalLLM__Vision__Model` | Vision model id sent to the configured multimodal endpoint (default `gemma-4-12b-it-UD-Q6_K_XL`) |
 | `PalLLM__Vision__ApiKey` | Bearer token for the vision endpoint, if it requires one |
 | `PalLLM__Vision__Temperature` | Vision-lane temperature (`0` to `2`), defaulting low for extraction-style calls |
 | `PalLLM__Vision__MaxResponseBytes` | Cap on vision response size in bytes (default `65536`, 64 KB) |

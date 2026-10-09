@@ -1252,6 +1252,11 @@ public sealed class MetaTests
             .And.Contain("lawyer[-\\\\s]?proof")
             .And.Contain("fully\\\\s+IP[-\\\\s]?neutral"),
             "Pack publication-safety validation should block legal/IP/compliance overclaims in shareable pack text.");
+        Assert.That(publicationSafetyContent, Does.Contain("MonetizationSolicitationRegex")
+            .And.Contain("patreon")
+            .And.Contain("donations?")
+            .And.Contain("paid[-\\\\s]?tiers?"),
+            "Pack publication-safety validation should block solicitation-style monetization copy in shareable pack text.");
 
         string personalityPackPath = Path.Combine(RepoRoot, "src", "PalLLM.Domain", "Packs", "PersonalityPack.cs");
         string personalityPackContent = File.ReadAllText(personalityPackPath);
@@ -1581,6 +1586,12 @@ public sealed class MetaTests
             "Publication text-surface scanning should keep shipped text files scoped to PalLLM for Palworld.");
         Assert.That(tooling, Does.Contain("$legalOverclaimPattern"),
             "Publication text-surface scanning should block legal, IP-neutrality, or compliance-certainty overclaims.");
+        Assert.That(tooling, Does.Contain("$monetizationSolicitationPattern"),
+            "Publication text-surface scanning should block solicitation-style monetization copy in shipped text files.");
+        Assert.That(tooling, Does.Contain("donations?")
+                .And.Contain("premium\\s+tiers?")
+                .And.Contain("sponsorships?"),
+            "Publication text-surface scanning should cover common plural donation, premium-tier, and sponsorship solicitation wording.");
         Assert.That(tooling, Does.Contain("vLLM")
                 .And.Contain("SGLang")
                 .And.Contain("llama\\.cpp")
@@ -1681,6 +1692,12 @@ public sealed class MetaTests
             "Public copy audit should guard release-facing repo docs against sibling-project bleed.");
         Assert.That(publicCopyPolicy, Does.Contain("BlockedPublicLegalOverclaimPatterns"),
             "Public copy audit should guard release-facing repo docs against legal/IP/compliance overclaims.");
+        Assert.That(publicCopyPolicy, Does.Contain("BlockedPublicMonetizationPatterns"),
+            "Public copy audit should guard release-facing repo docs against solicitation-style monetization copy.");
+        Assert.That(publicCopyPolicy, Does.Contain("donations?")
+                .And.Contain("premium\\s+tiers?")
+                .And.Contain("sponsorships?"),
+            "Public copy audit should cover common plural donation, premium-tier, and sponsorship solicitation wording.");
         Assert.That(publicCopyPolicy, Does.Contain("DeepForge"),
             "Public copy audit should block known sibling-project names in publication-facing surfaces.");
         // Pass 372: the policy switched to a more compact alternation

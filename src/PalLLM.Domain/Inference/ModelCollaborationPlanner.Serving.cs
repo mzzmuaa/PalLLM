@@ -20,7 +20,7 @@ public sealed partial class ModelCollaborationPlanner
         bool supportsVideo,
         bool supportsAudioInput,
         bool supportsAudioOutput,
-        bool isQwen36,
+        bool isQwen35,
         bool isQwenOmni,
         bool isGemma3n,
         bool isGemma4,
@@ -31,7 +31,7 @@ public sealed partial class ModelCollaborationPlanner
         bool multimodal = supportsVision || supportsVideo || supportsAudioInput || supportsAudioOutput;
         bool localGguf = isGguf && !isEmbedding;
         bool cloudEscape = !isGguf && !isEmbedding;
-        bool supportsModelNativeMtp = localGguf && (isQwen36 || isGemma4);
+        bool supportsModelNativeMtp = localGguf && (isQwen35 || isGemma4);
         bool isGemmaAudio = supportsAudioInput && (isGemma4 || isGemma3n);
         string gemmaAudioFamily = isGemma4 ? "Gemma 4" : "Gemma 3n";
         string gemmaAudioTokenRate = isGemma4 ? "25" : "6.25";
@@ -92,7 +92,7 @@ public sealed partial class ModelCollaborationPlanner
 
         if (supportsModelNativeMtp)
         {
-            startupHints.Add("llama.cpp draft-MTP proof lane: qualify --spec-type draft-mtp with measured --spec-draft-n-min / --spec-draft-n-max on text-only Qwen3.6 or Gemma 4 replay before any player-facing use.");
+            startupHints.Add("llama.cpp draft-MTP proof lane: qualify --spec-type draft-mtp with measured --spec-draft-n-min / --spec-draft-n-max on Qwen3.5 or Gemma 4 replay before any player-facing use.");
             if (multimodal)
             {
                 startupHints.Add("MTP/multimodal split-lane guard: keep text MTP and vision/audio profiles on separate server processes or ports until the exact llama-server build proves shared encoder batches do not corrupt slot, KV, or scheduler state.");
@@ -185,10 +185,10 @@ public sealed partial class ModelCollaborationPlanner
 
         if (supportsModelNativeMtp)
         {
-            requestHints.Add("Treat Qwen3.6 or Gemma 4 MTP as a separate model-native speculation mode; keep strict JSON, tool-call, judge, and save-replay routes no-spec until route-specific proof exists.");
-            if (isQwen36)
+            requestHints.Add("Treat Qwen3.5 or Gemma 4 MTP as a separate model-native speculation mode; keep strict JSON, tool-call, judge, and save-replay routes no-spec until route-specific proof exists.");
+            if (isQwen35)
             {
-                requestHints.Add("For Qwen3.6 low-concurrency latency proof, run MTP-1 with prefix caching disabled and keep the normal prefix-cache lane separate for shared or prompt-heavy traffic.");
+                requestHints.Add("For Qwen3.5 low-concurrency latency proof, run MTP-1 with prefix caching disabled and keep the normal prefix-cache lane separate for shared or prompt-heavy traffic.");
             }
             else if (isGemma4)
             {
@@ -206,10 +206,10 @@ public sealed partial class ModelCollaborationPlanner
             requestHints.Add("For Gemma 3n, request only the modalities needed for the turn; text-only companion turns should not load audio or vision parameters just because the model can.");
         }
 
-        if (isQwen36)
+        if (isQwen35)
         {
-            requestHints.Add("Qwen3.6 has a 262K default context on official cards; keep ordinary companion turns short, and reserve 128K+ contexts for proof, docs-sync, or deliberate review lanes that can afford the KV cache.");
-            requestHints.Add("Do not copy a 1,010,000-token extension, hosted catalog limit, or GGUF context setting across Qwen3.6 lanes; the served model id, runtime context cap, extension flags, and route token budget must be in the promotion receipt.");
+            requestHints.Add("Qwen3.5 fast-lane context stays measured-context-first; keep ordinary companion turns short and raise context only with KV-cache and route replay receipts.");
+            requestHints.Add("Do not copy hosted catalog limits or unrelated GGUF context settings across Qwen3.5 lanes; the served model id, runtime context cap, and route token budget must be in the promotion receipt.");
         }
 
         if (supportsAudioInput)
@@ -320,9 +320,9 @@ public sealed partial class ModelCollaborationPlanner
             admissionControls.Add("Do not co-schedule model-native MTP with mmproj, libmtmd, image, or audio workloads on one local server unless a same-process PalLLM replay proves no stalls, loops, OOM, or parser regressions.");
         }
 
-        if (isQwen36)
+        if (isQwen35)
         {
-            admissionControls.Add("For Qwen3.6, cap ordinary companion prompts to measured live budgets; 262,144+ local, 1,010,000-token extended, and reduced-context GGUF profiles require separate proof.");
+            admissionControls.Add("For Qwen3.5, cap ordinary companion prompts to measured live budgets; longer local contexts require separate proof.");
         }
 
         if (admissionControls.Count == 0)
@@ -449,10 +449,10 @@ public sealed partial class ModelCollaborationPlanner
 
         if (supportsModelNativeMtp)
         {
-            verificationChecks.Add("For Qwen3.6 or Gemma 4 MTP, compare the model-native drafter against n-gram or no-spec baselines on the same PalLLM replay set and record acceptance rate, TTFT, ITL, fallback behavior, and JSON/tool-call parse stability before promotion.");
-            if (isQwen36)
+            verificationChecks.Add("For Qwen3.5 or Gemma 4 MTP, compare the model-native drafter against n-gram or no-spec baselines on the same PalLLM replay set and record acceptance rate, TTFT, ITL, fallback behavior, and JSON/tool-call parse stability before promotion.");
+            if (isQwen35)
             {
-                verificationChecks.Add("For Qwen3.6 MTP-1 latency mode, include a --no-enable-prefix-caching replay and compare it against the normal prefix-cache lane before changing any player-facing default.");
+                verificationChecks.Add("For Qwen3.5 MTP-1 latency mode, include a --no-enable-prefix-caching replay and compare it against the normal prefix-cache lane before changing any player-facing default.");
             }
             else if (isGemma4)
             {

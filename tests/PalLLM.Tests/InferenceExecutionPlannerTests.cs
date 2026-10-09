@@ -22,7 +22,7 @@ public sealed class InferenceExecutionPlannerTests
                 UserMessage = "Anything moving near the treeline?",
                 Priority = PalTaskPriority.Low,
             },
-            "unsloth/Qwen3.6-35B-A3B-GGUF");
+            "Qwen3.5-9B-UD-Q6_K_XL");
 
         Assert.That(profile.ProfileId, Is.EqualTo("fast-reactive"));
         Assert.That(profile.AllowLiveVisionAugmentation, Is.False);
@@ -50,7 +50,7 @@ public sealed class InferenceExecutionPlannerTests
                 UserMessage = "Plan the safest expansion path for our base network.",
                 Priority = PalTaskPriority.High,
             },
-            "unsloth/Qwen3.6-27B-GGUF");
+            "gemma-4-12b-it-UD-Q6_K_XL");
 
         Assert.That(profile.ProfileId, Is.EqualTo("dense-deliberate"));
         Assert.That(profile.AllowLiveVisionAugmentation, Is.True);

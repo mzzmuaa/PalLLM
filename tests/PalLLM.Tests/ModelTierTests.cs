@@ -80,7 +80,7 @@ public sealed class ModelTierTests
         // Only /v1/models is probed now. A model reachable solely via the old
         // Foundry Local /openai/models route must NOT appear, proving Pass 436
         // dropped that candidate.
-        const string openAiBody = "{\"data\":[{\"id\":\"gemma-4-E4B-it\"}]}";
+        const string openAiBody = "{\"data\":[{\"id\":\"gemma-4-12b-it-UD-Q6_K_XL\"}]}";
         const string foundryBody = "[\"phi-4-mini-instruct-generic-cpu\"]";
         using var handler = new ScriptedProbeHandler(
             new[]
@@ -93,7 +93,7 @@ public sealed class ModelTierTests
         var probe = new HttpModelAvailabilityProbe(httpClient, BuildOptionsWithBaseUrl("http://127.0.0.1:8080/v1/"));
         IReadOnlySet<string> models = await probe.GetAvailableModelsAsync(CancellationToken.None);
 
-        Assert.That(models, Is.EquivalentTo(new[] { "gemma-4-E4B-it" }),
+        Assert.That(models, Is.EquivalentTo(new[] { "gemma-4-12b-it-UD-Q6_K_XL" }),
             "Pass 436 removed the Foundry /openai/models probe; only /v1/models models should appear.");
     }
 
@@ -324,13 +324,13 @@ public sealed class ModelTierTests
     // ---------------------------------------------------------------------
 
     [Test]
-    public void CollaborationPlanner_WhenQwenDenseAndMoeConfigured_AssignsWorkerAndJudgeRoles()
+    public void CollaborationPlanner_WhenQwen35AndGemma4Configured_AssignsWorkerAndJudgeRoles()
     {
         var options = new PalLlmOptions();
         options.Inference.ModelTiers =
         [
-            new ModelTierOptions { Id = "worker", Model = "unsloth/Qwen3.6-35B-A3B-GGUF", Priority = 10 },
-            new ModelTierOptions { Id = "judge", Model = "unsloth/Qwen3.6-27B-GGUF", Priority = 9 },
+            new ModelTierOptions { Id = "worker", Model = "Qwen3.5-9B-UD-Q6_K_XL", Priority = 10 },
+            new ModelTierOptions { Id = "judge", Model = "gemma-4-12b-it-UD-Q6_K_XL", Priority = 9 },
             new ModelTierOptions { Id = "omni", Model = "Qwen/Qwen3-Omni-30B-A3B-Instruct", Priority = 3 },
             new ModelTierOptions { Id = "edge3n", Model = "google/gemma-3n-E4B-it", Priority = 2 },
             new ModelTierOptions { Id = "edge", Model = "gemma4:e4b", Priority = 2 },
@@ -340,8 +340,8 @@ public sealed class ModelTierTests
         ];
 
         var orchestrator = new ModelTierOrchestrator(options, new StubProbe(
-            "unsloth/Qwen3.6-35B-A3B-GGUF",
-            "unsloth/Qwen3.6-27B-GGUF",
+            "Qwen3.5-9B-UD-Q6_K_XL",
+            "gemma-4-12b-it-UD-Q6_K_XL",
             "Qwen/Qwen3-Omni-30B-A3B-Instruct",
             "google/gemma-3n-E4B-it",
             "gemma4:e4b",
@@ -359,9 +359,9 @@ public sealed class ModelTierTests
         Assert.That(snapshot.Hardware.CanKeepTwoSpecialistsWarm, Is.True);
 
         ModelCollaborationModelDescriptor fastModel = snapshot.ConfiguredModels
-            .Single(model => model.ModelId.Contains("35B-A3B", StringComparison.Ordinal));
+            .Single(model => model.ModelId.Contains("Qwen3.5-9B", StringComparison.Ordinal));
         ModelCollaborationModelDescriptor deliberateModel = snapshot.ConfiguredModels
-            .Single(model => model.ModelId.Contains("27B", StringComparison.Ordinal));
+            .Single(model => model.ModelId.Contains("gemma-4-12b", StringComparison.Ordinal));
 
         Assert.That(fastModel.OperatingStyle, Is.EqualTo("fast-iterative"));
         Assert.That(deliberateModel.OperatingStyle, Is.EqualTo("deliberate"));
@@ -369,8 +369,8 @@ public sealed class ModelTierTests
         Assert.That(fastModel.Authority.MayRecommendMerge, Is.False);
         Assert.That(deliberateModel.Authority.MayBePrimaryReviewer, Is.True);
         Assert.That(deliberateModel.Authority.MayDraftHighRiskToolPlans, Is.True);
-        Assert.That(fastModel.Capability.Family, Is.EqualTo("qwen3.6"));
-        Assert.That(fastModel.Capability.InputModalities, Is.SupersetOf(new[] { "text", "image", "video" }));
+        Assert.That(fastModel.Capability.Family, Is.EqualTo("qwen3.5"));
+        Assert.That(fastModel.Capability.InputModalities, Is.SupersetOf(new[] { "text", "image" }));
         Assert.That(fastModel.Capability.OutputModalities, Is.EqualTo(new[] { "text" }));
         Assert.That(fastModel.Capability.SupportsAudioInput, Is.False);
         Assert.That(fastModel.Capability.SupportsStructuredOutputs, Is.True);
@@ -382,7 +382,7 @@ public sealed class ModelTierTests
         Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--mmproj <matching-mmproj.gguf>"));
         Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("--spec-type draft-mtp"));
         Assert.That(fastModel.Capability.ServingProfile.StartupHints, Has.Some.Contains("MTP/multimodal split-lane guard"));
-        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("262K default context"));
+        Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("measured-context-first"));
         Assert.That(fastModel.Capability.ServingProfile.RequestHints, Has.Some.Contains("model-card license metadata"));
         Assert.That(fastModel.Capability.ServingProfile.CacheHints, Has.Some.Contains("staged artifact store"));
         Assert.That(fastModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("state-cache canary"));
@@ -548,8 +548,8 @@ public sealed class ModelTierTests
         Assert.That(ggufTextModel.Capability.ServingProfile.VerificationChecks, Has.Some.Contains("For llama.cpp GGUF lanes"));
 
         ModelCollaborationRecipe recipe = snapshot.Recipes.Single(r => r.Id == "fast-draft-dense-judge");
-        Assert.That(recipe.Stages[0].PreferredModel, Does.Contain("35B-A3B"));
-        Assert.That(recipe.Stages[1].PreferredModel, Does.Contain("27B"));
+        Assert.That(recipe.Stages[0].PreferredModel, Does.Contain("Qwen3.5-9B"));
+        Assert.That(recipe.Stages[1].PreferredModel, Does.Contain("gemma-4-12b"));
         Assert.That(
             snapshot.RoutingPolicies.Single(policy => policy.Id == "high-risk-deliberate-bookends").RequiresHumanReview,
             Is.True);
@@ -567,13 +567,13 @@ public sealed class ModelTierTests
         var options = new PalLlmOptions();
         options.Inference.ModelTiers =
         [
-            new ModelTierOptions { Id = "worker", Model = "unsloth/Qwen3.6-35B-A3B-GGUF", Priority = 10 },
-            new ModelTierOptions { Id = "judge", Model = "unsloth/Qwen3.6-27B-GGUF", Priority = 9 },
+            new ModelTierOptions { Id = "worker", Model = "Qwen3.5-9B-UD-Q6_K_XL", Priority = 10 },
+            new ModelTierOptions { Id = "judge", Model = "gemma-4-12b-it-UD-Q6_K_XL", Priority = 9 },
         ];
 
         var planner = new ModelCollaborationPlanner(
             options,
-            new ModelTierOrchestrator(options, new StubProbe("unsloth/Qwen3.6-35B-A3B-GGUF")));
+            new ModelTierOrchestrator(options, new StubProbe("Qwen3.5-9B-UD-Q6_K_XL")));
 
         ModelCollaborationSnapshot snapshot = planner.GetSnapshot(new ModelHardwareHints(
             VramGb: 12,
@@ -594,16 +594,16 @@ public sealed class ModelTierTests
         var options = new PalLlmOptions();
         options.Inference.ModelTiers =
         [
-            new ModelTierOptions { Id = "worker", Model = "unsloth/Qwen3.6-35B-A3B-GGUF", Priority = 10 },
-            new ModelTierOptions { Id = "judge", Model = "unsloth/Qwen3.6-27B-GGUF", Priority = 9 },
+            new ModelTierOptions { Id = "worker", Model = "Qwen3.5-9B-UD-Q6_K_XL", Priority = 10 },
+            new ModelTierOptions { Id = "judge", Model = "gemma-4-12b-it-UD-Q6_K_XL", Priority = 9 },
         ];
 
         var decisionPlanner = new ModelCollaborationDecisionPlanner(
             new ModelCollaborationPlanner(
                 options,
                 new ModelTierOrchestrator(options, new StubProbe(
-                    "unsloth/Qwen3.6-35B-A3B-GGUF",
-                    "unsloth/Qwen3.6-27B-GGUF"))));
+                    "Qwen3.5-9B-UD-Q6_K_XL",
+                    "gemma-4-12b-it-UD-Q6_K_XL"))));
 
         ModelCollaborationDecision decision = decisionPlanner.Plan(new ModelCollaborationDecisionRequest(
             Task: "Plan and implement a release-facing auth migration with tool-driven repo edits",
@@ -618,8 +618,8 @@ public sealed class ModelTierTests
         Assert.That(decision.SelectedPolicyId, Is.EqualTo("high-risk-deliberate-bookends"));
         Assert.That(decision.SelectedRecipeId, Is.EqualTo("dense-plan-fast-execute-dense-audit"));
         Assert.That(decision.RunMode, Is.EqualTo("parallel"));
-        Assert.That(decision.DeliberateLaneModel, Does.Contain("27B"));
-        Assert.That(decision.FastLaneModel, Does.Contain("35B-A3B"));
+        Assert.That(decision.DeliberateLaneModel, Does.Contain("gemma-4-12b"));
+        Assert.That(decision.FastLaneModel, Does.Contain("Qwen3.5-9B"));
         Assert.That(decision.HumanReviewRequired, Is.True);
         Assert.That(decision.PreserveThinking.DeliberateLane, Is.True);
         Assert.That(decision.Validators, Has.Some.Contains("Security"));

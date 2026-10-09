@@ -40,7 +40,7 @@ full first-chat walkthrough.
 
 ## Pre-flight checklist before a PR
 
-1. `dotnet test` passes locally (currently `1309 passed`). Shortcut that
+1. `dotnet test` passes locally (currently `1310 passed`). Shortcut that
    runs build + tests + every drift gate CI runs in one shot:
    `powershell -File scripts/run_full_audit.ps1 -SkipCoverage -SkipSbom`.
    Writes a timestamped `artifacts/full-audit/<ts>/RESULTS.md`; a PASS

@@ -76,22 +76,24 @@ public sealed partial class ModelCollaborationPlanner
     {
         string normalized = NormalizeModelId(modelId);
         bool isSparseMoe = IsSparseMoe(normalized);
-        bool isRecognizedQwen27 = normalized.Contains("qwen3.6") && normalized.Contains("27b");
-        bool isRecognizedQwen35A3B = normalized.Contains("qwen3.6") && normalized.Contains("35b") && normalized.Contains("a3b");
+        bool isRecognizedQwen35Worker = IsQwen35(normalized) && normalized.Contains("9b");
+        bool isRecognizedGemma4Edge = IsGemma4(normalized) && normalized.Contains("12b");
+        bool isWorkerTier = string.Equals(tierId, "worker", StringComparison.OrdinalIgnoreCase);
+        bool isFastWorker = isSparseMoe || isRecognizedQwen35Worker || isWorkerTier;
         ModelCapabilityProfile capability = BuildCapabilityProfile(normalized, isSparseMoe);
         bool likelyMultimodal = capability.SupportsVisionInput
             || capability.SupportsVideoInput
             || capability.SupportsAudioInput
             || capability.SupportsAudioOutput;
 
-        string architecture = isSparseMoe ? "sparse-moe" : "dense";
-        string operatingStyle = isSparseMoe ? "fast-iterative" : "deliberate";
+        string architecture = isSparseMoe ? "sparse-moe" : isFastWorker ? "dense-fast" : "dense";
+        string operatingStyle = isFastWorker ? "fast-iterative" : "deliberate";
 
-        string[] primaryRoles = isSparseMoe
+        string[] primaryRoles = isFastWorker
             ? ["bridge-scout", "reply-drafter", "tool-loop-runner", "screenshot-auditor"]
             : ["planner", "reviewer", "constraint-keeper", "final-judge"];
 
-        string[] strengths = isSparseMoe
+        string[] strengths = isFastWorker
             ? [
                 "Rapid PalLLM repo sweeps and candidate generation",
                 "Cheaper branch fan-out for bridge, HUD, and docs work",
@@ -103,7 +105,7 @@ public sealed partial class ModelCollaborationPlanner
                 "Better fit for deliberate repo-level and release-readiness audits",
             ];
 
-        string[] cautions = isSparseMoe
+        string[] cautions = isFastWorker
             ? [
                 "Needs a stricter verifier when the task touches release-facing or native-seam rules",
                 "Long unattended loops benefit from periodic dense-model checkpoints",
@@ -113,23 +115,23 @@ public sealed partial class ModelCollaborationPlanner
                 "Less efficient for wide speculative search or continuous background monitoring",
             ];
 
-        ModelAuthorityProfile authority = BuildAuthorityProfile(isSparseMoe);
+        ModelAuthorityProfile authority = BuildAuthorityProfile(isFastWorker);
         List<string> modelNotes = new();
-        if (isRecognizedQwen27)
+        if (isRecognizedQwen35Worker)
         {
-            modelNotes.Add("Qwen3.6-27B is a strong dense reviewer and finalizer for PalLLM runtime, bridge, and docs-sync work.");
-            modelNotes.Add("The official Qwen3.6-27B card leads the open 35B-A3B sibling on several repo-grade coding benchmarks, which makes it a good default judge for higher-risk PalLLM changes.");
+            modelNotes.Add("Qwen3.5-9B-UD-Q6_K_XL is PalLLM's fast Worker lane for drafts, tool loops, and routine companion turns.");
+            modelNotes.Add("Keep thinking off by default and use a stricter validator or Gemma 4 review for release-facing changes.");
         }
 
-        if (isRecognizedQwen35A3B)
+        if (isRecognizedGemma4Edge)
         {
-            modelNotes.Add("Qwen3.6-35B-A3B is well-suited to fast draft, tool-loop, screenshot-review, and watchdog roles.");
-            modelNotes.Add("The sparse active-parameter budget makes it a good worker lane for bridge triage, doc drift patrol, test mining, and quick implementation loops.");
+            modelNotes.Add("Gemma 4 12B is PalLLM's smart/multimodal Edge lane for screenshot proof, slower review, and final arbitration.");
+            modelNotes.Add("Keep mmproj and speculative decoding as proof lanes until Palworld replay evidence exists.");
         }
 
         if (likelyMultimodal)
         {
-            modelNotes.Add("Official Qwen3.6 weights are multimodal; Palworld screenshot work may still use a separate vision-capable lane when local text-only GGUFs are deployed.");
+            modelNotes.Add("Multimodal use requires a matching mmproj and route-specific Palworld screenshot replay before promotion.");
         }
 
         return new ModelCollaborationModelDescriptor(
@@ -150,15 +152,13 @@ public sealed partial class ModelCollaborationPlanner
 
     private static ModelCapabilityProfile BuildCapabilityProfile(string normalizedModelId, bool isSparseMoe)
     {
-        bool isGemma4 = normalizedModelId.Contains("gemma4", StringComparison.Ordinal)
-            || normalizedModelId.Contains("gemma-4", StringComparison.Ordinal)
-            || normalizedModelId.Contains("gemma_4", StringComparison.Ordinal);
+        bool isGemma4 = IsGemma4(normalizedModelId);
         bool isGemma3n = normalizedModelId.Contains("gemma3n", StringComparison.Ordinal)
             || normalizedModelId.Contains("gemma-3n", StringComparison.Ordinal)
             || normalizedModelId.Contains("gemma_3n", StringComparison.Ordinal);
         bool isQwen = normalizedModelId.Contains("qwen", StringComparison.Ordinal);
         bool isQwenOmni = isQwen && normalizedModelId.Contains("omni", StringComparison.Ordinal);
-        bool isQwen36 = normalizedModelId.Contains("qwen3.6", StringComparison.Ordinal);
+        bool isQwen35 = IsQwen35(normalizedModelId);
         bool isQwenVl = isQwen
             && (normalizedModelId.Contains("-vl", StringComparison.Ordinal)
                 || normalizedModelId.Contains("_vl", StringComparison.Ordinal)
@@ -174,10 +174,12 @@ public sealed partial class ModelCollaborationPlanner
         bool isEmbedding = normalizedModelId.Contains("embed", StringComparison.Ordinal)
             || normalizedModelId.Contains("bge-", StringComparison.Ordinal)
             || normalizedModelId.Contains("nomic-", StringComparison.Ordinal);
-        bool isGguf = normalizedModelId.Contains("gguf", StringComparison.Ordinal);
+        bool isGguf = normalizedModelId.Contains("gguf", StringComparison.Ordinal)
+            || normalizedModelId.Contains("ud-q", StringComparison.Ordinal)
+            || normalizedModelId.Contains("ud-iq", StringComparison.Ordinal);
 
-        bool supportsVision = isGemma4 || isGemma3n || isQwenOmni || isQwen36 || isQwenVl;
-        bool supportsVideo = isGemma4 || isGemma3n || isQwenOmni || isQwen36;
+        bool supportsVision = isGemma4 || isGemma3n || isQwenOmni || isQwen35 || isQwenVl;
+        bool supportsVideo = isGemma4 || isGemma3n || isQwenOmni;
         bool supportsAudioInput = isQwenOmni || isGemma4 || isGemma3n || isAudioTagged;
         bool supportsAudioOutput = isQwenOmni;
         bool supportsToolCalls = isQwen
@@ -188,7 +190,7 @@ public sealed partial class ModelCollaborationPlanner
         bool supportsSpeculativeDecoding = !isEmbedding && (isSparseMoe || supportsToolCalls || !supportsVision);
         bool multimodal = supportsVision || supportsVideo || supportsAudioInput || supportsAudioOutput;
         bool richMediaOrNonGguf = !isGguf || supportsVideo || supportsAudioOutput;
-        bool supportsModelNativeMtp = richMediaOrNonGguf && !isEmbedding && (isQwen36 || isGemma4);
+        bool supportsModelNativeMtp = !isEmbedding && (isQwen35 || (richMediaOrNonGguf && isGemma4));
 
         List<string> inputModalities = ["text"];
         if (supportsVision)
@@ -213,7 +215,7 @@ public sealed partial class ModelCollaborationPlanner
         string family = isGemma4 ? "gemma4"
             : isGemma3n ? "gemma3n"
             : isQwenOmni ? "qwen-omni"
-            : isQwen36 ? "qwen3.6"
+            : isQwen35 ? "qwen3.5"
             : isQwen ? "qwen"
             : isEmbedding ? "embedding"
             : "generic-openai-compatible";
@@ -230,7 +232,7 @@ public sealed partial class ModelCollaborationPlanner
             supportsVideo,
             supportsAudioInput,
             supportsAudioOutput,
-            isQwen36,
+            isQwen35,
             isQwenOmni,
             isGemma3n,
             isGemma4,
@@ -242,7 +244,7 @@ public sealed partial class ModelCollaborationPlanner
             supportsSpeculativeDecoding,
             supportsModelNativeMtp,
             multimodal,
-            isQwen36,
+            isQwen35,
             isGemma4);
         string[] optimizations = BuildServingOptimizations(
             supportsStructuredOutputs,
@@ -282,7 +284,7 @@ public sealed partial class ModelCollaborationPlanner
         bool supportsSpeculativeDecoding,
         bool supportsModelNativeMtp,
         bool multimodal,
-        bool isQwen36,
+        bool isQwen35,
         bool isGemma4)
     {
         if (!supportsSpeculativeDecoding)
@@ -297,7 +299,7 @@ public sealed partial class ModelCollaborationPlanner
                 PromotionGuard: "Speculative decoding is not recommended for this lane; use normal deterministic PalLLM replay evidence.");
         }
 
-        string recommendedFirstMode = supportsModelNativeMtp && isQwen36
+        string recommendedFirstMode = supportsModelNativeMtp && isQwen35
             ? "mtp-1-low-concurrency-prefix-cache-off"
             : supportsModelNativeMtp && isGemma4
                 ? "matching-gemma4-drafter"
@@ -314,7 +316,7 @@ public sealed partial class ModelCollaborationPlanner
             SupportsDraftModelSpeculation: true,
             SupportsModelNativeMtp: supportsModelNativeMtp,
             RequiresModalityIsolatedProof: multimodal,
-            RequiresPrefixCacheOffForLatencyMtp: supportsModelNativeMtp && isQwen36,
+            RequiresPrefixCacheOffForLatencyMtp: supportsModelNativeMtp && isQwen35,
             RecommendedFirstMode: recommendedFirstMode,
             PromotionGuard: promotionGuard);
     }

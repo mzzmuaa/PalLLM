@@ -845,9 +845,9 @@ public static class HardwareProfiler
         return tier switch
         {
             DuoHardwareTier.Constrained when !gpuLikely =>
-                $"CPU-only box with {ramGb} GB RAM. Keep live inference on small unsloth UD-* GGUFs (gemma-4-E4B / qwen3.6-mini-4B-A1B) via llama.cpp or run deterministic-only. Vision + TTS off by default.",
+                $"CPU-only box with {ramGb} GB RAM. Use deterministic-only mode or a remote/cloud escape path; the Qwen3.5/Gemma 4 local mesh is not a CPU-only live-play target.",
             DuoHardwareTier.Constrained =>
-                $"Entry-level GPU + {ramGb} GB RAM. Stick with the fast lane (unsloth gemma-4-E4B-it-UD-Q4_K_XL via llama.cpp) and keep thinking-mode off. Judge role not recommended.{lowPrecisionNote}",
+                $"Entry-level GPU + {ramGb} GB RAM. Stick with the Qwen3.5 fast lane via llama.cpp, keep thinking-mode off, and page Gemma 4 only after host proof.{lowPrecisionNote}",
             DuoHardwareTier.Standard =>
                 $"Single-GPU studio-class box with {ramGb} GB RAM. Worker + Edge bindings fit; Judge runs serialised (not co-resident). Enable vision + TTS selectively.{lowPrecisionNote}",
             DuoHardwareTier.Generous =>

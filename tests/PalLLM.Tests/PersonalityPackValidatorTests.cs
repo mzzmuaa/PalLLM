@@ -126,7 +126,7 @@ public class PersonalityPackValidatorTests
     public void Validate_PublicationUnsafePackText_ReturnsInvalid()
     {
         string packRoot = BuildPack(
-            promptBody: "Official Palworld prompt sponsored by Pocketpair, with Pok\u00E9mon banter, Qwen tuning notes, and a lawyer-proof release claim.");
+            promptBody: "Official Palworld prompt sponsored by Pocketpair, with Pok\u00E9mon banter, Qwen tuning notes, a lawyer-proof release claim, and Donations welcome.");
         RewriteManifest(packRoot, manifest => CopyManifest(
             manifest,
             voiceConsentNotes: "Qwen license note says this voice pack is lawyer-proof."));
@@ -148,6 +148,9 @@ public class PersonalityPackValidatorTests
         Assert.That(result.Issues, Has.Some.Matches<string>(
             issue => issue.Contains("legal", StringComparison.OrdinalIgnoreCase) &&
                      issue.Contains("lawyer-proof", StringComparison.OrdinalIgnoreCase)));
+        Assert.That(result.Issues, Has.Some.Matches<string>(
+            issue => issue.Contains("donation", StringComparison.OrdinalIgnoreCase) &&
+                     issue.Contains("Donations", StringComparison.Ordinal)));
         Assert.That(result.Issues, Has.Some.Matches<string>(
             issue => issue.Contains("VoiceConsentNotes", StringComparison.Ordinal) &&
                      issue.Contains("third-party model", StringComparison.OrdinalIgnoreCase)));

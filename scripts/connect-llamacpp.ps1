@@ -78,25 +78,16 @@
 
 .PARAMETER SpecType
     Optional llama.cpp speculative decoding proof lane. Defaults to none.
-    Net-negative on RTX 3090 + Qwen3.6-35B-A3B (post PR #19493 benchmark);
-    net-positive on RTX PRO 6000 / RTX 5090 / Apple M3 Max / Strix Halo.
-    Measure cold/warm replay on your own hardware before enabling.
+    Qwen3.5 / Gemma 4 MTP is hardware- and route-dependent. Measure
+    cold/warm replay on your own hardware before enabling.
     draft-mtp uses conservative defaults (DraftMin=1, DraftMax=2) unless
     explicitly overridden; the n-gram defaults are much wider and are not safe
     for model-native MTP.
-    NOTE (Pass 429): Qwen3-Coder-Next currently errors with "speculative
-    decoding not supported by this context" on the documented llama.cpp lane,
-    so this helper rejects non-none speculation for that profile until the
-    upstream/runtime proof is green.
-
 .PARAMETER ModelProfile
-    Per-model Unsloth canonical sampler profile. Defaults to qwen36 to
-    match PalLLM's shipping config. Values:
-      qwen36       - Qwen 3.6 (temp 0.7, top-p 0.8, top-k 20, min-p 0, pp 1.5)
-      qwen3-coder  - Qwen 3 Coder Next (temp 0.6, top-p 0.95, top-k 20, pp 0)
-      minimax      - MiniMax M2.7 (temp 1.0, top-p 0.95, top-k 40, min-p 0.01)
-      gemma        - Gemma 4 family (temp 0.7, top-p 0.95, top-k 20)
-      deepseek     - DeepSeek V4 Flash (temp 0.7, top-p 0.95, top-k 40)
+    Per-model sampler profile. Defaults to qwen35 to match PalLLM's
+    shipping fast lane. Values:
+      qwen35       - Qwen 3.5 9B (temp 0.7, top-p 0.8, top-k 20, min-p 0, pp 1.5)
+      gemma        - Gemma 4 12B (temp 0.7, top-p 0.95, top-k 20)
       generic      - No sampler override; llama-server defaults apply.
 
 .PARAMETER Threads
@@ -108,8 +99,7 @@
     Prompt-processing thread count. Default 0 = match --threads.
 
 .PARAMETER Prio
-    Worker-thread priority. 0 = normal, 3 = high. MiniMax M2.7 recipe
-    recommends `--prio 3`; everything else stays at 0.
+    Worker-thread priority. 0 = normal, 3 = high.
 
 .PARAMETER Mlock
     Emit `--mlock` (lock weights in RAM, no swap). Useful on Apple
@@ -153,7 +143,7 @@
     pwsh ./scripts/connect-llamacpp.ps1 -ModelPath C:\Models\qwen.gguf
 
 .EXAMPLE
-    pwsh ./scripts/connect-llamacpp.ps1 -HfRepo ggml-org/gemma-3-4b-it-GGUF -WireVision
+    pwsh ./scripts/connect-llamacpp.ps1 -ModelPath D:\Models\Gemma\gemma-4-12b-it-UD-Q6_K_XL.gguf -Model gemma-4-12b-it-UD-Q6_K_XL -ModelProfile gemma -WireVision
 
 .EXAMPLE
     pwsh ./scripts/connect-llamacpp.ps1 -Model pal-gguf -WriteConfig
@@ -209,18 +199,17 @@ param(
 
     [switch]$QuantizedKv,
 
-    # Pass 348: per-model sampler profile. Defaults to qwen36 to match
-    # PalLLM's shipping Qwen3.6 quality tier. Other profiles match the
-    # Unsloth-documented per-model canonical samplers.
-    [ValidateSet('qwen36', 'qwen3-coder', 'minimax', 'gemma', 'deepseek', 'generic')]
-    [string]$ModelProfile = 'qwen36',
+    # Pass 448: current PalLLM local lanes are Qwen3.5 9B and Gemma 4 12B.
+    # Older specialty profiles stay out of the supported connector surface.
+    [ValidateSet('qwen35', 'gemma', 'generic')]
+    [string]$ModelProfile = 'qwen35',
 
     # Pass 348: thread / priority / lock perf knobs. Defaults are the
     # GPU-offload-friendly values (Ventus Servers 2026 tuning: 1 thread
     # is +43% on GPU lanes vs system-default).
     [int]$Threads = 0,           # 0 = let llama-server pick its default
     [int]$ThreadsBatch = 0,      # 0 = match --threads
-    [int]$Prio = 0,              # 0..3 (normal..high); MiniMax recommends 3
+    [int]$Prio = 0,              # 0..3 (normal..high)
     [switch]$Mlock,              # Lock weights in RAM (no swap)
     [switch]$NoMmap,             # Skip mmap (pair with --cache-ram)
 
@@ -252,13 +241,10 @@ param(
                                  # uses before --tensor-split splits across
                                  # them.
 
-    # Pass 350: MoE partial-CPU offload. When > 0, emits --n-cpu-moe N
-    # so deeper layers' expert FFN tensors live in RAM instead of VRAM.
-    # Required to run Qwen3.6-35B-A3B / Qwen3-Coder-Next / MiniMax-M2.7
-    # on consumer cards (12-16 GB VRAM range). Source: David Sanftenberg
-    # Medium guide + Doctor-Shotgun HF blog. Pass 350 install-llama-cpp.ps1
-    # computes a sensible default per detected VRAM; this flag is the
-    # manual override.
+    # Optional llama.cpp MoE partial-CPU offload. When > 0, emits
+    # --n-cpu-moe N so deeper layers' expert FFN tensors live in RAM
+    # instead of VRAM. Current PalLLM default lanes do not need it; keep
+    # it for explicit operator experiments.
     [int]$NCpuMoe = 0,
 
     # Pass 350: regex tensor override (--override-tensor / -ot) for
@@ -414,10 +400,6 @@ function Join-CommandLine {
 }
 
 $effectiveSpecType = if ($SpecType -eq 'draft') { 'draft-simple' } else { $SpecType }
-if ($effectiveSpecType -ne 'none' -and $ModelProfile -eq 'qwen3-coder') {
-    throw "Qwen3-Coder-Next llama.cpp lanes must keep -SpecType none until upstream speculative decoding and hybrid-state proof pass for this profile."
-}
-
 if ($effectiveSpecType -eq 'draft-mtp') {
     if (-not $PSBoundParameters.ContainsKey('DraftMin')) {
         $DraftMin = 1
@@ -473,46 +455,29 @@ $serverArgs += @('-ngl', [string]([math]::Max(0, $GpuLayers)), '--flash-attn', $
 $serverArgs += @('--cache-prompt', '--cache-reuse', [string]([math]::Max(0, $CacheReuse)))
 $serverArgs += @('-sps', $SlotPromptSimilarity.ToString([Globalization.CultureInfo]::InvariantCulture))
 $serverArgs += @('--metrics', '--no-webui')
-# Pass 347: Unsloth canonical Qwen3.6 thinking-toggle. Emits
+# Pass 347/448: Qwen thinking-toggle. Emits
 # --chat-template-kwargs '{"enable_thinking":false}' by default to match
 # PalLLM:Inference:EnableThinking=false in shipping appsettings.json.
-# Pass 348: Only emit for Qwen profiles. MiniMax / Gemma / DeepSeek
-# don't use the enable_thinking template kwarg.
-if ($ModelProfile -in @('qwen36', 'qwen3-coder')) {
+# Only emit for the Qwen fast lane. Gemma does not use this template kwarg.
+if ($ModelProfile -eq 'qwen35') {
     $thinkingValue = if ($EnableThinking) { 'true' } else { 'false' }
     $serverArgs += @('--chat-template-kwargs', "{`"enable_thinking`":$thinkingValue}")
 }
 
-# Pass 347/348: Per-model Unsloth canonical sampler. PalLLM's shipping
-# appsettings carries the Qwen3.6 profile; the connect script flips to
-# the right per-model profile when the operator selects -ModelProfile.
-# Sources: unsloth.ai/docs/models/qwen3.6 (Qwen),
-#          unsloth.ai/docs/models/tutorials/minimax-m27 (MiniMax),
-#          unsloth.ai/docs/models/qwen3-coder-next (Qwen3-Coder-Next).
+# Pass 347/448: Per-model sampler. PalLLM's shipping appsettings carries
+# the Qwen3.5 fast-lane profile; Gemma is the smart multimodal lane.
+# Sources: unsloth.ai/docs/models/qwen3.5 and unsloth.ai/docs/models/gemma-4.
 switch ($ModelProfile) {
-    'qwen36' {
+    'qwen35' {
         if (-not $EnableThinking) {
             $serverArgs += @('--temp', '0.7', '--top-p', '0.8', '--top-k', '20', '--min-p', '0.0', '--presence-penalty', '1.5')
         } else {
             $serverArgs += @('--temp', '1.0', '--top-p', '0.95', '--top-k', '20', '--min-p', '0.0', '--presence-penalty', '1.5')
         }
     }
-    'qwen3-coder' {
-        # Unsloth Qwen3-Coder-Next: coding-tuned, lower temp, no presence penalty.
-        $serverArgs += @('--temp', '0.6', '--top-p', '0.95', '--top-k', '20', '--min-p', '0.0', '--presence-penalty', '0.0')
-    }
-    'minimax' {
-        # Unsloth MiniMax-M2.7: higher temp, top-k 40, min-p 0.01.
-        $serverArgs += @('--temp', '1.0', '--top-p', '0.95', '--top-k', '40', '--min-p', '0.01')
-    }
     'gemma' {
-        # Gemma family typically uses OpenAI-ish defaults; PalLLM's
-        # shipping config has the Qwen profile, so when on Gemma the
-        # operator usually wants to override.
+        # Gemma 4 12B smart lane.
         $serverArgs += @('--temp', '0.7', '--top-p', '0.95', '--top-k', '20', '--min-p', '0.0')
-    }
-    'deepseek' {
-        $serverArgs += @('--temp', '0.7', '--top-p', '0.95', '--top-k', '40', '--min-p', '0.0')
     }
     'generic' {
         # No sampler override; llama-server defaults apply.
@@ -562,9 +527,9 @@ if ($SplitMode -ne 'none') {
 }
 
 # Pass 350: MoE partial offload. The deepest N layers' expert FFN
-# tensors are placed on CPU/RAM instead of VRAM. Pairs naturally with
-# the curated MoE families (Qwen3.6-35B-A3B, Qwen3-Coder-Next, MiniMax)
-# to run on consumer GPUs.
+# tensors are placed on CPU/RAM instead of VRAM. Current PalLLM default
+# lanes are dense enough not to need it, but the flag remains available
+# for explicit operator experiments.
 if ($NCpuMoe -gt 0) {
     $serverArgs += @('--n-cpu-moe', [string]$NCpuMoe)
 }
@@ -698,17 +663,14 @@ if ($priorEnabled -ne $true) { $delta += "  Inference.Enabled             : $pri
 # Pass 352: Per-family Unsloth canonical sampler now propagates into
 # PalLLM.Inference's Temperature/TopP/TopK/MinP/PresencePenalty when
 # -ModelProfile is explicitly set. Without this, PalLLM keeps sending
-# Qwen3.6 sampler values even when the loaded model is MiniMax / Gemma
-# / DeepSeek -- PalLLM's per-request sampler overrides llama-server's
-# defaults, so the wrong-family sampler silently mis-samples the
-# response. Profiles match Get-SamplerFlags in install-llama-cpp.ps1.
+# Qwen sampler values even when the loaded model is Gemma -- PalLLM's
+# per-request sampler overrides llama-server's defaults, so the wrong-family
+# sampler silently mis-samples the response. Profiles match Get-SamplerFlags
+# in install-llama-cpp.ps1.
 if ($PSBoundParameters.ContainsKey('ModelProfile')) {
     $samplerSnapshot = switch ($ModelProfile) {
-        'qwen36'      { @{ Temperature = 0.7; TopP = 0.8;  TopK = 20; MinP = 0.0;  PresencePenalty = 1.5 } }
-        'qwen3-coder' { @{ Temperature = 0.6; TopP = 0.95; TopK = 20; MinP = 0.0;  PresencePenalty = 0.0 } }
-        'minimax'     { @{ Temperature = 1.0; TopP = 0.95; TopK = 40; MinP = 0.01; PresencePenalty = $null } }
+        'qwen35'      { @{ Temperature = 0.7; TopP = 0.8;  TopK = 20; MinP = 0.0;  PresencePenalty = 1.5 } }
         'gemma'       { @{ Temperature = 0.7; TopP = 0.95; TopK = 20; MinP = 0.0;  PresencePenalty = $null } }
-        'deepseek'    { @{ Temperature = 0.7; TopP = 0.95; TopK = 40; MinP = 0.0;  PresencePenalty = $null } }
         default       { $null }
     }
     if ($null -ne $samplerSnapshot) {

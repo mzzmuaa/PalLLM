@@ -1,6 +1,6 @@
 # Readiness - candid 10/10 scorecard
 
-Last audited: `2026-06-03`
+Last audited: `2026-06-05`
 
 > "Is it ready to run? Will users rate it 10/10 in every aspect?"
 >
@@ -71,10 +71,10 @@ live in-game work I cannot do autonomously.
 | 9 | Uninstall | **9.5/10** | One-click `uninstall.bat` with manifest-based atomic uninstall, `/preview`, `/full`, preserves chat history by default. | Snapshot-rollback via Windows shadow copies (2030 territory). |
 | 10 | Customize (personality packs) | **8.5/10** | `pack.json` format with content-hash integrity. Four reference packs (Warrior / Scholar / Healer / Trickster). `pal pack list / copy / new` covers the full lifecycle. Walkthrough at [`PACK_SAMPLES.md`](PACK_SAMPLES.md). | Pack browser / marketplace in the dashboard with one-click install. |
 | 11 | MCP integration | **9/10** | 38 tools, 6 resources + 1 template, 4 prompts. Example configs ship for Claude Desktop / VS Code / Cursor. `pal mcp connect <client>` wires the config idempotently. | One-click in-dashboard "wire to <my MCP client>" button. |
-| 12 | Performance (Blackwell + NVFP4 GGUF on llama.cpp) | **9.8/10** | `Chat.Inference` lands sub-second on a 5090 with a 70B NVFP4 GGUF. `pal connect llamacpp` picks a per-family recipe; `--mmproj` adds multimodal lanes (Gemma 3n/4, Qwen3-Omni). See [`BLACKWELL_RECIPES.md`](BLACKWELL_RECIPES.md), [`MULTIMODAL_RECIPES.md`](MULTIMODAL_RECIPES.md), `AGENTIC_PATTERNS_2026.md` (retired Pass 418), `MEMORY_RECIPES.md` (retired Pass 418). | One-click "boot + wait + verify" path that survives a model pull on first run. |
+| 12 | Performance (Qwen3.5 + Gemma 4 on llama.cpp) | **9.8/10** | The current local mesh is intentionally narrow: Qwen3.5 9B for fast turns and Gemma 4 12B for smart/multimodal turns, both through llama.cpp with proof-gated sampler profiles. | One-click "boot + wait + verify" path that survives a model pull on first run. |
 | 13 | Performance (typical hardware) | **7.5/10** | 1-3 second per-turn latency with a local engine on most PCs. `pal benchmark` measures actual cold/median/p95/max vs the per-tier budgets in [`HOT_PATH.md`](HOT_PATH.md) (Constrained 1500ms warm / Standard 900ms / Generous 600ms / Blackwell 450ms). | One-click "speed mode" preset that prefers smaller models. |
 | 14 | Polish (dashboard + error messages) | **7.7/10** | Functional vanilla HTML/CSS/JS dashboard. `pal welcome` (60-second tour), `pal preflight` (12-check readiness verdict). Friendly errors with "try this next" hints. | Dashboard visual redesign, animated transitions, polished theming. |
-| 15 | Documentation | **9/10** | 63 docs, drift-gated, [Diataxis](https://diataxis.fr/)-organized. [`CODE_MAP.md`](CODE_MAP.md) gives small models the full project replication recipe. | A "5 docs to read in order" dropdown on the dashboard. |
+| 15 | Documentation | **9/10** | 63 top-level docs, drift-gated, [Diataxis](https://diataxis.fr/)-organized. [`CODE_MAP.md`](CODE_MAP.md) gives small models the full project replication recipe. | A "5 docs to read in order" dropdown on the dashboard. |
 | 16 | Community / share-ability | **4/10** | Single-maintainer project. No Discord, no marketplace, no "share my config" flow. | Community-driven; needs people. |
 | 17 | Localization (i18n) | **3/10** | English-only docs and dashboard. | Needs translation contributors per locale. |
 | 18 | Cross-platform mod | **6/10** | Sidecar runs on Windows / Linux / macOS / containers. Mod is Windows-only because Palworld is Windows-only. | Won't change unless Palworld ships native Linux client. |
@@ -108,15 +108,14 @@ delivery) and Phase 5 (native action execution) close -
 specifically the work tracked in `docs/IMPLEMENTATION_QUEUE.md`
 queues 3-5. That's `~12.5%` of the honest roadmap remaining.
 
-### B. Player on Blackwell hardware (5090 / B-series)
+### B. Player on reference local-inference hardware
 
-**Realistic experience: 8/10 today, 10/10 once they load an NVFP4 GGUF.**
+**Realistic experience: 8/10 today, 10/10 once the Qwen3.5/Gemma 4 mesh is proven on their rig.**
 
-- The default llama.cpp path gives 1-3s per turn - same as any other
-  GPU.
-- Loading an NVFP4 GGUF (per `docs/BLACKWELL_RECIPES.md`)
-  drops `Chat.Inference` to sub-second and quality stays near
-  FP16. This is genuinely 10/10 territory once configured.
+- The default deterministic path answers immediately even with no model.
+- The current llama.cpp path is Qwen3.5 9B for fast turns and Gemma 4 12B for
+  smart/multimodal turns; operators should promote those lanes only after a
+  local proof run records latency, fallback behavior, and multimodal receipts.
 - The configuration step is documented but not yet a one-click
   wizard.
 
@@ -136,13 +135,13 @@ queues 3-5. That's `~12.5%` of the honest roadmap remaining.
 
 **Realistic experience: 9.5/10 today.**
 
-- 69 audited docs, 16/16 drift gates, 0 build warnings.
+- 64 stamped docs, 16/16 drift gates, 0 build warnings.
 - Diataxis-organized, ADR-backed, schemas in `docs/schemas/`.
 - One-command `pal context` JSON snapshot, `pal status`
   one-liner, `pal scaffold` placeholder generator.
 - Portable adapter seam (`PortableAdapterContracts.cs`) for
   lifting into other games.
-- Honest baseline: `1309 / 1309 tests`, every count in docs verified
+- Honest baseline: `1310 / 1310 tests`, every count in docs verified
   against code by drift gates.
 
 This is genuinely 10/10 if your goal is to take ideas / patterns /
@@ -196,7 +195,7 @@ Each is 1-2 passes of focused work, all autonomous.
 | Clean-machine release proof | Requires a clean Windows machine without dev artifacts. | Operator with hardware |
 | Community ecosystem (4 -> 9) | Requires people: Discord, marketplace, contributor pipeline. | Community |
 | Localization (3 -> 9) | Requires translators per locale. | Community |
-| Hardware-specific perf (7 -> 10) | Requires the user to have Blackwell + load an NVFP4 GGUF. | User hardware |
+| Hardware-specific perf (7 -> 10) | Requires the user to prove the Qwen3.5/Gemma 4 llama.cpp mesh on their hardware. | User hardware |
 | Visual polish (7 -> 10) | Requires designer time + asset pipeline. | Designer |
 
 ## How users would actually rate it 10/10
@@ -230,7 +229,7 @@ side compensates for that single experiential gap.
 **Today, PalLLM is genuinely production-grade in every aspect that
 sits on the sidecar / dashboard / docs / supply-chain / privacy
 side.** Those aspects are 9-10/10. A coding agent, an ops user,
-an MCP client user, or a Blackwell-equipped operator will rate
+an MCP client user, or a reference-hardware operator will rate
 their experience in the 9-10/10 range.
 
 **A casual Palworld player on average hardware will rate it

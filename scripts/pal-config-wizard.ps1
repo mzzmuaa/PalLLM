@@ -237,7 +237,7 @@ $inferenceEnabled = $false
 switch ($inferenceChoice) {
     1 {
         $inferenceBaseUrl = 'http://127.0.0.1:8080/v1/'
-        $inferenceModel = Ask-String -Question "  Model name? (e.g. Qwen3.6-35B-A3B-UD-Q8_K_XL, gemma-4-E4B-it-UD-Q4_K_XL)" -Default 'Qwen3.6-35B-A3B-UD-Q8_K_XL'
+        $inferenceModel = Ask-String -Question "  Model name? (e.g. Qwen3.5-9B-UD-Q6_K_XL, gemma-4-12b-it-UD-Q6_K_XL)" -Default 'Qwen3.5-9B-UD-Q6_K_XL'
         $inferenceEnabled = $true
     }
     2 {
@@ -268,7 +268,7 @@ $visionChoice = Ask-Choice -Question "4. Wire local vision describer at the defa
 $visionEnabled = ($visionChoice -eq 1)
 $visionModel = ''
 if ($visionEnabled) {
-    $visionModel = Ask-String -Question "  Vision model name?" -Default 'Qwen3.6-35B-A3B-UD-Q8_K_XL'
+    $visionModel = Ask-String -Question "  Vision model name?" -Default 'gemma-4-12b-it-UD-Q6_K_XL'
 }
 
 # -----------------------------------------------------------------------------

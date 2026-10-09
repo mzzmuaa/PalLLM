@@ -206,7 +206,7 @@ $pathReferenceReportPath = Join-Path $outputRootPath "path-reference-audit.json"
 
 Add-PublishAuditStep `
     -Id "public-copy" `
-    -Description "Release-facing text avoids broad scope drift, sibling-project bleed, and unrelated franchise references." `
+    -Description "Release-facing text avoids broad scope drift, sibling-project bleed, unrelated franchise references, and monetization-solicitation language." `
     -Body {
         Invoke-CheckedPowerShellScript `
             -ScriptPath (Join-Path $repoRoot "scripts\audit_public_copy.ps1") `

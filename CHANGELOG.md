@@ -5,10 +5,19 @@ All notable changes to PalLLM are documented here. Format follows
 
 ## [Unreleased]
 
+### Tooling filename preservation (2026-10-09)
+
+The shared relative-path helper now preserves literal percent sequences in
+filesystem names while retaining explicit file URIs for Unix portability.
+Publication audit and release-verification paths no longer change `%23`,
+`%2F`, or `%25` into different filenames. Focused metadata/script tests pass;
+the broader source snapshot remains a review draft with existing documentation
+freshness debt and outstanding live proof.
+
 First public-ready revision. Collapsed from multiple in-flight drafts
 dated `2026-04-18`, `2026-04-19`, `2026-04-22`, and `2026-04-23`.
 
-**Current baseline (rolling):** `1309` passing tests - `16/16` drift
+**Current baseline (rolling):** `1310` passing tests - `16/16` drift
 gates green - `122` feature-catalog entries (119 ready / 2 scaffolded
 / 1 deferred) - `57` `/api` routes - `38` MCP tools - `19`
 deterministic fallback strategies - `6` ADRs accepted - honest
@@ -17,6 +26,394 @@ roadmap `76.2%` - `0` build warnings.
 Each dated entry below is a historical snapshot of what landed on
 that day - the counts inside an entry reflect state at the time of
 that landing, not the current rolling baseline above.
+
+### Pass 452 - secondary documentation truth resync (2026-06-05)
+
+**Context.** The main drift-gated mirrors were green, but a read-through of
+secondary operator and agent docs found stale current-state claims that could
+still mislead a small coding agent: several pages still said `1309/1309`
+tests, the refactoring roadmap still carried older hot-file line counts, and
+some readiness/compatibility prose still implied broad retired local-model
+lanes.
+
+**Changes.**
+- Updated secondary current-state docs to the live `1310/1310` test count:
+  `docs/COMPATIBILITY.md`, `docs/COMPLETION.md`, `docs/CHEAT_SHEET.md`,
+  `docs/COOKBOOK.md`, `docs/INVARIANTS.md`,
+  `docs/adr/0004-drift-gates-over-manual-review.md`, and
+  `docs/READINESS.md`.
+- Refreshed `docs/CODE_MAP.md`, `docs/REFACTORING_ROADMAP.md`, and the
+  `docs/HANDOFF.md` current-state block with the current hot-file line counts.
+- Narrowed secondary readiness/compatibility copy so it describes the active
+  local surface as Qwen3.5 9B fast lane + Gemma 4 12B smart/multimodal lane
+  through llama.cpp, with deterministic fallback and the cloud escape path for
+  hardware that cannot run that mesh.
+- No code, route, MCP, feature-catalog, OpenAPI, or executable-test surface
+  changed.
+
+**Verification.** Start-state `dotnet test PalLLM.sln -c Release --nologo`
+passed `1310/1310`; start-state full audit passed `16/16` at
+`artifacts/full-audit/20260605-223811/RESULTS.md` with `0` warnings. Final
+logged-state `dotnet test PalLLM.sln -c Release --nologo` passed `1310/1310`;
+full audit passed `16/16` at `artifacts/full-audit/20260605-225518/RESULTS.md`
+with `0` warnings.
+
+### Pass 451 - README scope boundary hardening (2026-06-05)
+
+**Context.** After the README became the single source of truth and the local
+model surface was narrowed to the current two-lane llama.cpp mesh, the next safe
+autonomous pass was documentation hardening: make the public front door clearer
+about project scope and sibling-project boundaries without changing runtime
+behavior.
+
+**Changes.**
+- Added a README scope/ownership boundary that says adjacent local projects may
+  inspire generic engineering patterns only, and that PalLLM tracked code/docs
+  must not import their names, assets, prompts, lore, characters, gameplay
+  rules, or product identity.
+- Preserved the brand-free README rule for publication-facing files; concrete
+  engine/model names remain in the agent/operator docs where the policy allows
+  them.
+- Updated the append-only handoff and Codex work log for this pass. No code,
+  route, MCP, feature-catalog, or test-count surface changed.
+
+**Verification.** Start-state `dotnet test PalLLM.sln -c Release --nologo`
+passed `1310/1310`; start-state full audit passed `16/16` at
+`artifacts/full-audit/20260605-192517/RESULTS.md` with `0` warnings. Final
+`dotnet test PalLLM.sln -c Release --nologo` passed `1310/1310`; final full
+audit passed `16/16` at `artifacts/full-audit/20260605-192935/RESULTS.md` with
+`0` warnings.
+
+### Pass 450 - active local-model examples follow Qwen3.5/Gemma 4 (2026-06-05)
+
+**Context.** Pass 448 narrowed PalLLM's active local-engine contract to the
+two-lane llama.cpp mesh, and Pass 449 refreshed the forward-looking base planner
+notes. A follow-up active-doc scan found several copyable operator examples that
+still described retired local model families or the old small-to-large
+graduation flow.
+
+**Changes.**
+- Updated active operator docs and examples to the current supported local mesh:
+  `Qwen3.5-9B-UD-Q6_K_XL` as the fast Worker and
+  `gemma-4-12b-it-UD-Q6_K_XL` as the smart/multimodal Edge.
+- Reworked `docs/examples/compose.yaml` so the one-server sample launches the
+  Qwen3.5 fast lane, keeps vision disabled until a Gemma screenshot proof
+  exists, and does not enable speculative decoding by default.
+- Updated `docs/MCP_QUICKSTART.md`, `docs/OPERATIONS.md`, `docs/API.md`,
+  `docs/ARCHITECTURE.md`, `docs/CHEAT_SHEET.md`, and the
+  `connect-llamacpp.ps1` help example so their copyable model ids and sampler
+  language match the current inventory.
+- Strengthened the existing `BundledDoc_DoesNotPromoteRetiredHeavyweightFamilies`
+  test to scan the active llama.cpp operator documentation and scripts surface for retired
+  local model families. No new `[Test]` attribute was added, so the test count
+  remains `1310`.
+
+**Verification.** Start-state `dotnet test PalLLM.sln -c Release --nologo`
+passed `1310/1310`; start-state full audit passed `16/16` at
+`artifacts/full-audit/20260605-190346/RESULTS.md` with `0` warnings. Focused
+`LlamaCppBundlingTests` passed `57/57`; final `dotnet test PalLLM.sln -c
+Release --nologo` passed `1310/1310`; full audit passed `16/16` at
+`artifacts/full-audit/20260605-191553/RESULTS.md` with `0` warnings.
+
+### Pass 449 - agent-work log and 2035 base-planning refresh (2026-06-05)
+
+**Context.** The README was already the project source of truth, but the
+automation prompt also asks every agent to keep a succinct per-agent work log
+under `docs/AgentWork/`. That folder did not exist yet. The forward-looking
+base/autobuild notes also needed a June 5, 2026 refresh against current
+Palworld server/API limits and current agentic-AI oversight research.
+
+**Changes.**
+- Added `docs/AgentWork/Codex.md` with Codex pass notes, start-state
+  verification, adjacent-local-project process scan notes, and the current
+  interpretation of the non-autonomous blocker.
+- Linked the new agent work log from `README.md` and `docs/INDEX.md` so humans
+  and agents do not miss it.
+- Refreshed `docs/FUTURE_2035.md` with current external anchors for Palworld
+  server REST/API limits, recent building/crafting changes, world-action-model
+  research, grounded reflective planning, meaningful human oversight, and
+  agentic-AI risk-management work.
+- Hardened the advisory base-layout/autobuild planner contract: inputs,
+  outputs, proof receipts, and explicit non-goals now make clear that PalLLM
+  may plan and explain but must not place or destroy structures automatically
+  without live hook proof, operator approval, and guarded bridge allowlisting.
+- Fixed a newly surfaced broken future-path reference by describing the
+  hypothetical router as a future type instead of a file that already exists.
+
+**Verification.** Start-state `dotnet test PalLLM.sln -c Release --nologo`
+passed `1310/1310`; start-state full audit passed `16/16` at
+`artifacts/full-audit/20260605-172504/RESULTS.md` with `0` warnings. After the
+documentation edits, `dotnet test PalLLM.sln -c Release --nologo` passed
+`1310/1310`; the first audit rerun exposed the broken future-path reference
+above, which was fixed before final verification.
+
+### Pass 448 - llama.cpp local mesh narrowed to Qwen3.5/Gemma 4 (2026-06-05)
+
+**Context.** The README and sidecar defaults already pointed at the current
+two-lane local mesh, but active operator scripts and tests still preserved
+retired model-profile examples. That made the setup path harder to understand
+and risked agents re-promoting unsupported local lanes.
+
+**Changes.**
+- Replaced `docs/LLAMA_CPP_BUNDLED.md`, `docs/LOCAL_MODELS_INVENTORY.md`,
+  `docs/MINIMUM_REQUIREMENTS.md`, and `docs/TUNING.md` with shorter active-only
+  guides for the supported llama.cpp mesh: `Qwen3.5-9B-UD-Q6_K_XL` as the fast
+  Worker and `gemma-4-12b-it-UD-Q6_K_XL` as the smart/multimodal Edge.
+- Updated `scripts/install-llama-cpp.ps1` and `scripts/connect-llamacpp.ps1` so
+  the recommendation catalog, launch recipes, sampler profiles, and write-config
+  propagation expose only `qwen35`, `gemma`, and `generic` profiles.
+- Updated runtime collaboration, role, hardware, MCP prompt, and feature-catalog
+  copy so public surfaces describe the current Qwen3.5 + Gemma 4 mesh instead of
+  retired local lanes. The planner now treats curated `UD-Q` / `UD-IQ` ids as
+  GGUF local lanes.
+- Retuned bundling, script-execution, collaboration, MCP, and sidecar endpoint
+  tests to guard the current contract. Test count unchanged.
+
+**Verification.** `dotnet test PalLLM.sln -c Release --nologo` passed
+`1310/1310`; full audit passed `16/16` at
+`artifacts/full-audit/20260605-164804/RESULTS.md` with `0` warnings.
+
+### Pass 447 - README promoted to the single source of truth; AGENTS deduped (2026-06-05)
+
+**Context.** Pass 446 made `AGENTS.md` the single source of truth, but the
+publication-hygiene gate forbids the README from naming the engine/models while
+the count gates *require* the README to carry the live numbers - so the two
+files had inverted constraints and both tried to be "the whole picture." The
+front door a human or coding agent hits first (and industry practice) is the
+README; this pass makes it the authoritative one and dedupes the rest.
+
+**Changes.**
+- Rewrote `README.md` as the complete, brand-free, self-contained source of
+  truth with an industry-standard structure (what it is / how it works / public
+  surface / operate / develop / roadmap / harvest / doc map), adding a new
+  inlined §5 "Develop it - the authority model" so a contributor or coding agent
+  gets the one rule, the seven invariants, the drift-gate cascade, the working
+  loop, the what-not-to-touch list, and the two verify commands without leaving
+  the page. Added an explicit before/after-every-change review ritual.
+- Preserved every drift-gated string verbatim (the `**57 `/api` routes**` bold
+  span, the `122` + `119 ready / 2 scaffolded / 1 deferred` feature blockquote,
+  and `Passed: 1310`) and kept the file free of the blocked vendor brand names.
+- Deduped `AGENTS.md` from a parallel full description into a lean agent entry
+  point that defers to README §5 and carries only the engine/model specifics the
+  README is not allowed to name (the bundled engine is `llama.cpp`; the per-turn
+  mesh lives in `src/PalLLM.Sidecar/appsettings.json` + the operator docs).
+- Repointed the agent doorways at README as the source of truth: `CLAUDE.md` and
+  `docs/INDEX.md` now name README §5 as the authority model, with their gated
+  test-count / hot-file line-count claims preserved.
+- Documentation architecture only - no code, route, feature, or test-count
+  change. Audit green: 16/16 gates, 1310 tests, 0 warnings.
+
+### Pass 446 - AGENTS.md hardened into the single source-of-truth root document (2026-06-05)
+
+**Context.** PalLLM's description was spread across AGENTS.md (a navigational hub
+of pointers), HANDOFF, CODE_MAP, ARCHITECTURE, INDEX, PITCH, and MENTAL_MODEL. No
+single file let a human or a coding agent understand and operate the whole
+program end to end without following half a dozen links, and AGENTS.md carried
+drift-prone hardcoded counts (e.g. "37 MCP tools") plus a stale stamp.
+
+**Changes.**
+- Rewrote `AGENTS.md` into a self-contained, durable single root that describes
+  the program completely for both humans and coding agents: what it is, the
+  three-process + engine architecture, an end-to-end chat turn, the public
+  surface (HTTP / MCP / feature catalog / dashboard / CLI), how to operate it,
+  how to develop it (green discipline, invariants, gates, conventions,
+  what-not-to-touch), how to harvest it into other programs (the portable seam,
+  ADR 0002), and where the live state lives.
+- Made it always-current by construction: volatile counts are no longer
+  duplicated - they reference `docs/PROJECT_NUMBERS.json` (the drift-gated single
+  source of truth), so the doc cannot go stale on numbers. Stamp refreshed.
+- Every backticked path and markdown link resolves (the
+  `ReadingOrder_FilesNamedInAgentsMd_ExistOnDisk` test + the dangling-link gate
+  both pass); AGENTS.md remains the release-packaged "read first" doorway.
+
+**Verification.** `16/16` drift gates PASS
+(`artifacts/full-audit/20260605-062841`), `1310/1310` tests, `0` warnings, `218`
+link targets resolve. Doc-only change; no code, route, feature, or test count
+moved.
+
+### Pass 445 - Qwen/Gemma default alignment and autobuild horizon scan (2026-06-04)
+
+**Context.** The recurring automation asked for the local model posture to stay
+strictly on Qwen3.5 9B + Gemma 4 12B through llama.cpp, and for the 2035
+autobuild/base-planning ideas to be refreshed against current research without
+turning PalLLM into a broader AI product catalog.
+
+**Changes.**
+- Aligned compiled defaults, development appsettings, config wizard/show
+  output, and environment-variable docs on `Qwen3.5-9B-UD-Q6_K_XL` for the
+  fast Worker lane and `gemma-4-12b-it-UD-Q6_K_XL` for the multimodal Edge /
+  vision lane.
+- Reworked `MODELS_2026.md` and `MODEL_COLLABORATION.md` so the current
+  recommendation is Qwen3.5 + Gemma 4 + deterministic fallback; TTS, ASR,
+  embeddings, and rerank stay disabled or deterministic unless an operator
+  wires a separately proven local lane.
+- Refreshed `FUTURE_2035.md` with a June 2026 research scan, an advisory
+  base-layout/autobuild planner shape, bounded reasoning-critique and
+  audio-event ideas, and an explicit hard no on unapproved structure placement.
+- Fixed chat routing so reactive screenshot barks stay on the fast Worker lane
+  with snapshot fallback, while deliberate image turns can still promote to the
+  Gemma multimodal Edge lane.
+
+**Verification.** Focused config/meta/runtime checks passed `120/120`; the
+affected runtime/planner checks passed `4/4`; full `dotnet test PalLLM.sln
+--configuration Release --no-restore --nologo --verbosity minimal` passed
+`1310/1310`; `scripts/path_reference_audit.ps1` passed with `0` findings; full
+audit passed `16/16` at `artifacts/full-audit/20260604-222825/RESULTS.md` with
+`0` warnings. No route, MCP, OpenAPI, feature-catalog, or executable-test count
+changed.
+
+### Pass 444 - monetization plural wording guard (2026-06-04)
+
+**Context.** A fourth layered review of the publication-safety scanners found
+one remaining wording bypass class: the shared monetization pattern blocked
+`donation`, `paid tier`, and `premium tier`, but ordinary release/package copy
+could use common plural forms such as `donations` or `premium tiers` without
+tripping the guard.
+
+**Changes.**
+- Extended the monetization-solicitation regex in `scripts/public_copy_policy.ps1`,
+  `scripts/PalLLM.Tooling.ps1`, and `PackPublicationSafetyValidator` to cover
+  plural donation, paid-tier, premium-tier, ad-supported, and sponsorship
+  wording while preserving the Pass 443 false-positive fix for neutral
+  `advertise` prose.
+- Reused existing executable tests instead of adding count churn:
+  `ScriptExecutionTests.PublicCopyAudit_BlocksMonetizationSolicitationInReleaseCopy`
+  now proves public-copy audit output catches `Donations`, and the tooling
+  package probe catches `premium tiers`.
+- Updated the narrative/personality pack-validator tests and meta source guards
+  so shareable pack validation and shipped-text scanners cannot silently drop
+  plural solicitation coverage later.
+
+**Verification.** Focused scanner / pack-validator / meta checks passed `4/4`;
+full `dotnet test PalLLM.sln --configuration Release --no-restore --nologo
+--verbosity minimal` passed `1310/1310`; full audit passed `16/16` at
+`artifacts/full-audit/20260604-185314/RESULTS.md` with `0` warnings. No runtime
+routes, MCP tools, OpenAPI schema, feature count, or executable test count
+changed.
+
+### Pass 443 - monetization scanner false-positive guard (2026-06-04)
+
+**Context.** A third layered review of the Pass 441/442 publication guards
+found the package/proof/support scanner path still had one subtle behavior
+risk: the monetization regex matched neutral text like `advertises` before the
+intended blocker phrase `premium tier`. That made the scanner stricter than the
+policy intended and noisier for ordinary release prose.
+
+**Changes.**
+- Tightened the shared monetization-solicitation regex in
+  `scripts/public_copy_policy.ps1`, `scripts/PalLLM.Tooling.ps1`, and
+  `PackPublicationSafetyValidator` so it still blocks donation, sponsor,
+  paid-tier, premium-tier, ad-supported, advertising-supported, and
+  advertisement copy without treating the plain verb `advertise` as a blocker.
+- Extended the existing
+  `ScriptExecutionTests.PublicCopyAudit_BlocksMonetizationSolicitationInReleaseCopy`
+  sandbox to execute `Test-PalLlmPublicationTextSurface` through
+  `PalLLM.Tooling.ps1` against shipped-package text and prove the reported
+  match is `premium tier`, not a neutral preceding verb.
+- Corrected this changelog's rolling baseline from `1309` to `1310` passing
+  tests so it matches the audited current-state mirrors after Pass 442.
+
+**Verification.** Focused publication scanner test passed `1/1`; full
+`dotnet test PalLLM.sln --configuration Release --no-restore --nologo
+--verbosity minimal` passed `1310/1310`; full audit passed `16/16` at
+`artifacts/full-audit/20260604-184518/RESULTS.md` with `0` warnings. No runtime
+routes, MCP tools, OpenAPI schema, feature count, or executable test count
+changed.
+
+### Pass 442 - public-copy monetization audit execution test (2026-06-04)
+
+**Context.** A second layered review of Pass 441 found no runtime defect in the
+new monetization-solicitation guard, but did identify one test-depth gap: the
+suite proved the policy strings existed and that authored packs reject the new
+class, yet it did not execute `scripts/audit_public_copy.ps1` against a positive
+release-facing example.
+
+**Changes.**
+- Added `ScriptExecutionTests.PublicCopyAudit_BlocksMonetizationSolicitationInReleaseCopy`,
+  which creates a minimal sandbox repo, copies the public-copy audit and policy
+  scripts into it, inserts `Support us on Patreon` into release-facing README
+  text, and proves the script exits nonzero with the stable
+  `monetization-solicitation` issue kind.
+- The test also verifies the failure output does not leak the real PalLLM
+  checkout path when scanning the sandbox.
+- Cascaded the rolling executable test count from `1309` to `1310` across
+  `PROJECT_NUMBERS.json` and the current-state doc/script mirrors.
+
+**Verification.** Focused new test passed `1/1`; count/mirror checks passed
+`3/3`; full `dotnet test` passed `1310/1310`; full audit passed `16/16` at
+`artifacts/full-audit/20260604-164212/RESULTS.md` with `0` warnings.
+
+### Pass 441 - monetization-solicitation publication guard (2026-06-04)
+
+**Context.** A read-only sibling publication-hygiene scan reinforced a useful
+gap class for PalLLM's own release posture: public/package text already blocked
+sibling bleed, unrelated franchise references, endorsement claims, broad scope
+drift, and legal overclaims, but did not separately block solicitation-style
+monetization copy.
+
+**Changes.**
+- Extended `scripts/public_copy_policy.ps1` and `scripts/audit_public_copy.ps1`
+  with a `BlockedPublicMonetizationPatterns` guard for release-facing repo docs
+  and support-facing issue templates.
+- Extended `scripts/PalLLM.Tooling.ps1` so packaged releases, proof bundles,
+  and support bundles reject the same solicitation-style monetization language
+  during publication text-surface scans.
+- Extended `PackPublicationSafetyValidator` so shareable personality/narrative
+  pack text rejects that class before load/publish, then updated existing tests
+  and source guards without adding new `[Test]` attributes.
+- Updated the release/API/architecture/operator docs and the feature-catalog
+  note so the central handoff surfaces describe the new blocker class.
+
+**Verification.** Focused publication-safety tests plus the meta-test source
+guards passed `30/30`; `scripts/audit_public_copy.ps1` passed clean; full
+`dotnet test PalLLM.sln --configuration Release --no-restore --nologo
+--verbosity minimal` passed `1309/1309`; full audit passed `16/16` at
+`artifacts/full-audit/20260604-163126/RESULTS.md` with `0` warnings. No runtime
+routes, MCP tools, OpenAPI schema, feature count, or executable test count
+changed.
+
+### Pass 440 - handoff label regression guard (2026-06-04)
+
+**Context.** A layered logical review of Pass 439 found no runtime/API defect,
+but did find a missing invariant in the tests: `PalScript_ExposesHandoffVerb`
+proved the `handoff` verb existed and told agents to audit first, but it did
+not prove the displayed pass label followed `docs/HANDOFF.md`. That left the
+exact stale-label failure mode from Pass 439 able to recur.
+
+**Changes.**
+- Strengthened the existing `PalScript_ExposesHandoffVerb` source guard in
+  `tests/PalLLM.Tests/LlamaCppBundlingTests.cs` to require the
+  `docs/HANDOFF.md` read path, the derived `$handoffPass` / `$passLabel` title
+  assembly, and the absence of the stale
+  `PalLLM handoff briefing (Pass 417)` literal.
+- Updated `docs/HANDOFF.md` to mark Pass 440 as the current handoff context.
+
+**Verification.** Focused `LlamaCppBundlingTests` passed `57/57`. Full
+`pal.ps1 audit` passed `16/16` at
+`artifacts/full-audit/20260604-162247/RESULTS.md` with `1309/1309` tests and
+`0` warnings. No new `[Test]` attribute was added, so the rolling executable
+test count remains `1309`.
+
+### Pass 439 - operator handoff label follows the central handoff (2026-06-04)
+
+**Context.** Baseline verification was green (`1309/1309` tests, `16/16`
+drift gates, `0` warnings), but the one-screen launcher handoff still printed
+"Pass 417" while `docs/HANDOFF.md` and this changelog had advanced to Pass 438.
+That made the fastest agent onboarding path look stale even when the audited
+state was current.
+
+**Changes.**
+- Updated `pal.ps1 handoff` to parse the pass number from the
+  `docs/HANDOFF.md` "Codex handoff" heading and render the title underline from
+  the actual title length. The launcher now follows the central handoff
+  document instead of carrying a second hard-coded pass mirror.
+- Updated `docs/HANDOFF.md` to mark Pass 439 as the current handoff context and
+  record this cleanup in "What just landed."
+
+**Verification.** `pal.ps1 handoff` now prints Pass 439. Full `pal.ps1 audit`
+after the edit passed `16/16` at
+`artifacts/full-audit/20260604-161545/RESULTS.md` with `1309/1309` tests and
+`0` warnings. Runtime/API behavior unchanged; no count-bearing surface moved.
 
 ### Pass 438 - concurrency stress guards for shared hot-path state (2026-06-04)
 

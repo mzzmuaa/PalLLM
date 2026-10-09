@@ -1,6 +1,6 @@
 # Invariants - what's guaranteed to be true at runtime
 
-Last audited: `2026-06-03`
+Last audited: `2026-06-05`
 
 [`ANTI_PATTERNS.md`](ANTI_PATTERNS.md) lists what NOT to do. This
 doc lists what IS GUARANTEED - the load-bearing invariants the
@@ -168,7 +168,7 @@ trace claim -> implementation.
     `Build_Release` gate (the audit fails if `dotnet build`
     surfaces any warning).
 
-22. **`dotnet test` produces 1309 / 1309 green.**
+22. **`dotnet test` produces 1310 / 1310 green.**
     **Enforced:** `Tests` gate plus the
     `Drift_Test_count_docs` gate verifying the count
     matches docs.
@@ -222,4 +222,3 @@ that isn't listed here:
 - [`adr/`](adr/) - full ADRs for the load-bearing decisions
 - [`STATE_MACHINES.md`](STATE_MACHINES.md) - explicit
   diagrams for the systems whose invariants matter most
-

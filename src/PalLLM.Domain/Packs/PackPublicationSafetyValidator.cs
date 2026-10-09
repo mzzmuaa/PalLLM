@@ -114,6 +114,12 @@ internal static class PackPublicationSafetyValidator
                 text,
                 LegalOverclaimRegex,
                 "Pack text must not claim legal, IP, or compliance certainty.");
+            AddMatch(
+                findings,
+                field.Path,
+                text,
+                MonetizationSolicitationRegex,
+                "Pack text must not carry donation, ad, sponsor, or paid-tier solicitation language without a separate publication decision.");
 
             if (field.CheckScope)
             {
@@ -192,6 +198,10 @@ internal static class PackPublicationSafetyValidator
 
     private static readonly Regex LegalOverclaimRegex = new(
         "\\b(?:lawyer[-\\s]?proof|legal[-\\s]?risk[-\\s]?free|no\\s+legal\\s+risk|guaranteed\\s+legal|fully\\s+IP[-\\s]?neutral|100%\\s+IP[-\\s]?neutral|compliance[-\\s]?certified)\\b",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    private static readonly Regex MonetizationSolicitationRegex = new(
+        "\\b(?:donations?|donate|patreon|ko[-\\s]?fi|buy\\s+me\\s+a\\s+coffee|paid[-\\s]?tiers?|premium\\s+tiers?|ads?[-\\s]?supported|advertising[-\\s]?supported|advertisements?|sponsorships?|sponsors?\\s+welcome|become\\s+(?:a\\s+)?sponsor|support\\s+(?:us|me)\\s+on)\\b",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     private readonly record struct PackPublicationSafetyField(

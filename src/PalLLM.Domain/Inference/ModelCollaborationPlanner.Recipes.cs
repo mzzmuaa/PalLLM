@@ -324,9 +324,9 @@ public sealed partial class ModelCollaborationPlanner
     private static string GetFastLaneQuantHint(ModelCollaborationModelDescriptor model, string tierId)
     {
         string normalized = NormalizeModelId(model.ModelId);
-        bool qwen35A3B = normalized.Contains("qwen3.6") && normalized.Contains("35b") && normalized.Contains("a3b");
+        bool qwen35 = IsQwen35(normalized);
 
-        if (!qwen35A3B)
+        if (!qwen35)
         {
             return tierId switch
             {
@@ -340,20 +340,20 @@ public sealed partial class ModelCollaborationPlanner
 
         return tierId switch
         {
-            "cpu-only" => "UD-IQ1_M / UD-IQ2_XXS / UD-IQ2_M",
-            "edge" => "UD-Q3_K_XL / UD-IQ4_XS / lower Q4",
-            "hybrid-offload" => "UD-Q3_K_XL / UD-IQ4_XS / UD-Q4_K_S",
-            "prosumer" => "UD-Q4_K_M / UD-Q4_K_XL / MXFP4_MOE / UD-Q5_K_M",
-            _ => "UD-Q4_K_M / MXFP4_MOE / UD-Q5_K_M / UD-Q6_K",
+            "cpu-only" => "Use deterministic-only mode or a remote/cloud escape path.",
+            "edge" => "UD-Q4_K_M / UD-Q5_K_M if the host cannot hold UD-Q6_K_XL.",
+            "hybrid-offload" => "UD-Q5_K_M / UD-Q6_K with cautious context sizing.",
+            "prosumer" => "UD-Q6_K_XL fast lane with measured context.",
+            _ => "UD-Q6_K_XL fast lane or native precision where hardware allows.",
         };
     }
 
     private static string GetDeliberateLaneQuantHint(ModelCollaborationModelDescriptor model, string tierId)
     {
         string normalized = NormalizeModelId(model.ModelId);
-        bool qwen27 = normalized.Contains("qwen3.6") && normalized.Contains("27b");
+        bool gemma4 = IsGemma4(normalized);
 
-        if (!qwen27)
+        if (!gemma4)
         {
             return tierId switch
             {
@@ -367,11 +367,11 @@ public sealed partial class ModelCollaborationPlanner
 
         return tierId switch
         {
-            "cpu-only" => "UD-IQ2_XXS / UD-IQ2_M / Q3_K_S (batch only)",
-            "edge" => "Q3 / tight Q4",
-            "hybrid-offload" => "Q4_K_S / IQ4_XS / Q4_K_M",
-            "prosumer" => "Q4_K_M / UD-Q4_K_XL / Q5_K_M",
-            _ => "Q5_K_M / Q6_K / Q8_0",
+            "cpu-only" => "Use deterministic-only mode or a remote/cloud escape path.",
+            "edge" => "Keep Gemma 4 serialized and use a lower quant only with replay proof.",
+            "hybrid-offload" => "UD-Q4_K / UD-Q5_K with measured KV headroom.",
+            "prosumer" => "UD-Q6_K_XL when the host can hold the smart lane.",
+            _ => "UD-Q6_K_XL or native precision if dedicated VRAM is available.",
         };
     }
 
@@ -445,6 +445,17 @@ public sealed partial class ModelCollaborationPlanner
         || normalizedModelId.Contains("a10b")
         || normalizedModelId.Contains("a17b")
         || normalizedModelId.Contains("moe");
+
+    private static bool IsQwen35(string normalizedModelId) =>
+        normalizedModelId.Contains("qwen3.5")
+        || normalizedModelId.Contains("qwen3-5")
+        || normalizedModelId.Contains("qwen3_5")
+        || normalizedModelId.Contains("qwen35");
+
+    private static bool IsGemma4(string normalizedModelId) =>
+        normalizedModelId.Contains("gemma4", StringComparison.Ordinal)
+        || normalizedModelId.Contains("gemma-4", StringComparison.Ordinal)
+        || normalizedModelId.Contains("gemma_4", StringComparison.Ordinal);
 
     private static string NormalizeModelId(string modelId) =>
         (modelId ?? string.Empty).Trim().ToLowerInvariant();

@@ -120,7 +120,7 @@ function Run-List {
             Tagline = 'Day-to-day code + test + audit loop.'
             Verbs = @(
                 @{ Verb = 'build';      Description = 'dotnet build (Release)' }
-                @{ Verb = 'test';       Description = 'dotnet test  (Release, quiet) -- expects 1309 / 1309' }
+                @{ Verb = 'test';       Description = 'dotnet test  (Release, quiet) -- expects 1310 / 1310' }
                 @{ Verb = 'audit';      Description = 'full drift audit -- build + tests + 16 gates (~30 s)' }
                 @{ Verb = 'fast-audit'; Description = 'drift gates only -- skip coverage / SBOM / packaging' }
                 @{ Verb = 'cleanup';    Description = 'preview/remove generated audit coverage and build outputs (-Apply to delete)' }
@@ -771,10 +771,19 @@ function Run-CheckUpdates {
 }
 
 function Run-Handoff {
-    # Pass 417: one-screen briefing for an incoming agent (Codex et
-    # al). Mirrors the "Codex handoff" section at the top of
-    # docs/HANDOFF.md without forcing the agent to open the file.
-    # Output is intentionally compact - call it, read it, then audit.
+    # One-screen briefing for an incoming agent (Codex et al). Mirrors
+    # the "Codex handoff" section at the top of docs/HANDOFF.md without
+    # forcing the agent to open the file. Output is intentionally compact -
+    # call it, read it, then audit.
+    $handoffPath = Join-Path $repoRoot 'docs/HANDOFF.md'
+    $handoffPass = $null
+    if (Test-Path -LiteralPath $handoffPath) {
+        $handoffText = Get-Content -LiteralPath $handoffPath -Raw
+        if ($handoffText -match 'Codex handoff[^\r\n]*\bPass\s+(?<pass>\d+)') {
+            $handoffPass = $Matches['pass']
+        }
+    }
+
     $numbersPath = Join-Path $repoRoot 'docs/PROJECT_NUMBERS.json'
     $numbers = if (Test-Path -LiteralPath $numbersPath) {
         Get-Content -LiteralPath $numbersPath -Raw | ConvertFrom-Json
@@ -785,9 +794,11 @@ function Run-Handoff {
         $currentSha = & git -C $repoRoot rev-parse --short HEAD 2>$null
     } catch { $currentSha = $null }
 
+    $passLabel = if ($handoffPass) { "Pass $handoffPass" } else { "current pass" }
+    $title = "PalLLM handoff briefing ($passLabel)"
     Write-Host ""
-    Write-Host "PalLLM handoff briefing (Pass 417)" -ForegroundColor Cyan
-    Write-Host "==================================="
+    Write-Host $title -ForegroundColor Cyan
+    Write-Host ('=' * $title.Length)
     if ($numbers) {
         Write-Host ("  Tests:           {0}" -f $numbers.tests)
         Write-Host ("  Drift gates:     {0}" -f $numbers.driftGates)

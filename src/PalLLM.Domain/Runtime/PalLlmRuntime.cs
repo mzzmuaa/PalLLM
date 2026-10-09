@@ -22,7 +22,7 @@ using PalLLM.Domain.Packs;
 //            prompt rendering, snapshot assembly, and bridge/outbox activity
 //            live in companion partials.
 //            Touch only what you're changing.
-//   gate:    Drift_Test_count_docs (1309 expected); ChatAsync behaviour pinned
+//   gate:    Drift_Test_count_docs (1310 expected); ChatAsync behaviour pinned
 //            by PalLlmRuntimeChatTests + neighbouring suites.
 //   adr:     0001-deterministic-first-reply-pipeline.md (load-bearing for
 //            the chat hot path), 0005-ttl-cache-for-posture-surfaces.md.
@@ -515,7 +515,17 @@ public sealed partial class PalLlmRuntime
         GameCharacterSnapshot? character = ResolveCharacter(request.CharacterId, request.CharacterName);
         GameWorldSnapshot snapshot = Adapter.Snapshot;
         PalTaskProfile taskProfile = PalTaskRouter.Resolve(request.TaskTag, request.UserMessage, request.Priority);
-        string activeInferenceModel = (_inferenceClient as IInferenceLaneMetadata)?.GetActiveModelId() ?? _options.Inference.Model;
+        // Two-model mesh routing. Deliberate perception turns can run on the
+        // multimodal Edge lane (Vision.Model = gemma-4-12b), while reactive barks
+        // with screenshots stay on the fast Worker lane and use snapshot fallback.
+        // This keeps low-latency companion alerts from paying a smart-lane cost.
+        bool routeToMultimodalEdge = !string.IsNullOrWhiteSpace(request.ImageBase64)
+            && _options.Vision.Enabled
+            && !string.IsNullOrWhiteSpace(_options.Vision.Model)
+            && taskProfile.Kind != PalTaskKind.ReactiveBark;
+        string activeInferenceModel = routeToMultimodalEdge
+            ? _options.Vision.Model
+            : ((_inferenceClient as IInferenceLaneMetadata)?.GetActiveModelId() ?? _options.Inference.Model);
         InferenceExecutionProfile executionProfile = _inferenceExecutionPlanner.Plan(taskProfile, request, activeInferenceModel);
         int maxTokens = executionProfile.MaxTokens;
         float temperature = executionProfile.Temperature;

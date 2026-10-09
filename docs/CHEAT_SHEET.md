@@ -1,6 +1,6 @@
 # PalLLM cheat sheet - one page
 
-Last audited: `2026-06-03`
+Last audited: `2026-06-05`
 
 The TL;DR-of-TL;DRs. Everything you need to operate the repo
 fits on one screen. For the full doc tour, see
@@ -12,7 +12,7 @@ fits on one screen. For the full doc tour, see
 pwsh ./pal.ps1 next           # "what should I do right now?" - context-aware single-action advisor
 pwsh ./pal.ps1 onboard        # first-time setup -- SDK + build + test + audit + dashboard
 pwsh ./pal.ps1 build          # dotnet build (Release)
-pwsh ./pal.ps1 test           # dotnet test  (Release, quiet) -- expects 1309 / 1309
+pwsh ./pal.ps1 test           # dotnet test  (Release, quiet) -- expects 1310 / 1310
 pwsh ./pal.ps1 audit          # full drift audit -- build + tests + 16 gates (~30 s)
 pwsh ./pal.ps1 fast-audit     # drift gates only -- skip coverage / SBOM / packaging
 pwsh ./pal.ps1 cleanup        # preview generated clutter; add -Apply to delete
@@ -42,10 +42,10 @@ pwsh ./scripts/install-llama-cpp.ps1 -AutoLaunch
 Detects GPU vendor / VRAM / RAM / CUDA cross-platform, picks the
 right backend (cuda12 / cuda13 / vulkan / hip / sycl / cpu),
 downloads + smoke-tests the latest upstream release, recommends
-the best curated GGUF that fits VRAM (with MoE partial offload
-when needed), wires PalLLM `appsettings.json` with the
-per-family sampler (Qwen3.6 / Qwen3-Coder / MiniMax / Gemma /
-DeepSeek), and launches `llama-server`. Deep-dive:
+the best supported GGUF lane that fits VRAM, wires PalLLM
+`appsettings.json` with the current per-family sampler
+(`qwen35` for Qwen3.5 9B, `gemma` for Gemma 4 12B), and launches
+`llama-server`. Deep-dive:
 [`LLAMA_CPP_BUNDLED.md`](LLAMA_CPP_BUNDLED.md).
 
 ## Key files
@@ -56,7 +56,7 @@ DeepSeek), and launches `llama-server`. Deep-dive:
 | `pal.ps1` | Verb-driven task runner (this cheat sheet's commands) |
 | `Directory.Build.props` | Repo-wide MSBuild settings (NoWarn, etc.) |
 | `src/PalLLM.Domain/Configuration/PalLlmOptions.cs` | Every config knob with default + XML doc |
-| `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs` | The ~1104-line runtime spine - every chat turn lives here |
+| `src/PalLLM.Domain/Runtime/PalLlmRuntime.cs` | The ~1115-line runtime spine - every chat turn lives here |
 | `src/PalLLM.Domain/Runtime/PalLlmRuntime.Helpers.cs` | Extracted pure helper partial for MIME routing, receipt text, bounded directory counts, and file enumeration |
 | `src/PalLLM.Domain/Runtime/PalLlmRuntime.Inference.cs` | Extracted inference partial for warmup, circuit/model metadata, and operation receipts |
 | `src/PalLLM.Domain/Runtime/PalLlmRuntime.UiProbe.cs` | Extracted `ui_probe` diagnostics partial for dump parsing and HUD candidate ranking |
@@ -86,7 +86,7 @@ DeepSeek), and launches `llama-server`. Deep-dive:
 | # | Gate | What it checks |
 |---|---|---|
 | 1 | `Build_Release` | `dotnet build` succeeds with zero warnings |
-| 2 | `Tests` | `dotnet test` all-green (1309 / 1309 currently) |
+| 2 | `Tests` | `dotnet test` all-green (1310 / 1310 currently) |
 | 3 | `Drift_Mojibake` | No UTF-8 corruption in tracked files |
 | 4 | `Drift_Api_route_count` | `api.Map*` calls in `Program.cs` + `RouteRegistrations/*.cs` agree with README / ROADMAP / ARCHITECTURE / API counts |
 | 5 | `Drift_Api_reference_surface` | `API.md` route list matches live route registrations |
@@ -133,7 +133,7 @@ D:\Coding\PalLLM\
 +-- src/
 |   +-- PalLLM.Domain/                   -> portable runtime (NO ASP.NET, NO UE4SS)
 |   +-- PalLLM.Sidecar/                  -> ASP.NET Core host
-+-- tests/PalLLM.Tests/                  -> NUnit, 1309 tests
++-- tests/PalLLM.Tests/                  -> NUnit, 1310 tests
 +-- mod/ue4ss/Mods/PalLLM/               -> Lua bridge
 +-- scripts/                             -> install / doctor / smoke / audit / package
 +-- docs/

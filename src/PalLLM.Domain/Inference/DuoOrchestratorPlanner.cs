@@ -155,7 +155,7 @@ public sealed class DuoOrchestratorPlanner
                 Pattern: DuoCooperationPattern.DeterministicOnly,
                 Why: "No Worker or Judge role bound. Deterministic fallback director still answers every chat, but duo cooperation patterns require at least one role.",
                 Steps: [new DuoPlanStep("deterministic-fallback", "Either", "PalLLM's deterministic director replies without model inference.")],
-                Escalation: "Declare a Worker binding under PalLLM:ModelRoles[] (Qwen3.6-35B-A3B class) to unlock Worker-only patterns. Add a Judge binding (Qwen3.6-27B class) to unlock full-duo patterns.",
+                Escalation: "Declare a Worker binding under PalLLM:ModelRoles[] (Qwen3.5 9B class) to unlock Worker-only patterns. Add a Judge binding (Gemma 4 12B class) to unlock full-duo patterns.",
                 ThinkingMode: new DuoThinkingMode(Worker: null, Judge: null),
                 ContextBudget: new DuoContextBudget(Worker: null, Judge: null),
                 RiskLevel: request.Risk.ToString());
@@ -172,7 +172,7 @@ public sealed class DuoOrchestratorPlanner
                     new DuoPlanStep("worker-execute", "Worker", "Worker handles the task end-to-end."),
                     new DuoPlanStep("validators", "Either", "Deterministic validators (schema, tests, policy) substitute for dense audit."),
                 ],
-                Escalation: "Add a Judge binding (Qwen3.6-27B class) to unlock audit / branch-tournament / final-synthesis patterns.",
+                Escalation: "Add a Judge binding (Gemma 4 12B class) to unlock audit / branch-tournament / final-synthesis patterns.",
                 ThinkingMode: new DuoThinkingMode(Worker: WorkerThinkingFor(request.Kind), Judge: null),
                 ContextBudget: new DuoContextBudget(Worker: WorkerContextFor(request.Kind, request.Hardware), Judge: null),
                 RiskLevel: request.Risk.ToString());
@@ -186,7 +186,7 @@ public sealed class DuoOrchestratorPlanner
                 [
                     new DuoPlanStep("judge-execute", "Judge", "Judge handles the task end-to-end — slower but coherent."),
                 ],
-                Escalation: "Add a Worker binding (Qwen3.6-35B-A3B class) to unlock fan-out / scout / draft patterns.",
+                Escalation: "Add a Worker binding (Qwen3.5 9B class) to unlock fan-out / scout / draft patterns.",
                 ThinkingMode: new DuoThinkingMode(Worker: null, Judge: JudgeThinkingFor(request.Kind)),
                 ContextBudget: new DuoContextBudget(Worker: null, Judge: JudgeContextFor(request.Kind, request.Hardware)),
                 RiskLevel: request.Risk.ToString());

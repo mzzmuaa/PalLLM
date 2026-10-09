@@ -346,8 +346,7 @@ function Get-DetectedSystemRamGb {
 function Get-CudaToolkitVersion {
     # Returns the major.minor CUDA toolkit version (e.g. "12.4", "13.1")
     # or $null when unavailable. Used only to warn operators when
-    # they're on a known-broken toolkit (CUDA 13.0-13.2 + MiniMax-M2.7
-    # → gibberish; CUDA 13.x + Blackwell MMQ → crash).
+    # they're on a known-broken toolkit (CUDA 13.x + Blackwell MMQ crash).
     if (-not (Test-CommandAvailable 'nvcc')) { return $null }
     try {
         $output = & nvcc --version 2>$null | Out-String
@@ -393,7 +392,7 @@ function Get-KvCacheGb {
     # Pass 350: rough KV-cache memory estimate so the recommendation
     # accounts for "model + KV at chosen context" rather than just
     # "model fits". Formula: 2 * layers * kv_heads * head_dim * ctx
-    # * bytes_per_elem. Defaults below match Qwen3.6 / Gemma-4 architectures.
+    # * bytes_per_elem. Defaults below match the Qwen3.5 / Gemma-4 lanes.
     param(
         [int]$Layers,
         [int]$KvHeads,
@@ -417,173 +416,50 @@ function Get-RecommendedModel {
     param([double]$VramGb, [double]$SystemRamGb, [string]$ModelsRoot, [string]$Backend = 'auto')
 
     # Curated tier preferences from docs/LOCAL_MODELS_INVENTORY.md,
-    # sorted highest-quality first. Pass 351: catalog now covers all
-    # 7 curated families (was 4 in Pass 350). Each entry carries:
-    #   - Family / Path: display name + relative path (first shard
-    #     for multi-shard models — llama.cpp auto-loads the rest)
+    # sorted by the current PalLLM support posture: fast Qwen3.5 text first,
+    # smart Gemma 4 12B multimodal second. Each entry carries:
+    #   - Family / Path: display name + relative path
     #   - DiskGb / MinVramGb / MoeMinVramGb: VRAM gating
     #   - ContextSize / GpuLayers: launch defaults
     #   - IsMoE / Layers / KvHeads / HeadDim: KV-cache math + MoE
     #     partial-offload eligibility
-    #   - Sampler: Unsloth per-family canonical (qwen36 / qwen3-coder /
-    #     minimax / gemma / deepseek) — auto-launch picks the right
+    #   - Sampler: per-family profile (qwen35 / gemma) — auto-launch picks the right
     #     --temp / --top-p / --top-k / --min-p per family
-    #   - Prio: optional --prio override (MiniMax recipe asks for 3)
+    #   - Prio: optional --prio override
     #   - AllowsSpecDecode: false when upstream has a known
-    #     spec-decode crash on this family (Qwen3-Coder-Next: #21886)
+    #     spec-decode crash on this family
     #
     # IsMoE drives partial-offload recommendations when VRAM is tight:
     # MoE models can run on smaller cards by moving expert FFN tensors
     # to CPU via --n-cpu-moe N (David Sanftenberg, Doctor-Shotgun).
     $catalog = @(
         @{
-            Family       = 'Qwen3.6-35B-A3B-UD-Q8_K_XL (MoE, quality)'
-            Path         = 'Qwen\Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf'
-            DiskGb       = 39
-            MinVramGb    = 18
-            MoeMinVramGb = 8
-            # Pass 373: MoE partial-offload needs to keep ~25 GB of expert
-            # FFN tensors resident in system RAM (model is 39 GB on disk,
-            # ~14 GB lives in VRAM after --n-cpu-moe ~25, rest in RAM). On
-            # a 16 GB RAM machine that would thrash. Skip this entry on
-            # hosts below 32 GB RAM so the recommender falls back to the
-            # 5 GB Gemma fast-start tier instead.
-            MoeMinSystemRamGb = 32
-            ContextSize  = 16384
-            GpuLayers    = 99
-            IsMoE        = $true
-            Layers       = 80
-            KvHeads      = 8
-            HeadDim      = 128
-            Sampler      = 'qwen36'
-            Prio         = 0
-            AllowsSpecDecode = $true
-        }
-        @{
-            Family       = 'Qwen3.6-27B-UD-Q8_K_XL (dense, quality)'
-            Path         = 'Qwen\Qwen3.6-27B-UD-Q8_K_XL.gguf'
-            DiskGb       = 36
-            MinVramGb    = 30
-            MoeMinVramGb = 0
-            ContextSize  = 16384
-            GpuLayers    = 99
-            IsMoE        = $false
-            Layers       = 64
-            KvHeads      = 8
-            HeadDim      = 128
-            Sampler      = 'qwen36'
-            Prio         = 0
-            AllowsSpecDecode = $true
-        }
-        @{
-            Family       = 'Gemma-4-31B-it-UD-Q8_K_XL (dense)'
-            Path         = 'Gemma\gemma-4-31B-it-UD-Q8_K_XL.gguf'
-            DiskGb       = 35
-            MinVramGb    = 28
+            Family       = 'Qwen3.5-9B-UD-Q6_K_XL (fast Worker)'
+            Path         = 'Qwen\Qwen3.5-9B-UD-Q6_K_XL.gguf'
+            DiskGb       = 8.4
+            MinVramGb    = 9
             MoeMinVramGb = 0
             ContextSize  = 8192
             GpuLayers    = 99
             IsMoE        = $false
-            Layers       = 56
+            Layers       = 48
             KvHeads      = 8
             HeadDim      = 128
-            Sampler      = 'gemma'
+            Sampler      = 'qwen35'
             Prio         = 0
             AllowsSpecDecode = $true
         }
-        # Pass 351: heavyweight specialty models. Default-rank
-        # below the general-purpose chat tiers because they're
-        # niche (coding, research) and their disk footprint is
-        # large — the operator must have curated them deliberately.
-        #
-        # Pass 356/373: heavyweight families MARKED PostRelease=$true.
-        # They remain in the catalog so the operator's manual
-        # `connect-llamacpp.ps1 -ModelProfile <family>` still works,
-        # but Get-RecommendedModel skips them when the host is the
-        # v1.0 reference rig (RTX 3060 12 GB + 16 GB RAM, total
-        # 28 GB memory budget — these models exceed that by a wide
-        # margin even with aggressive partial offload, and the
-        # MoeMinSystemRamGb gate added in Pass 373 also keeps them
-        # off 32 GB / 24 GB-VRAM hosts unless explicitly requested).
         @{
-            Family       = 'Qwen3-Coder-Next-UD-Q6_K_XL (coding, multi-shard)'
-            Path         = 'Qwen\Qwen3-Coder-Next\UD-Q6_K_XL\Qwen3-Coder-Next-UD-Q6_K_XL-00001-of-00003.gguf'
-            DiskGb       = 73
-            MinVramGb    = 36
-            MoeMinVramGb = 12      # MoE so partial offload available
-            ContextSize  = 32768   # Unsloth-documented memory-friendly default (256K native)
-            GpuLayers    = 99
-            IsMoE        = $true
-            Layers       = 80
-            KvHeads      = 8
-            HeadDim      = 128
-            Sampler      = 'qwen3-coder'
-            Prio         = 0
-            AllowsSpecDecode = $false  # Upstream #21886 — spec-decode broken
-            PostRelease  = $true
-        }
-        @{
-            Family       = 'MiniMax-M2.7-UD-IQ4_XS (MoE, heavyweight, multi-shard)'
-            Path         = 'MiniMax-M2.7\UD-IQ4_XS\MiniMax-M2.7-UD-IQ4_XS-00001-of-00004.gguf'
-            DiskGb       = 108
-            MinVramGb    = 64
-            MoeMinVramGb = 16      # Aggressive --n-cpu-moe on tight cards
-            ContextSize  = 32768   # Unsloth recipe value
-            GpuLayers    = 999     # MiniMax recipe explicitly uses 999
-            IsMoE        = $true
-            Layers       = 88
-            KvHeads      = 8
-            HeadDim      = 128
-            Sampler      = 'minimax'
-            Prio         = 3       # Unsloth M2.7 recipe asks for --prio 3
-            AllowsSpecDecode = $true
-            PostRelease  = $true
-        }
-        @{
-            Family       = 'MiniMax-M2.7-UD-IQ3_XXS (MoE, heavyweight, smaller-shard)'
-            Path         = 'MiniMax-M2.7\UD-IQ3_XXS\MiniMax-M2.7-UD-IQ3_XXS-00001-of-00003.gguf'
-            DiskGb       = 80
-            MinVramGb    = 48
-            MoeMinVramGb = 12
-            ContextSize  = 32768
-            GpuLayers    = 999
-            IsMoE        = $true
-            Layers       = 88
-            KvHeads      = 8
-            HeadDim      = 128
-            Sampler      = 'minimax'
-            Prio         = 3
-            AllowsSpecDecode = $true
-            PostRelease  = $true
-        }
-        @{
-            Family       = 'DeepSeekV4-Flash-158B-Q3_K_M (research lane)'
-            Path         = 'DeepSeek\DeepSeekV4-Flash-158B-Q3_K_M.gguf'
-            DiskGb       = 99.9
-            MinVramGb    = 80      # Practically CPU-RAM-heavy; researcher-class
-            MoeMinVramGb = 0       # Not MoE in the GGUF; whole-model offload only
-            ContextSize  = 16384
-            GpuLayers    = 99
-            IsMoE        = $false
-            Layers       = 60
-            KvHeads      = 8
-            HeadDim      = 128
-            Sampler      = 'deepseek'
-            Prio         = 0
-            AllowsSpecDecode = $true
-            PostRelease  = $true
-        }
-        @{
-            Family       = 'Gemma-4-E4B-it-UD-Q4_K_XL (fast-start)'
-            Path         = 'Gemma\gemma-4-E4B-it-UD-Q4_K_XL.gguf'
-            DiskGb       = 5.1
-            MinVramGb    = 6
+            Family       = 'gemma-4-12b-it-UD-Q6_K_XL (smart multimodal Edge)'
+            Path         = 'Gemma\gemma-4-12b-it-UD-Q6_K_XL.gguf'
+            DiskGb       = 10
+            MinVramGb    = 12
             MoeMinVramGb = 0
             ContextSize  = 8192
             GpuLayers    = 99
             IsMoE        = $false
-            Layers       = 30
-            KvHeads      = 4
+            Layers       = 48
+            KvHeads      = 8
             HeadDim      = 128
             Sampler      = 'gemma'
             Prio         = 0
@@ -592,13 +468,6 @@ function Get-RecommendedModel {
     )
 
     foreach ($entry in $catalog) {
-        # Pass 356: skip post-release catalog entries on the v1.0
-        # reference rig. They remain launchable via manual flags
-        # (connect-llamacpp.ps1 -ModelProfile ... -ModelPath ...);
-        # they just don't appear as the auto-recommended default.
-        # See docs/POST_RELEASE_ANNEX.md.
-        if ($entry.ContainsKey('PostRelease') -and $entry.PostRelease) { continue }
-
         $full = if ($Platform -eq 'win-x64') {
             Join-Path $ModelsRoot $entry.Path
         } else {
@@ -705,7 +574,7 @@ function Get-RecommendedModel {
         NCpuMoe     = 0
         QuantizedKv = $false
         IsMoE       = $false
-        Sampler     = 'qwen36'
+        Sampler     = 'qwen35'
         Prio        = 0
         AllowsSpecDecode = $false
         Note        = "No GGUFs detected under $ModelsRoot. Either populate the operator library (see docs/LOCAL_MODELS_INVENTORY.md) or pass -m <path> to llama-server manually."
@@ -720,11 +589,8 @@ function Get-SamplerFlags {
     # recommended model without invoking connect-llamacpp.ps1.
     param([string]$Sampler)
     switch ($Sampler) {
-        'qwen36'      { return @('--temp', '0.7', '--top-p', '0.8',  '--top-k', '20', '--min-p', '0.0',  '--presence-penalty', '1.5') }
-        'qwen3-coder' { return @('--temp', '0.6', '--top-p', '0.95', '--top-k', '20', '--min-p', '0.0',  '--presence-penalty', '0.0') }
-        'minimax'     { return @('--temp', '1.0', '--top-p', '0.95', '--top-k', '40', '--min-p', '0.01') }
+        'qwen35'      { return @('--temp', '0.7', '--top-p', '0.8',  '--top-k', '20', '--min-p', '0.0',  '--presence-penalty', '1.5') }
         'gemma'       { return @('--temp', '0.7', '--top-p', '0.95', '--top-k', '20', '--min-p', '0.0') }
-        'deepseek'    { return @('--temp', '0.7', '--top-p', '0.95', '--top-k', '40', '--min-p', '0.0') }
         default       { return @() }
     }
 }
@@ -846,7 +712,7 @@ if (-not $onTargetRig -and -not $VerifyOnly -and -not $DryRun) {
         Write-Host '  2) Remote PC (llama-server on a beefier reference-rig host)' -ForegroundColor White
         Write-Host '     pwsh ./scripts/connect-llamacpp.ps1 \' -ForegroundColor DarkGray
         Write-Host '         -LlamaCppUrl http://<remote-rig-ip>:8080 \' -ForegroundColor DarkGray
-        Write-Host '         -Model Qwen3.6-35B-A3B-UD-Q8_K_XL -WriteConfig' -ForegroundColor DarkGray
+        Write-Host '         -Model Qwen3.5-9B-UD-Q6_K_XL -WriteConfig' -ForegroundColor DarkGray
         Write-Host '     The remote host runs pwsh ./scripts/install-llama-cpp.ps1 -AutoLaunch' -ForegroundColor DarkGray
         Write-Host '     and exposes port 8080; this client points at that URL.' -ForegroundColor DarkGray
         Write-Host ''
@@ -899,7 +765,7 @@ if ($detectedCuda) {
     if ($detectedCuda -match '^13\.[012]$' -and $resolvedBackend -eq 'cuda13') {
         Write-Host "    WARNING: CUDA $detectedCuda is in the known-broken band (13.0-13.2):" -ForegroundColor Yellow
         Write-Host "             - MMQ crashes on Blackwell sm_120 (zenn.dev benchmark)" -ForegroundColor Yellow
-        Write-Host "             - gibberish output on MiniMax-M2.7 (Unsloth)" -ForegroundColor Yellow
+        Write-Host "             - unstable output on unqualified GGUF lanes" -ForegroundColor Yellow
         Write-Host "             Switching to -Backend cuda12 is the safe path." -ForegroundColor Yellow
     }
 }
@@ -972,7 +838,7 @@ if (Test-Path -LiteralPath $serverExe) {
     Write-Host "Already installed: $serverExe" -ForegroundColor Green
     Write-Host "  Pass -ReleaseTag to install a different version, or delete $installDir to force re-install."
     Write-Host ""
-    Write-Host "Next step: pwsh ./pal.ps1 connect llamacpp -ModelPath D:\Models\Qwen\Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf -WriteConfig" -ForegroundColor Cyan
+    Write-Host "Next step: pwsh ./pal.ps1 connect llamacpp -ModelPath D:\Models\Qwen\Qwen3.5-9B-UD-Q6_K_XL.gguf -WriteConfig" -ForegroundColor Cyan
     exit 0
 }
 
@@ -1186,19 +1052,17 @@ if ($AutoLaunch.IsPresent) {
         # Both default to off so this is a "don't add" comment rather
         # than a conditional flag-prune; the operator must opt in.
 
-        # Pass 351: per-model Unsloth canonical sampler. The recommended
-        # family's Sampler ('qwen36' | 'qwen3-coder' | 'minimax' |
-        # 'gemma' | 'deepseek') drives the --temp/--top-p/--top-k/--min-p
-        # combo. Only Qwen profiles use --chat-template-kwargs
+        # Pass 351/448: per-model sampler. The recommended family's
+        # Sampler ('qwen35' | 'gemma') drives the --temp/--top-p/--top-k/
+        # --min-p combo. Only Qwen profiles use --chat-template-kwargs
         # (enable_thinking is a Qwen3 template kwarg, not universal).
-        if ($recommendation.Sampler -in @('qwen36', 'qwen3-coder')) {
+        if ($recommendation.Sampler -eq 'qwen35') {
             $launchArgs += @('--chat-template-kwargs', '{"enable_thinking":false}')
         }
         $launchArgs += Get-SamplerFlags -Sampler $recommendation.Sampler
 
-        # Pass 351: per-model thread priority. MiniMax-M2.7's Unsloth
-        # recipe asks for --prio 3; other families stay at the
-        # llama-server default.
+        # Pass 351: per-model thread priority. Current lanes stay at the
+        # llama-server default unless the catalog says otherwise.
         if ($recommendation.Prio -gt 0) {
             $launchArgs += @('--prio', [string]$recommendation.Prio)
         }
@@ -1230,9 +1094,9 @@ Write-Host ""
 
 # Common base flags used by every backend
 $modelHint = if ($Platform -eq 'win-x64') {
-    'D:\Models\Qwen\Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf'
+    'D:\Models\Qwen\Qwen3.5-9B-UD-Q6_K_XL.gguf'
 } else {
-    '/path/to/Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf'
+    '/path/to/Qwen3.5-9B-UD-Q6_K_XL.gguf'
 }
 $mmprojHint = if ($Platform -eq 'win-x64') {
     'D:\Models\mmproj\mmproj-F16.gguf'
@@ -1240,7 +1104,7 @@ $mmprojHint = if ($Platform -eq 'win-x64') {
     '/path/to/mmproj-F16.gguf'
 }
 
-# Per-backend default flags. Sampler values match Unsloth's Qwen3.6
+# Per-backend default flags. Sampler values match PalLLM's Qwen3.5
 # thinking-OFF canonical (temp 0.7, top-p 0.8, top-k 20, min-p 0,
 # presence-penalty 1.5) — same numbers as PalLLM's appsettings so the
 # pal.json connect verb and the manual recipe agree.
@@ -1259,12 +1123,10 @@ $sharedFlags = @(
     '--temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --presence-penalty 1.5'
 )
 $gpuFlags = if ($resolvedBackend -in @('cuda12','cuda13','hip','sycl','vulkan')) { @('-ngl 99') } else { @() }
-$specFlags = @() # Speculative decoding OFF by default. Net-negative on
-                 # RTX 3090 + Qwen3.6-35B-A3B (post PR #19493 benchmark).
-                 # Net-positive on RTX PRO 6000 / RTX 5090 / Apple M3 Max
-                 # / Strix Halo. Opt in via `connect-llamacpp -SpecType
-                 # draft-mtp -DraftMax 2` after measuring your own
-                 # cold/warm replay.
+$specFlags = @() # Speculative decoding OFF by default. Qwen3.5 / Gemma 4
+                 # MTP remains hardware- and route-dependent. Opt in via
+                 # `connect-llamacpp -SpecType draft-mtp -DraftMax 2`
+                 # after measuring your own cold/warm replay.
 
 $launchLines = @()
 if ($Platform -eq 'win-x64') {
@@ -1307,15 +1169,15 @@ switch ($resolvedBackend) {
     }
     'cpu' {
         Write-Host "  - CPU-only path. 7B-13B GGUFs run ~1-2 tok/s on AVX-512 hosts." -ForegroundColor DarkGray
-        Write-Host "  - Plan on the small fast-start tier (gemma-4-E4B-it-UD-Q4_K_XL); the" -ForegroundColor DarkGray
-        Write-Host "    Qwen3.6-35B-A3B quality tier isn't realistic without GPU offload." -ForegroundColor DarkGray
+        Write-Host "  - Plan on deterministic-only or a remote llama-server; Qwen3.5/Gemma lanes" -ForegroundColor DarkGray
+        Write-Host "    are not realistic on CPU-only hardware." -ForegroundColor DarkGray
     }
 }
 
 Write-Host ""
 Write-Host "Speculative decoding (off by default):" -ForegroundColor DarkGray
-Write-Host "  Qwen3.6 MTP is hardware-dependent — net-negative on RTX 3090 single-card MoE," -ForegroundColor DarkGray
-Write-Host "  net-positive on RTX PRO 6000 / RTX 5090 / Apple M3 Max / Strix Halo." -ForegroundColor DarkGray
+Write-Host "  Qwen3.5 / Gemma 4 MTP is hardware- and route-dependent." -ForegroundColor DarkGray
+Write-Host "  Keep speculation off until your own PalLLM replay proves lower latency." -ForegroundColor DarkGray
 Write-Host "  Enable via connect-llamacpp -SpecType draft-mtp -DraftMax 2 after measuring." -ForegroundColor DarkGray
 
 Write-Host ""
