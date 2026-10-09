@@ -187,8 +187,11 @@ function ConvertTo-PalLlmRelativePath {
         $basePath += [IO.Path]::DirectorySeparatorChar
     }
 
-    $baseUri = [Uri]$basePath
-    $targetUri = [Uri]$targetPath
+    # Explicit file URIs keep Unix absolute paths absolute under .NET.
+    # UriBuilder also escapes fragment/query characters in real filenames.
+    # Retain .NET Framework compatibility for Windows PowerShell 5.1.
+    $baseUri = [UriBuilder]::new([Uri]::UriSchemeFile, '', -1, $basePath).Uri
+    $targetUri = [UriBuilder]::new([Uri]::UriSchemeFile, '', -1, $targetPath).Uri
     return [Uri]::UnescapeDataString($baseUri.MakeRelativeUri($targetUri).ToString()).Replace('\', '/')
 }
 
